@@ -16,7 +16,7 @@ test('office record: absent is self-hosted, present is office_park, wrong is unr
     assert.equal(v.hosting === 'self_hosted' && v.host, os.hostname());
     assert.equal(await isOfficeHost(), false);
 
-    const record = { office_id: 'glen', office_park: 'oh-1', gateway_office: 'http://10.0.0.2:4912/', provisioned_at: '2026-11-06T09:00:00Z' };
+    const record = { office_id: 'glen', office_park: 'oh-1', gateway_office: 'http://10.0.0.2:4912/v1', provisioned_at: '2026-11-06T09:00:00Z' };
     await fs.writeFile(path.join(dir, 'office_record.json'), JSON.stringify(record));
     v = await readOfficeRecord();
     assert.equal(v.hosting, 'office_unit');

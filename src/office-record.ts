@@ -24,7 +24,8 @@ export interface OfficeRecord {
   office_id: string;
   /** The office_park this office runs on, as the fleet names it. */
   office_park: string;
-  /** The gateway_office this office's house calls go to, reachable from inside the office. */
+  /** The gateway_office this office's house calls go to, reachable from inside the office: its origin
+   * alone, since each caller adds its own path (/v1, /usage). A record written with /v1 reads the same. */
   gateway_office: string;
   provisioned_at: string;
 }
@@ -56,7 +57,7 @@ export function parseOfficeRecord(raw: unknown): OfficeRecord {
   }
   const provisioned_at = r.provisioned_at;
   if (typeof provisioned_at !== 'string' || Number.isNaN(Date.parse(provisioned_at))) throw new Error('provisioned_at must be a date');
-  return { office_id: name(r, 'office_id'), office_park: name(r, 'office_park'), gateway_office: url.href.replace(/\/$/, ''), provisioned_at };
+  return { office_id: name(r, 'office_id'), office_park: name(r, 'office_park'), gateway_office: url.origin, provisioned_at };
 }
 
 export async function readOfficeRecord(): Promise<OfficeView> {
