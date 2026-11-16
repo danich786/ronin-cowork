@@ -15,27 +15,29 @@ how Agents launch, and an Agent that is already running can use one connected af
 The brief's `mcp:` header (a bridge naming an MCP server for the launch) retires, with no
 compat. gbrain becomes a command like the rest.
 
-## Three ways in
+## Four ways in
 
-All three are commands; Ronin holds the key and makes the network call, so an Agent never
+All four are commands; Ronin holds the key and makes the network call, so an Agent never
 handles a key.
 
 | Way | The Agent sees | Who defines the calls | Example |
 |---|---|---|---|
 | **Hidden** | Ronin's own object; the provider is invisible | Ronin | Jira behind `item` |
 | **Curated** | a few Ronin commands for the provider | Ronin, mapped to the provider's API | `netlify` |
-| **Pass-through** | the provider's own MCP tools, as its server describes them | the provider | `mcp call <name> …` |
+| **MCP pass-through** | the provider's own MCP tools, as its server describes them | the provider | `mcp call <name> …` |
+| **API pass-through** | the provider's own HTTP API, with the key attached | the provider | `api call <name> <METHOD> <path>` |
 
-Pass-through comes first: one broker serves every MCP server with no code per provider. A
+Pass-through comes first: one broker serves every MCP server and every web API with no code
+per provider; an Agent already knows a provider's API, and Ronin only holds its key. A
 provider gets a curated bridge only when it earns one (answers too long, the same calls with the
-same arguments, a Workspace fact to fill in). A curated bridge may call through the broker.
+same arguments, a Workspace fact to fill in). A curated bridge may call through the broker, by MCP or by API.
 
 ## The pieces
 
 | Piece | Where | Says |
 |---|---|---|
 | A **bridge** (curated or hidden) | a behaviour file with `when: integration:<name>`, and its tools ([brief.md](brief.md#integrations-and-bridges)) | what the bridge is for and when to reach for its commands |
-| An **MCP server** | a record, `~/ronin/catalogs/integrations/<name>.md` | how the server is reached, how it signs in, which secret holds its key, which Campaigns are offered it |
+| An **MCP server** or a **web API** | a record, `~/ronin/catalogs/integrations/<name>.md` | how the server is reached, how it signs in, which secret holds its key, which Campaigns are offered it |
 | The **keys** | secrets, `~/ronin/services_secrets/<name>-<key>`, made with `secret ask` | nothing readable: a value is never printed |
 | The **link** | the Workspace record's `integrations` entry, `{provider, …facts}` | the facts a bridge needs for that Workspace (Netlify's `site`) |
 
@@ -59,15 +61,17 @@ lowercase letters, digits and `-`.
 |---|---|
 | title (`#`) | the label Settings shows |
 | `description:` | one line: what the server is for. Taken from the server at `mcp add` (its `instructions`, else its title), editable. The brief prints it; the brief build never calls a server |
-| `reach:` | a URL (`http://`, `https://`: MCP's streamable HTTP), or the command that starts a local server (MCP over its stdin and stdout) |
+| `reach:` | an MCP server: a URL (`http://`, `https://`: MCP's streamable HTTP), or the command that starts a local server (MCP over its stdin and stdout) |
+| `base:` | in place of `reach:`, a web API: its root URL (`https://api.netlify.com/api/v1`), http or https, no query. Every call's path goes under it, and the key goes nowhere else |
 | `sign-in:` | `key` (a pasted key), `oauth` (a sign-in whose token the broker keeps and renews), or `none` |
 | `secret:` | the secret that holds the key or the OAuth token, `<name>-<key>`. Blank with `sign-in: none` |
-| `send:` | how the key goes on each call: a header, `Header-Name: … {secret} …` (default `Authorization: Bearer {secret}`), or for a local server an environment variable, `env NAME` |
+| `send:` | how the key goes on each call: a header, `Header-Name: … {secret} …` (default `Authorization: Bearer {secret}`), for a local server an environment variable, `env NAME`; for a web API that wants it in the query string, `query <param>` |
 | `campaigns:` | the Campaigns it is offered to, comma-separated. Blank: every Campaign |
 
-There is no `bridge:` field: every record here is an MCP server. A record whose name is also
-a bridge's (`netlify`) is that bridge's way through the broker: the bridge behaviour teaches
-it, and the MCP list does not show it.
+There is no `bridge:` field and no kind field: a record with `reach:` is an MCP server, one with
+`base:` a web API. A record whose name is also a bridge's (`netlify`) is that bridge's way through
+the broker: the bridge behaviour teaches it, and no list shows it. A record named apart from its
+bridge (`netlify-api` beside `netlify`) gets its own line: it does what the bridge does not.
 
 ## Who has it
 
@@ -93,12 +97,16 @@ it, and the MCP list does not show it.
   `mcp tools <name>` when the work needs it.
 - **Running Agents hear of a change.** A record added, removed, offered or narrowed refreshes
   every brief it touches, as the Jira pairing does, so a running Agent gets it as a brief update.
-- **A curated bridge** keeps its own behaviour file and gets no line in the MCP list.
+- **Web APIs likewise,** in their own behaviour, `behaviours/web-apis.md` (seed depth, in play when
+  at least one API record is on): one generated line per API, then `api call <name> <METHOD>
+  <path>`; `tools/api.md` is the command's tool file. Each seed names one command and is in play
+  only when that kind is on.
+- **A curated bridge** keeps its own behaviour file and gets no line in either list.
 
 ## The broker
 
-The Services part `mcp` is an MCP client. It keeps no connection between calls: each call
-connects, asks and closes.
+The Services part `mcp` is an MCP client and an HTTP caller. It keeps no connection between calls:
+each call connects, asks and closes.
 
 | Command | Route | Does |
 |---|---|---|
@@ -107,12 +115,15 @@ connects, asks and closes.
 | `mcp call <name> <tool> --json '<args>'` | `POST /api/mcp/call` | runs the tool and prints its answer |
 | `mcp add <name> <reach> [--sign-in key\|oauth\|none] [--secret <n>] [--send <s>] [--campaigns <list>] [--description <d>]` | `POST /api/mcp/add` | connects, reads the server's description, writes the record. A key not yet saved: the command asks for it with `secret ask <secret>` and tries again |
 | (Settings › Integrations) | `POST /api/mcp/campaigns` `{name, campaigns}` | changes which Campaigns the server is offered to: only the record's `campaigns:` line, blank for every Campaign; connects to nothing |
-| `mcp remove <name>` | `POST /api/mcp/remove` | deletes the record; its secret stays until the owner removes it |
-| (Settings › Integrations) | `POST /api/mcp/campaigns` `{name, campaigns}` | rewrites only the record's `campaigns:` line (blank: every Campaign); connects to nothing |
+| `mcp remove <name>`, `api remove <name>` | `POST /api/mcp/remove` | deletes the record (either kind); its secret stays until the owner removes it |
+| `api list` | `GET /api/apis` | the web APIs offered to the caller's Campaign, each with its base and whether its key is saved |
+| `api call <name> <METHOD> <path> [--json '<body>'] [--query k=v]` | `POST /api/apis/call` | the call: `HTTP <status>`, then the body (JSON pretty-printed, cut at 400 lines; any other body saved to a file). Never a response header. The path starts with one `/` and must stay on base's host and under base's path (`//host`, a scheme, `..` and encoded dots refused before anything is sent); redirects are not followed |
+| `api add <name> <base> [--sign-in …] [--secret <n>] [--send '<header>'\|'query <param>'] [--campaigns <list>] [--description <d>]` | `POST /api/apis/add` | writes the record, calling nothing. A key not yet saved: the command asks for it with `secret ask` and tries again |
 | (the owner, in the browser) | `GET /api/mcp/oauth/start?name=` | an `oauth` record's sign-in: Ronin registers itself with the server's authorization server and comes back to the address the browser used; the tokens go in the record's secret and the broker renews them |
 
 On every call the broker reads the record and the secret, attaches the key as `send:` says,
-logs the caller and the tool (never the arguments' secrets, never the key), stops after 60
+logs the caller and the tool or path (never the arguments' secrets, never the key: it is masked as
+`***` in every line that leaves the broker, a `query` key included), stops after 60
 seconds, and answers `{ok, lines}`: the tool's text, cut at 400 lines with a note of what was
 cut. An image or audio is saved to a file under the system temp folder (`ronin-mcp/<caller>/`)
 and its path is printed. A failure is one line: what is missing (409, with what to set), what the
