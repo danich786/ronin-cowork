@@ -305,11 +305,11 @@ real stores.
 
 ## Where it is set in the UI
 
-- **New Agent form, Behaviors step:** Integrations (inherited ones shown "On, from the
-  {layer}", the Agent's own to turn on); Project management (a switch, locked when a layer
-  above or Jira has it on); Optional (the Agent's add list, Full or Seed; a behaviour already
-  told can be raised to Full); Comes with this Agent (read-only: what is in play and why, from
-  `POST /api/brief/preview`).
+- **New Agent form, Behaviors step:** one list of cards, each on or off: Project management,
+  each integration by name (never Jira), and the optional behaviours (Full or Seed once on; one
+  already told can be raised to Full). A card on from a layer above reads "On, from the
+  {layer}". Then Comes with this Agent (read-only: what is in play and why, from
+  `POST /api/brief/preview`). It saves `{ brief, integrations, pm }` as before.
 - **Mandate** (New Agent, New Team's Agent rows, Team, Campaign): Reach, Recruit and Output list
   the mandate files from the catalog, in `order:`, less the preview's off
   (`public/js/mandates.js`). No value is listed in the client.

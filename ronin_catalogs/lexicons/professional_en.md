@@ -1597,7 +1597,6 @@ The catalog entry goes. {dir} is not touched.
 
 ## behaviours — behaviour-surface.js
 - **behaviours.title:** Behaviors
-- **behaviours.available:** Optional
 - **behaviours.yours:** Yours
 - **behaviours.stock:** Ronin
 - **campaign_view.desk_settings:** Desk Settings
@@ -1626,15 +1625,12 @@ The catalog entry goes. {dir} is not touched.
 - **brief.why_not:** not {what}
 - **brief.why_every:** every Agent
 - **brief.integrations:** Integrations
-- **brief.integrations_help:** On from the Campaign, Workspace or Team, plus any you turn on for this Agent.
 - **brief.integrations_help_layer:** On here is on for everything below.
 - **brief.pm:** Project management
 - **brief.on_from_word:** On, from the {layer}
 - **brief.on:** On
 - **brief.off:** Off
-- **brief.pm_on:** Work items: the item model, and the guidance for this Agent’s role.
 - **brief.pm_on_layer:** Work items for every Agent below: the item model, and the guidance for each role.
-- **brief.pm_off:** No work items guidance.
 - **brief.pm_off_layer:** Off here and below: no work items guidance.
 - **brief.off_from_word:** Off, from the {layer}
 - **brief.set_on:** Set on
@@ -1642,7 +1638,6 @@ The catalog entry goes. {dir} is not touched.
 - **brief.depth_full:** Full
 - **brief.depth:** Depth
 - **brief.add:** Add
-- **brief.optional_help:** Behaviors added for this Agent only. One already told can be raised to Full.
 - **brief.add_help:** Brought in for every Agent below, at this depth.
 - **behaviours.customize:** Customize Behaviors
 - **brief.comes:** Comes with this Agent

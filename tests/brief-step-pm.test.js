@@ -40,6 +40,7 @@ const draw = (layer, above = {}, value = undefined) => {
   paintBriefForm(host, { layer, catalog, above, ...(value ? { value } : {}), onChange: (next) => changes.push(next) });
   return { host, changes };
 };
+const card = (host, v) => host.all('ask-opt').find((node) => node.dataset.askValue === v) || null;
 const optionNames = (host) => host.all('ask-opt').map((node) => node.dataset.v ?? node.dataset.value ?? node.textContent);
 
 test('Jira is offered at the Campaign and Workspace, never on a Team or Agent form', () => {
@@ -49,7 +50,7 @@ test('Jira is offered at the Campaign and Workspace, never on a Team or Agent fo
     const { host, changes } = draw(layer, above);
     assert.doesNotMatch(host.textContent, /jira/i, `${layer} never names Jira`);
     assert.match(host.textContent, /netlify/, `${layer} keeps its other integrations`);
-    stone(host, 'pm').click();
+    (layer === 'agent' ? card(host, '@pm') : stone(host, 'pm')).click();
     assert.equal((changes.at(-1).brief.integrations_off || []).includes('jira'), false, `${layer} never writes Jira off`);
   }
 });
@@ -69,9 +70,9 @@ test('project management: on from the Campaign by default; turning it off is thi
 
 test('project management off above can be turned on below; the Campaign’s own default is on', () => {
   const agent = draw('agent', { pm: { on: false, from: 'workspace' } });
-  assert.equal(stone(agent.host, 'pm').attributes['aria-checked'], 'false');
+  assert.equal(card(agent.host, '@pm').attributes['aria-selected'], 'false');
   assert.match(agent.host.textContent, /Off, from the Workspace/);
-  stone(agent.host, 'pm').click();
+  card(agent.host, '@pm').click();
   assert.equal(agent.changes.at(-1).pm, true);
   const campaign = draw('campaign', {});
   assert.equal(stone(campaign.host, 'pm').attributes['aria-checked'], 'true', 'nothing said: on');
