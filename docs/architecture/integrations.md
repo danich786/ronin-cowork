@@ -107,6 +107,7 @@ connects, asks and closes.
 | `mcp call <name> <tool> --json '<args>'` | `POST /api/mcp/call` | runs the tool and prints its answer |
 | `mcp add <name> <reach> [--sign-in key\|oauth\|none] [--secret <n>] [--send <s>] [--campaigns <list>] [--description <d>]` | `POST /api/mcp/add` | connects, reads the server's description, writes the record. A key not yet saved: the command asks for it with `secret ask <secret>` and tries again |
 | `mcp remove <name>` | `POST /api/mcp/remove` | deletes the record; its secret stays until the owner removes it |
+| (Settings › Integrations) | `POST /api/mcp/campaigns` `{name, campaigns}` | rewrites only the record's `campaigns:` line (blank: every Campaign); connects to nothing |
 | (the owner, in the browser) | `GET /api/mcp/oauth/start?name=` | an `oauth` record's sign-in: Ronin registers itself with the server's authorization server and comes back to the address the browser used; the tokens go in the record's secret and the broker renews them |
 
 On every call the broker reads the record and the secret, attaches the key as `send:` says,
@@ -120,8 +121,23 @@ server said (502), or that the part is not running (404: use the provider's own 
 
 One list: every bridge and every MCP server, each with its description, the secret names
 saved for it (never a value), the Campaigns it is offered to, the Workspaces that link it and
-whether its Services part runs. An MCP server is added there or with `mcp add`; both write the
-same record. The list is `integrationsState` (`src/integrations.ts`).
+whether its Services part runs. The list is `integrationsState` (`src/integrations.ts`): it
+reads the record files, never a server; a record named like a bridge shows as that bridge.
+An MCP row carries `mcp: {reach, sign_in, secret, saved, campaigns}`; a bridge's is null.
+
+The panel (`public/js/integrations-panel.js`) works an MCP server through the broker's routes,
+so it answers only while the `mcp` part runs:
+
+- **Add MCP server** (the surface's action): name, address, sign-in, through `POST /api/mcp/add`,
+  the same record `mcp add` writes. A key not saved yet opens the paste field for the secret
+  the broker names; saving it adds again.
+- **The key** of a `key` record: a paste field on its row saves it with `POST /api/secrets/<secret>`,
+  the route `secret ask` answers through; the field is cleared the moment it is sent.
+- **Sign in** on an `oauth` record opens `/api/mcp/oauth/start?name=<name>` in a new tab; Refresh
+  shows it signed in.
+- **Campaigns** are ticked on the row and saved with `POST /api/mcp/campaigns`; none ticked is
+  every Campaign.
+- **Remove** is one press (`POST /api/mcp/remove`); the secret stays.
 
 ## Order of work
 
