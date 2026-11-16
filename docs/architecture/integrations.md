@@ -44,7 +44,9 @@ same arguments, a Workspace fact to fill in). A curated bridge may call through 
 ## The MCP server record
 
 One Markdown file per server, in the owner's store (it survives updates). `mcp add` writes it,
-`mcp remove` deletes it, and the owner may edit it by hand. The name is the file name:
+`mcp remove` deletes it, and the owner may edit it by hand. A few records ship with Ronin (the Services
+part's `mcp/stock/`: `perplexity`, the Perplexity bridge's API); the owner's record of the same
+name replaces one, a Campaigns change writes that copy, and a stock record is never removed. The name is the file name:
 lowercase letters, digits and `-`.
 
 ```markdown
