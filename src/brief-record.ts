@@ -61,7 +61,7 @@ export interface BriefRecord {
     mcp: Array<{ name: string; description: string; needs?: string }>;
     /** The web APIs on for this Agent, likewise (behaviours/web-apis.md). */
     api: Array<{ name: string; description: string; needs?: string }>;
-    /** Project management on for this Agent: any layer on, or Jira on. */
+    /** Project management on for this Agent: the narrowest layer that says on or off, else on from the Campaign. Jira, an integration set at the Campaign and Workspace only, never decides it (KAN-608). */
     pm: boolean;
     /** Ronin Services parts running. */
     services: string[];

@@ -32,10 +32,10 @@ export async function availableRecords(campaign: string, catalog?: Pick<Catalog,
   return (await readMcpRecords()).filter((record) => !bridges.has(record.name) && availableTo(record, campaign));
 }
 
-/** The Campaign's layer: its own settings, and Jira when its Jira part is on (so pm is on). The
- * switch, not the live pairing: a pairing named after a restart would leave an Agent born first
- * without pm for life. A record available to the Campaign is not on here unless the Campaign's
- * own integrations name it. */
+/** The Campaign's layer: its own settings, and Jira when its Jira part is on. Jira is an
+ * integration set at the Campaign and Workspace only; it never decides project management, which
+ * is its own setting, on at the Campaign by default (KAN-608). The switch, not the live pairing.
+ * A record available to the Campaign is not on here unless the Campaign's own integrations name it. */
 export async function campaignLayer(campaign: { id: string; config: Pick<CampaignSettings, 'integrations'> & { services?: { parts?: Record<string, unknown> } } } | null | undefined): Promise<Layer> {
   if (!campaign) return layerOf('campaign', {});
   const jira = campaign.config.services?.parts?.jira === true ? ['jira'] : [];
@@ -144,7 +144,7 @@ export type BriefDocument = BriefRecord & { brief_settings: Partial<Record<Layer
 
 export interface BuiltBrief { doc: BriefDocument; layers: Layer[]; cascade: Cascade; resolved: Resolved; text: string }
 
-// Jira only turns project management on: an Agent never reaches past the bridge, so it isn't told of it.
+// Jira is never told: an Agent never reaches past the bridge. It doesn't move pm either (KAN-608).
 const told = (on: Cascade): string[] => Object.keys(on.integrations).filter((name) => name !== 'jira');
 
 /** THE BRIEF BUILDER: the brief document and the catalogs, nothing else. Pure. */

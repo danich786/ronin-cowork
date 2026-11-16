@@ -217,11 +217,18 @@ available (listed in the pickers); a layer's switch turns it on (KAN-607).
 On for an Agent makes `integration:<name>` hold, so its bridge behaviour and that behaviour's
 tools come into play.
 
-**Project management is its own switch**, cascading like an integration. When the Campaign's
-Jira part is on (its switch, `services.parts.jira`, not the live pairing), it is on; otherwise
-each layer may turn it on or off. Jira only turns project management on: an Agent reaches work
-items through `item` and never past the bridge, so it is not told of Jira, and Jira is not
-among the integrations on its record. Off: no item
+**Jira is set at the Campaign and Workspace only** (the Campaign's Jira part, its switch
+`services.parts.jira`, or the Workspace's integrations). A Team's or Agent's Jira entry is
+ignored by the cascade, and the Team and New Agent forms don't show Jira. An Agent reaches work
+items through `item` and never past the bridge, so it is not told of Jira, and Jira is not among
+the integrations on its record.
+
+**Project management is its own switch** (`pm` on each layer's record), apart from Jira: Jira
+on or off never moves it (KAN-608). It is on at the Campaign unless the Campaign's record says
+`pm: false`, so turning it off is always deliberate; below, each layer may say on or off, and
+the narrowest layer that says one holds (`cascade`, `src/brief-settings.ts`). A form shows it on
+or off with "On/Off, from the <layer>" while it follows the layer above; choosing the other
+value sets it on that layer. Off: no item
 behaviours and no `item` seed. On: the item model for everyone, role behaviours by role. The
 Services part that runs project management keeps its own switch for running; the brief reads
 `pm`.

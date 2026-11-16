@@ -32,7 +32,8 @@ async function layerAt(layer: SettingLayer, id: string, campaignId: string): Pro
   const campaign = await readCampaign(campaignId);
   if (!campaign) throw new BehaviourDocumentError(`Unknown Campaign: ${campaignId || '(none)'}.`, 404);
   const available = (await availableRecords(campaignId)).map((record) => record.name);
-  // What the Campaign holds itself; below it, the Campaign as the brief reads it (Jira when paired).
+  // What the Campaign holds itself; below it, the Campaign as the brief reads it (Jira when its part is on).
+  // Jira is an integration only; pm is its own setting, on at the Campaign by default (KAN-608).
   if (layer === 'campaign') return { own: layerOf('campaign', campaign.config), above: [user], available };
   const campaignLayer = await campaignLayerOf({ id: campaignId, config: campaign.config });
   if (layer === 'workspace') {
