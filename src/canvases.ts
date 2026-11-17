@@ -233,8 +233,12 @@ export function editCanvas(w: Workspace, name: string, op: string, blockName: st
  * commands as run, with what it printed. `shown` false: the Workspace hasn't this part (no such
  * integration, nothing in it). `unavailable`: why an integration block has no reading (its
  * template or its block is not in the catalog). */
-export interface CommandReading { command: string; lines: string[] }
-export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; reads: CommandReading[]; entries: CanvasEntry[]; shown: boolean; unavailable: string }
+export interface CardLink { text: string; url: string }
+/** A card a canvas paints (KAN-630): a title, rows of plain words, each with short-named links. A
+ * read command gives cards by printing one line of JSON, `{"cards":[…]}` (`netlify … --card`). */
+export interface Card { title: string; rows: Array<{ text: string; links?: CardLink[] }> }
+export interface CommandReading { command: string; lines: string[]; cards?: Card[] }
+export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; cards: Card[]; reads: CommandReading[]; entries: CanvasEntry[]; shown: boolean; unavailable: string }
 export interface CanvasReading { name: string; workspace: string; title: string; template: string; date: string; by: string; blocks: ReadBlock[] }
 
 /** `{workspace}` and the integration's facts (`{site}`) in one argument; an unknown one stays. */
@@ -264,6 +268,23 @@ export const shownWords = (argv: string[]): string => argv.map((a) => (/^[\w@%+=
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'ronin_bin');
 const CUT = 40;
 
+/** One line of `{"cards":[…]}` is cards; anything else is lines. Only text and http(s) links are kept. */
+function cardsOf(lines: string[]): Card[] | null {
+  if (lines.length !== 1 || !lines[0]!.startsWith('{"cards"')) return null;
+  try {
+    const raw = JSON.parse(lines[0]!).cards;
+    if (!Array.isArray(raw)) return null;
+    const text = (v: unknown) => String(v ?? '').slice(0, 300);
+    return raw.map((c: { title?: unknown; rows?: unknown }) => ({
+      title: text(c?.title),
+      rows: (Array.isArray(c?.rows) ? c.rows : []).map((r: { text?: unknown; links?: unknown }) => ({
+        text: text(r?.text),
+        links: (Array.isArray(r?.links) ? r.links : []).filter((l: { url?: unknown }) => /^https?:\/\//.test(String(l?.url ?? ''))).map((l: { text?: unknown; url?: unknown }) => ({ text: text(l.text), url: String(l.url) })),
+      })),
+    }));
+  } catch { return null; }
+}
+
 async function runRead(command: string, facts: Record<string, string>): Promise<CommandReading> {
   let argv: string[];
   try { argv = splitWords(command).map((a) => fillArg(a, facts)); }
@@ -280,6 +301,8 @@ async function runRead(command: string, facts: Record<string, string>): Promise<
   let lines = String(stdout).replace(/\n+$/, '').split('\n').filter((l) => l.trim());
   const last = String(stderr).trim().split('\n').filter((l) => l.trim()).pop();
   if (failed && last) lines.push(last);
+  const cards = cardsOf(lines);
+  if (cards) return { command: shownWords(argv), lines: [], cards };
   if (lines.length > CUT) lines = [...lines.slice(0, CUT), `… ${lines.length - CUT} more lines: run it yourself`];
   return { command: shownWords(argv), lines: lines.length ? lines : ['(nothing)'] };
 }
@@ -311,11 +334,28 @@ async function workspaceItems(w: Workspace) {
   return rows.sort((a, b) => Number(done(a.status)) - Number(done(b.status)) || b.level - a.level || b.moved.localeCompare(a.moved));
 }
 
-async function itemLines(w: Workspace): Promise<string[]> {
-  const rows = await workspaceItems(w);
-  const lines = rows.slice(0, CAP).map((row) => `${row.id} ${row.kind} · ${row.status} · ${row.holders.join(', ') || 'nobody'} · ${row.title}`);
-  if (rows.length > CAP) lines.push(`and ${rows.length - CAP} more: item search`);
-  return lines;
+/** The Workspace's open work as cards (KAN-630): one per epic, its open items under it, Done
+ * left out; an item under no epic goes on a card of its own. */
+async function itemCards(w: Workspace): Promise<Card[]> {
+  const { liveRows } = await import('./work-items-index.js');
+  const every = new Map((await liveRows()).map((row) => [row.id, row]));
+  const open = (await workspaceItems(w)).filter((row) => !/^done$/i.test(row.status));
+  const epicOf = (row: { id: string; parent: string | null; level: number }) => {
+    let at: typeof row | undefined = row;
+    for (let steps = 0; at && at.level !== 1 && steps < 10; steps++) at = at.parent ? every.get(at.parent) : undefined;
+    return at?.level === 1 ? at.id : '';
+  };
+  const groups = new Map<string, typeof open>();
+  for (const row of open.filter((one) => one.level !== 1)) {
+    const epic = epicOf(row);
+    if (!groups.has(epic)) groups.set(epic, []);
+    groups.get(epic)!.push(row);
+  }
+  const holder = (row: { holders: string[] }) => row.holders.map((h) => h.replace(/^(agent|team|workspace):/, '')).join(', ') || 'nobody';
+  return [...groups].map(([epic, rows]) => ({
+    title: epic ? `${every.get(epic)?.title ?? epic} (${epic})` : 'Not under an epic',
+    rows: [...rows.slice(0, 8).map((row) => ({ text: `${row.title}: ${row.status}, ${holder(row)} (${row.id})` })), ...(rows.length > 8 ? [{ text: `and ${rows.length - 8} more` }] : [])],
+  }));
 }
 
 async function documentLines(w: Workspace): Promise<string[]> {
@@ -342,15 +382,16 @@ export async function readCanvas(w: Workspace, name: string): Promise<CanvasRead
   const blocks = await Promise.all(canvas.blocks.map(async (b): Promise<ReadBlock> => {
     const [kind, what = ''] = b.source.split(/\s+/);
     const read = commandsOf(b);
-    const base = { name: b.name, source: b.source, holds: b.holds, entries: b.entries, lines: [] as string[], reads: [] as CommandReading[], unavailable: '' };
+    const base = { name: b.name, source: b.source, holds: b.holds, entries: b.entries, lines: [] as string[], cards: [] as Card[], reads: [] as CommandReading[], unavailable: '' };
     const run = (facts: Record<string, string>) => Promise.all(read.map((cmd) => runRead(cmd, facts)));
     if (kind === 'integration' && what) {
       const link = w.integrations.find((one) => one.provider === what);
       return { ...base, reads: link ? await run({ ...factsOf(link), workspace: w.name }) : [], unavailable: link ? whyNot(b) : '', shown: !!link || b.entries.length > 0 };
     }
     if (kind === 'live') {
-      const lines = what === 'repos' ? await repoLines(w) : what === 'items' ? await itemLines(w) : what === 'documents' ? await documentLines(w) : [];
-      return { ...base, lines, reads: await run({ workspace: w.name }), shown: lines.length > 0 || b.entries.length > 0 || read.length > 0 };
+      const lines = what === 'repos' ? await repoLines(w) : what === 'documents' ? await documentLines(w) : [];
+      const cards = what === 'items' ? await itemCards(w) : [];
+      return { ...base, lines, cards, reads: await run({ workspace: w.name }), shown: lines.length > 0 || cards.length > 0 || b.entries.length > 0 || read.length > 0 };
     }
     return { ...base, reads: await run({ workspace: w.name }), shown: b.entries.length > 0 || read.length > 0 };
   }));

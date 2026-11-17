@@ -18,7 +18,8 @@ Usage:
                                             preview URL, or live with --prod
   netlify env                               the site's variables: keys and contexts, never values
   netlify env set <KEY> <value> [--context all|production|deploy-preview|branch-deploy|dev] [--branch <b>]
-Any tool takes --site <name|domain|id> and --workspace <name>. The site is --site, else the one
+Any tool takes --site <name|domain|id> and --workspace <name>; sites, previews, traffic and forms take
+--card: one line of JSON, the answer as a card for a canvas to paint. The site is --site, else the one
 linked to your Workspace. The token is the secret netlify-auth-token; with it missing, the tool
 says what to set. The bridge is only a shortcut: Netlify's API and its own CLI work with the same
 token (secret path netlify-auth-token). Any other command goes to Netlify's CLI when installed.
@@ -42,7 +43,7 @@ esac
 ronin_connect || exit $?
 BY=$(ronin_session_me 2>/dev/null || id -un)
 tool=$1; shift
-site=''; workspace=''; days=''; limit=''; prod=false; message=''; context=''; branch=''; args=()
+site=''; workspace=''; days=''; limit=''; card=''; prod=false; message=''; context=''; branch=''; args=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --site|--workspace|--days|--limit|--message|--context|--branch)
@@ -50,6 +51,7 @@ while [ "$#" -gt 0 ]; do
       v=$2; case "$1" in --site) site=$v;; --workspace) workspace=$v;; --days) days=$v;; --limit) limit=$v;; --message) message=$v;; --context) context=$v;; --branch) branch=$v;; esac
       shift 2 ;;
     --prod) prod=true; shift ;;
+    --card) card=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) args+=("$1"); shift ;;
   esac
@@ -62,7 +64,7 @@ netlify_call() {
   local method=$1 path=$2 body=${3-} out
   local opts=(-sS -m 180 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
   if [ -n "$body" ]; then opts+=(-H 'content-type: application/json' --data-binary @-)
-  else opts+=(-G --data-urlencode "by=$BY" --data-urlencode "site=$site" --data-urlencode "workspace=$workspace" --data-urlencode "days=$days" --data-urlencode "limit=$limit" --data-urlencode "form=${form-}")
+  else opts+=(-G --data-urlencode "by=$BY" --data-urlencode "site=$site" --data-urlencode "workspace=$workspace" --data-urlencode "days=$days" --data-urlencode "limit=$limit" --data-urlencode "form=${form-}" --data-urlencode "card=$card")
   fi
   out=$(printf '%s' "$body" | curl "${opts[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
   printf '%s' "${out%$'\n'*}" | REPLY_STATUS=${out##*$'\n'} python3 -c '

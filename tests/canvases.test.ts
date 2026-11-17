@@ -40,7 +40,12 @@ await fs.writeFile(path.join(bin, 'tmux'), [
   '  *) exit 1;;', 'esac', '',
 ].join('\n'), { mode: 0o755 });
 // Each argument bracketed, so a test sees how the words were split.
-await fs.writeFile(path.join(bin, 'netlify'), '#!/bin/sh\nprintf "netlify said:"; for a in "$@"; do printf " [%s]" "$a"; done; echo\n', { mode: 0o755 });
+// With --card it answers one card, as the bridge does; a link that is not http(s) must be dropped.
+await fs.writeFile(path.join(bin, 'netlify'), [
+  '#!/bin/sh',
+  'case " $* " in *" --card "*) echo \'{"cards":[{"title":"Card \'"$1"\'","rows":[{"text":"up","links":[{"text":"open","url":"https://x.netlify.app"},{"text":"bad","url":"javascript:alert(1)"}]}]}]}\'; exit 0;; esac',
+  'printf "netlify said:"; for a in "$@"; do printf " [%s]" "$a"; done; echo', '',
+].join('\n'), { mode: 0o755 });
 // Any command a canvas file tries to bring in would leave this mark.
 const mark = path.join(dir, 'pwned');
 await fs.writeFile(path.join(bin, 'pwn'), `#!/bin/sh\ntouch '${mark}'\necho PWNED\n`, { mode: 0o755 });
@@ -174,9 +179,12 @@ test('edit writes typed entries only: no read command can be introduced or chang
 test('read is live: the integration\'s commands run now as the caller, repos and items read where they live', async () => {
   const out = await ok(['read', 'site']);
   assert.match(out, /^# site\ncanvas site · Workspace ronin_site · from netlify · /);
-  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --workspace ronin_site\n  netlify said: \[sites\] \[--workspace\] \[ronin_site\]\n> netlify previews --workspace ronin_site\n  netlify said: \[previews\] \[--workspace\] \[ronin_site\]\n> netlify traffic --days 1 --workspace ronin_site\n/);
+  // The template asks for cards: each command's one card, its unsafe link dropped.
+  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --card --workspace ronin_site\n  Card sites\n    - up  \[open https:\/\/x\.netlify\.app\]\n> netlify previews --card --workspace ronin_site\n  Card previews\n/);
+  assert.doesNotMatch(out, /javascript:/);
   assert.match(out, /## Repos\nThe code for this site\.\n- site — the website — .*\/site\n/);
-  assert.match(out, new RegExp(`## Work items\\n.*\\n- ${held.id} Task · To Do · agent:builder · Make the canvas`));
+  // Open work as cards: one per epic, an item under none on a card of its own; Done left out.
+  assert.match(out, new RegExp(`## Work items\\n.*\\nNot under an epic\\n  - Make the canvas: To Do, builder \\(${held.id}\\)\\n`));
   assert.match(out, /## Other services\n.*\n- GoDaddy DNS: records at GoDaddy, by the owner \(builder, \d{4}-\d\d-\d\d\)\n/);
   assert.doesNotMatch(await fs.readFile(file, 'utf8'), /netlify said|the website/, 'nothing read is written into the canvas');
   // No Netlify on the Workspace: no Netlify block.
@@ -198,7 +206,7 @@ test('a hand edit can not bring a command in: read: text in the canvas file is n
   assert.doesNotMatch(out, /PWNED|> pwn/);
   await assert.rejects(fs.stat(mark), 'never executed');
   assert.equal(out.match(/^> netlify sites/gm)?.length, 1, 'the template\'s commands run, once each');
-  assert.match(out, /> netlify traffic --days 1 --workspace ronin_site/);
+  assert.match(out, /> netlify traffic --card --days 1 --workspace ronin_site/);
 
   // A template that does not exist: a clear line, nothing run.
   await fs.writeFile(file, injected.replace('Canvas: from netlify ·', 'Canvas: from nothere ·'));

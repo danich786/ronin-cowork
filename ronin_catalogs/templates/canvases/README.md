@@ -28,6 +28,11 @@ Workspace's own, with only provenance left.
 | `entries` | the entries it holds, each `name (its one line)`; `only if` / `only while` marks one that shows only when it exists |
 | `read` | an integration block's commands, semicolon-separated: the bridge or `api`/`mcp` calls that Ronin runs whenever the canvas is read—from `canvas read` or the Workspace page—for example `netlify sites --workspace {workspace}`. `{workspace}` and integration facts such as `{site}` are filled in. The commands live only here: a canvas file holds none (one written into it by hand is ignored), and Ronin takes them from the canvas's template by block name; no template, or no such block, runs nothing |
 
+A read command that prints one line of `{"cards":[{title, rows:[{text, links:[{text, url}]}]}]}`
+is painted as cards (a title, rows of plain words, links named shortly); `netlify <tool> --card`
+prints it. Anything else it prints is shown as lines. The work items block is cards too: one per
+epic, its open items under it.
+
 A typed entry is stored as `- **entry:** <name> · <line> · <by> · <date>`; `canvas edit` writes
 it. A block with nothing in it now is left off the reading. Every entry is a link and one line.
 No keys or tokens, ever.

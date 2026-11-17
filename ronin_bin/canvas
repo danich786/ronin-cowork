@@ -78,9 +78,17 @@ for b in c["blocks"]:
     if b["holds"]: print(b["holds"])
     for l in b["lines"]: print("- %s" % l)
     if b.get("unavailable"): print("(no reading: %s)" % b["unavailable"])
+    def cards(cs, pad):
+        for card in cs:
+            print("%s%s" % (pad, card["title"]))
+            for row in card["rows"]:
+                links = " · ".join("%s %s" % (l["text"], l["url"]) for l in row.get("links") or [])
+                print("%s  - %s%s" % (pad, row["text"], ("  [%s]" % links) if links else ""))
+    cards(b.get("cards") or [], "")
     for r in b["reads"]:
         print("> %s" % r["command"])
         for l in r["lines"]: print("  %s" % l)
+        cards(r.get("cards") or [], "  ")
     for e in b["entries"]:
         print("- %s: %s (%s, %s)" % (e["name"], e["line"], e["by"] or "?", e["at"] or "?"))
 if hidden: print("\nNot here, nothing in them: %s." % ", ".join(hidden))
