@@ -377,7 +377,8 @@ export function registerLaunch(app: express.Express): LaunchControl {
       let hermesEnv: Record<string, string> = {};
       if (resolved.identity?.provider === 'hermes') {
         if (!birthDir) throw new Error('Named Hermes setups require a Cowork agent session.');
-        hermesEnv = { RONIN_SETUP_ID: resolved.identity.model };
+        // The person on the birth receipt (user_email) labels this Agent's house calls (KAN-621).
+        hermesEnv = { RONIN_SETUP_ID: resolved.identity.model, ...(form.person?.email ? { RONIN_PERSON: form.person.email } : {}) };
       }
       const launchWords = resolved.session_type === 'bare_metal_agent' ? (form.prompt ?? '') : resolved.brief;
       launch = resolved.agent ? await launchArgv(resolved.cmd, launchWords) : { argv: [], parked: false };

@@ -209,8 +209,12 @@ export function readHermesSettings(environment?: NodeJS.ProcessEnv): Promise<Her
   });
 }
 /** Fresh home per birth; immutable settings snapshot. A personal key is a shared credential link, for rotation on
- * restart; the house connection's .env is written here from the office_unit's house_token, never stored as a copy. */
-export async function prepareHermesHome(setupId: string, home: string) {
+ * restart; the house connection's .env is written here from the office_unit's house_token, never stored as a copy.
+ * On the house connection every call also carries `X-Ronin-Person: <email>`, the person the Agent works for (its birth
+ * receipt's user_email), so HQ can book the spend (KAN-621). A self-declared label: it sits in a file the Agent can edit.
+ * No person, no header; a personal key's calls never carry it. */
+export const PERSON_HEADER = 'X-Ronin-Person';
+export async function prepareHermesHome(setupId: string, home: string, person?: string) {
   const state = await readStoredSettings(); const setup = state.setups.find(s => s.id === setupId);
   const connection = state.connections.find(c => c.id === setup?.connection);
   const key = connection ? await readKey(connection) : '';
@@ -221,13 +225,15 @@ export async function prepareHermesHome(setupId: string, home: string) {
   // Hermes ignores a bare custom model.api_mode=codex_responses on proxy URLs.
   // A named custom provider is its supported explicit transport contract.
   const apiMode = connection.wireApi === 'responses' ? 'codex_responses' : 'chat_completions';
+  const house = await isHouse(connection.baseUrl);
+  const label = house && person?.trim() ? { extra_headers: { [PERSON_HEADER]: person.trim().toLowerCase() } } : {};
   const config = { model: { provider: connection.wireApi ? 'custom:ronin' : connection.provider === 'openai' ? 'openai' : 'custom', default: setup.model, base_url: connection.baseUrl, ...(connection.wireApi ? { api_mode: apiMode } : {}) },
-    ...(connection.wireApi ? { providers: { ronin: { name: 'ronin', base_url: connection.baseUrl, key_env: 'OPENAI_API_KEY', api_mode: apiMode } } } : {}),
+    ...(connection.wireApi ? { providers: { ronin: { name: 'ronin', base_url: connection.baseUrl, key_env: 'OPENAI_API_KEY', api_mode: apiMode, ...label } } } : {}),
     agent: setup.reasoning === 'default' ? {} : { reasoning_effort: setup.reasoning }, approvals: { mode: setup.approvals === 'off' ? 'off' : 'manual' },
     telemetry: { enabled: false } };
   await writeFile(path.join(home, 'config.yaml'), JSON.stringify(config, null, 2), { mode: 0o600 });
   await writeFile(path.join(home, 'ronin-setup.json'), JSON.stringify({ setup, connection: { id: connection.id, name: connection.name, provider: connection.provider, baseUrl: connection.baseUrl, wireApi: connection.wireApi } }, null, 2), { mode: 0o600 });
-  if (await isHouse(connection.baseUrl)) await writeFile(path.join(home, '.env'), `OPENAI_API_KEY='${key}'\nOPENAI_BASE_URL='${connection.baseUrl}'\n`, { mode: 0o600 });
+  if (house) await writeFile(path.join(home, '.env'), `OPENAI_API_KEY='${key}'\nOPENAI_BASE_URL='${connection.baseUrl}'\n`, { mode: 0o600 });
   else await symlink(keyPath(connection.id), path.join(home, '.env'));
   return { HERMES_HOME: home };
 }
