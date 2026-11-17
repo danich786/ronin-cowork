@@ -1206,12 +1206,14 @@ The catalog entry goes. {dir} is not touched.
 
 ## gauge — ramrpm.js (the machine gauge: how full the machine is)
 - **gauge.no_swap:** no swap
-- **gauge.swap_in_use:** (swap {used})
 - **gauge.container_limit:** (container limit)
-- **gauge.disk_share:** disk {pct}%
-- **gauge.title:** {full}% full · memory {used} of {total}{swap}{where} · CPU {cpu}%{disk}
+- **gauge.title:** Full {full} — {shares}
+- **gauge.share_memory:** Memory
+- **gauge.share_cpu:** CPU
+- **gauge.share_disk:** Disk
 - **gauge.disk_label:** Disk
 - **gauge.full_label:** Full
+- **gauge.shares_label:** Shares
 - **gauge.ram_details:** Machine memory
 - **gauge.ram_available:** RAM available
 - **gauge.ram_total:** RAM total

@@ -102,8 +102,10 @@ test('the memory gauge paints the pushed reading and hides when the box is off',
   assert.equal(gaugeEl.hidden, false, 'a reading shows the gauge');
   assert.equal(gaugeEl.dataset.band, 'ok', '50% full is green');
   store.receive({ t: 'memory', reading: { mem: { total_mb: 8192, available_mb: 1126 }, swap: { total_mb: 2048, used_mb: 1229 }, load: [2, 3.2, 3], cpus: 8, disk: { total_mb: 100000, used_mb: 55000 } } });
-  assert.equal(gaugeEl.dataset.band, 'red', 'memory plus swap past 90% is red');
-  assert.match(gaugeEl.title, /^100% full · memory 6\.9 of 8\.0 GB \(swap 1\.2 GB\) · CPU 40% · disk 55%$/);
+  assert.equal(gaugeEl.dataset.band, 'warn', 'swap in use adds nothing: 86% RAM in use is orange');
+  assert.equal(gaugeEl.title, 'Full 86% · Memory — Memory 86%, CPU 40%, Disk 55%');
+  store.receive({ t: 'memory', reading: { mem: { total_mb: 15360, available_mb: 7782 }, swap: { total_mb: 4096, used_mb: 3379 }, load: [6, 6.4, 6], cpus: 8, disk: { total_mb: 100000, used_mb: 61000 } } });
+  assert.equal(gaugeEl.title, 'Full 80% · CPU — Memory 49%, CPU 80%, Disk 61%', 'the owner\'s 17 Nov box: Full names CPU');
   store.receive({ t: 'memory', reading: { off: true } });
   assert.equal(gaugeEl.hidden, true, 'off hides it');
   assert.deepEqual(requests, [], 'the gauge never asks');
