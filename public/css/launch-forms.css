@@ -547,8 +547,7 @@
   .workspace-canvas-open { background: transparent; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
   /* A canvas over the surface (KAN-626): its name and ×, then the painted reading. */
   .canvas-view { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
-  .canvas-view-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-inline); border-bottom: var(--edge) solid var(--line); padding-bottom: var(--space-row); }
-  .canvas-view-head b { color: var(--fg-strong); font-weight: var(--weight-regular); overflow-wrap: anywhere; }
+  .canvas-view-head { display: flex; justify-content: flex-end; }
   .canvas-view-close { background: transparent; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
   .canvas-view-body { min-width: 0; overflow-wrap: anywhere; }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }

@@ -40,14 +40,15 @@ export async function openCanvas(from, workspace, name) {
   const surface = from.closest('.wk-surface-content') || from.parentElement;
   if (!surface) return;
   surface.querySelector(':scope > .canvas-view')?.remove();
-  const kept = [...surface.children];
-  for (const child of kept) child.hidden = true;
+  // Set aside, not `hidden`: a surface's own CSS may show a hidden child (the stone rail does).
+  const kept = [...surface.children].map((child) => [child, child.style.display]);
+  for (const [child] of kept) child.style.display = 'none';
   const view = el('div', 'canvas-view');
   const head = el('div', 'canvas-view-head');
   const close = el('button', 'canvas-view-close', '×'); close.type = 'button';
   close.title = t('canvas.close', 'Close the canvas');
-  close.addEventListener('click', () => { view.remove(); for (const child of kept) child.hidden = false; });
-  head.append(el('b', null, name), close);
+  close.addEventListener('click', () => { view.remove(); for (const [child, was] of kept) child.style.display = was; });
+  head.append(close);
   const body = el('div', 'canvas-view-body');
   body.append(el('p', 'fs-step-help', t('canvas.reading', 'Reading {name}: Netlify, repos, work items…', { name })));
   view.append(head, body);
