@@ -543,7 +543,13 @@
   /* Canvases (KAN-329): one read-only line under Plans, the names in full, wrapping. */
   .workspace-canvases-row { display: flex; align-items: baseline; gap: var(--space-inline); margin: 0; min-width: 0; }
   .workspace-canvases-row b { color: var(--fg-strong); font-size: var(--form-key); font-weight: var(--weight-regular); white-space: nowrap; }
-  .workspace-canvases-row span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+  .workspace-canvases-row span { display: flex; flex-wrap: wrap; gap: var(--space-inline); min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+  .workspace-canvas-open { background: transparent; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
+  /* A canvas over the surface (KAN-626): its name and ×, then the painted reading. */
+  .canvas-view { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
+  .canvas-view-head { display: flex; justify-content: flex-end; }
+  .canvas-view-close { background: transparent; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
+  .canvas-view-body { min-width: 0; overflow-wrap: anywhere; }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }
   .workspace-location-note { width: 100%; border: 0; background: transparent; color: var(--fg); padding: 0; }
   .workspace-location-note::placeholder { color: var(--muted); }

@@ -10,6 +10,7 @@ A Workspace holds:
 - **Locations** — the folders and repositories its Agents work in, each with a short note.
 - **Mode** — Native, or Dangerously for providers that offer it (Native where they don't).
 - **Plans** — where its plans are kept ([Writing a plan](planning.md)).
+- **Canvases** — one-page maps of the Workspace: its live site, repos, work, documents and outside services.
 
 ## Teams work in a Workspace
 
@@ -40,7 +41,10 @@ for; it goes into their brief). Where Explorer is on, you can also drag a folder
 onto the page. Under the rows, **Plans** says where the Workspace keeps its plans: Ronin Lab's
 `<campaign>/<workspace>/plans`, marked recommended. Press it to pick another Location and a
 subfolder. On Save the plans move there; a plan of the same name already there stops the Save,
-so one plan never overwrites another.
+so one plan never overwrites another. Under Plans, **Canvases** names the Workspace's canvases:
+press one and it opens over the page, read fresh (the site from Netlify, the repos, the work items
+and documents, and the services an Agent typed in), with × to go back. Agents make and keep
+canvases with the `canvas` tool.
 Agents never see the folder: they use the `plan` tool. Nothing is kept until you press **Save** (or **Create**) at the top: it lights up once there
 is a change, and **−** beside it throws the changes away.
 

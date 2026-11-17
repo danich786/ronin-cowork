@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# canvas — a Workspace's canvases (src/canvases.ts over /api/canvases). read is composite: Ronin
-# answers the blocks it reads itself (repos, items, documents) and each integration block's read
-# commands, from its template in the catalog (never from the canvas file), which this tool fills
-# per argument and runs as the caller, now, and never writes anywhere.
+# canvas — a Workspace's canvases (src/canvases.ts over /api/canvases). read prints Ronin's reading:
+# the blocks it reads itself (repos, items, documents) and what each integration block's commands,
+# from its template in the catalog (never from the canvas file), printed now. Nothing is written.
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" canvas "$@"
 set -u -o pipefail
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
@@ -48,11 +47,11 @@ set -- "${args[@]+"${args[@]}"}"
 # canvas_call METHOD PATH [JSON]: the reply printed; an error to stderr (4 asked or missing, 3 failed, 5 unreachable).
 canvas_call() {
   local method=$1 path=$2 body=${3-} out
-  local opts=(-sS -m 60 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
+  local opts=(-sS -m 200 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -X "$method")
   [ -z "$body" ] || opts+=(-H 'content-type: application/json' --data-binary @-)
   out=$(printf '%s' "$body" | curl "${opts[@]}" -w '\n%{http_code}' "$url$path") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; return 5; }
   printf '%s' "${out%$'\n'*}" | REPLY_STATUS=${out##*$'\n'} python3 -c '
-import json, os, re, shlex, subprocess, sys
+import json, os, sys
 status = os.environ["REPLY_STATUS"]
 try: d = json.loads(sys.stdin.read())
 except Exception: print("HTTP %s: Ronin answered without JSON" % status, file=sys.stderr); sys.exit(3)
@@ -69,18 +68,6 @@ if "canvases" in d:
     for c in d["canvases"]: print("%s\tfrom %s\t%s\t%s" % (c["name"], c["template"] or "none", c["date"], c["by"]))
     sys.exit(0)
 c = d["canvas"]
-CUT = 40
-def fill(arg, facts):
-    return re.sub(r"\{([a-z_]+)\}", lambda m: facts.get(m.group(1)) or m.group(0), arg)
-def run(argv):
-    try: p = subprocess.run(argv, capture_output=True, text=True, timeout=90)
-    except FileNotFoundError: return ["(%s is not on this PATH)" % argv[0]]
-    except subprocess.TimeoutExpired: return ["(no answer in 90s)"]
-    lines = [l for l in (p.stdout or "").rstrip("\n").split("\n") if l.strip()]
-    err = [l for l in (p.stderr or "").strip().split("\n") if l.strip()]
-    if p.returncode and err: lines.append(err[-1])
-    if len(lines) > CUT: lines = lines[:CUT] + ["… %d more lines: run it yourself" % (len(lines) - CUT)]
-    return lines or ["(nothing)"]
 print("# %s" % c["title"])
 print("canvas %s · Workspace %s · from %s · %s · %s" % (c["name"], c["workspace"], c["template"] or "none", c["date"], c["by"]))
 hidden = []
@@ -91,12 +78,9 @@ for b in c["blocks"]:
     if b["holds"]: print(b["holds"])
     for l in b["lines"]: print("- %s" % l)
     if b.get("unavailable"): print("(no reading: %s)" % b["unavailable"])
-    for cmd in b["run"]:
-        # Split first, then fill each argument: a fact with a space stays one argument.
-        try: argv = [fill(a, b["facts"]) for a in shlex.split(cmd)]
-        except ValueError as e: print("> %s\n  (can not read: %s)" % (cmd, e)); continue
-        print("> %s" % shlex.join(argv))
-        for l in run(argv): print("  %s" % l)
+    for r in b["reads"]:
+        print("> %s" % r["command"])
+        for l in r["lines"]: print("  %s" % l)
     for e in b["entries"]:
         print("- %s: %s (%s, %s)" % (e["name"], e["line"], e["by"] or "?", e["at"] or "?"))
 if hidden: print("\nNot here, nothing in them: %s." % ", ".join(hidden))

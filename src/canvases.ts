@@ -10,9 +10,10 @@
  * A block's commands (an integration block's `read:`) are its template's, in the catalog (stock,
  * the user's store over it), found at read time by the canvas's `from <template>` and the block's
  * name; a canvas of no template, or a block its template hasn't, runs nothing. `read` answers
- * each block with its live lines (repos, items, documents, resolved here) and those commands with
- * the facts (`{workspace}`, the integration's `{site}`), which the tool fills per argument after
- * splitting, and runs as its caller. No key is ever on a canvas or in a reading.
+ * each block with its live lines (repos, items, documents, resolved here) and what each of those
+ * commands printed now: Ronin splits a command into its words, fills the facts (`{workspace}`,
+ * the integration's `{site}`) per word, and runs it with ronin_bin on its PATH, so `canvas read`
+ * and the Workspace page show the same reading. No key is ever on a canvas or in a reading.
  *
  *   # <name>
  *
@@ -27,6 +28,8 @@
  */
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execFile } from './spawn-broker.js';
 import { commitOnly, plansPlace, listPlans } from './plans.js';
 import { readDefinitions, type Definition } from './resource-adapters.js';
 import { type Workspace } from './workspaces.js';
@@ -226,16 +229,60 @@ export function editCanvas(w: Workspace, name: string, op: string, blockName: st
 
 /* ---------- the reading ---------- */
 
-/** One block as read now: `lines` are what Ronin read itself; `run` its template's commands,
- * unfilled, and `facts` what fills their `{…}` (per argument, in the tool). `shown` false: the
- * Workspace hasn't this part (no such integration, nothing in it). `unavailable`: why an
- * integration block has no reading (its template or its block is not in the catalog). */
-export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; run: string[]; facts: Record<string, string>; entries: CanvasEntry[]; shown: boolean; unavailable: string }
+/** One block as read now: `lines` are what Ronin read itself; `reads` each of its template's
+ * commands as run, with what it printed. `shown` false: the Workspace hasn't this part (no such
+ * integration, nothing in it). `unavailable`: why an integration block has no reading (its
+ * template or its block is not in the catalog). */
+export interface CommandReading { command: string; lines: string[] }
+export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; reads: CommandReading[]; entries: CanvasEntry[]; shown: boolean; unavailable: string }
 export interface CanvasReading { name: string; workspace: string; title: string; template: string; date: string; by: string; blocks: ReadBlock[] }
 
 /** `{workspace}` and the integration's facts (`{site}`) in one argument; an unknown one stays. */
 export const fillArg = (arg: string, facts: Record<string, string>): string =>
   arg.replace(/\{([a-z_]+)\}/g, (all, key: string) => (facts[key] ? facts[key]! : all));
+
+/** A template's command split into words as a shell would: spaces, '…', "…" and \. */
+export function splitWords(command: string): string[] {
+  const out: string[] = [];
+  let word = ''; let has = false; let quote = '';
+  for (let i = 0; i < command.length; i++) {
+    const c = command[i]!;
+    if (quote) { if (c === quote) quote = ''; else if (c === '\\' && quote === '"' && i + 1 < command.length) word += command[++i]; else word += c; continue; }
+    if (c === "'" || c === '"') { quote = c; has = true; continue; }
+    if (c === '\\' && i + 1 < command.length) { word += command[++i]; has = true; continue; }
+    if (/\s/.test(c)) { if (has || word) out.push(word); word = ''; has = false; continue; }
+    word += c;
+  }
+  if (quote) throw new CanvasBadInput(`An unclosed quote in "${command}".`);
+  if (has || word) out.push(word);
+  return out;
+}
+
+/** The words as a person would type them: one quoted where it must be. */
+export const shownWords = (argv: string[]): string => argv.map((a) => (/^[\w@%+=:,./-]+$/.test(a) ? a : `'${a.replace(/'/g, `'"'"'`)}'`)).join(' ');
+
+const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'ronin_bin');
+const CUT = 40;
+
+async function runRead(command: string, facts: Record<string, string>): Promise<CommandReading> {
+  let argv: string[];
+  try { argv = splitWords(command).map((a) => fillArg(a, facts)); }
+  catch (e) { return { command, lines: [`(can not read: ${(e as Error).message})`] }; }
+  if (!argv.length) return { command, lines: ['(nothing to run)'] };
+  const env = { ...process.env, PATH: `${process.env.PATH ?? ''}:${BIN}` };
+  let stdout = ''; let stderr = ''; let failed = false;
+  try { ({ stdout, stderr } = await execFile(argv[0]!, argv.slice(1), { timeout: 90_000, env }) as { stdout: string; stderr: string }); }
+  catch (e) {
+    failed = true;
+    const err = e as { stdout?: string; stderr?: string; code?: string; message?: string };
+    stdout = err.stdout ?? ''; stderr = err.stderr || (err.code === 'ENOENT' ? `${argv[0]} is not on this PATH` : err.message || 'it failed');
+  }
+  let lines = String(stdout).replace(/\n+$/, '').split('\n').filter((l) => l.trim());
+  const last = String(stderr).trim().split('\n').filter((l) => l.trim()).pop();
+  if (failed && last) lines.push(last);
+  if (lines.length > CUT) lines = [...lines.slice(0, CUT), `… ${lines.length - CUT} more lines: run it yourself`];
+  return { command: shownWords(argv), lines: lines.length ? lines : ['(nothing)'] };
+}
 
 const factsOf = (row: Record<string, unknown>): Record<string, string> =>
   Object.fromEntries(Object.entries(row).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v)).map(([k, v]) => [k, String(v)]));
@@ -292,20 +339,20 @@ export async function readCanvas(w: Workspace, name: string): Promise<CanvasRead
   const whyNot = (b: CanvasBlock): string => !canvas.template ? 'this canvas is from no template, so nothing reads this block'
     : !template ? `the template ${canvas.template} is not in the catalog (canvas templates)`
     : !commandsOf(b).length ? `the template ${canvas.template} has no reading for a block ${b.name}` : '';
-  const blocks: ReadBlock[] = [];
-  for (const b of canvas.blocks) {
+  const blocks = await Promise.all(canvas.blocks.map(async (b): Promise<ReadBlock> => {
     const [kind, what = ''] = b.source.split(/\s+/);
     const read = commandsOf(b);
-    const base = { name: b.name, source: b.source, holds: b.holds, entries: b.entries, lines: [] as string[], run: read, facts: { workspace: w.name } as Record<string, string>, unavailable: '' };
+    const base = { name: b.name, source: b.source, holds: b.holds, entries: b.entries, lines: [] as string[], reads: [] as CommandReading[], unavailable: '' };
+    const run = (facts: Record<string, string>) => Promise.all(read.map((cmd) => runRead(cmd, facts)));
     if (kind === 'integration' && what) {
       const link = w.integrations.find((one) => one.provider === what);
-      blocks.push({ ...base, run: link ? read : [], facts: { ...(link ? factsOf(link) : {}), workspace: w.name }, unavailable: link ? whyNot(b) : '', shown: !!link || b.entries.length > 0 });
-    } else if (kind === 'live') {
-      const lines = what === 'repos' ? await repoLines(w) : what === 'items' ? await itemLines(w) : what === 'documents' ? await documentLines(w) : [];
-      blocks.push({ ...base, lines, shown: lines.length > 0 || b.entries.length > 0 || read.length > 0 });
-    } else {
-      blocks.push({ ...base, shown: b.entries.length > 0 || read.length > 0 });
+      return { ...base, reads: link ? await run({ ...factsOf(link), workspace: w.name }) : [], unavailable: link ? whyNot(b) : '', shown: !!link || b.entries.length > 0 };
     }
-  }
+    if (kind === 'live') {
+      const lines = what === 'repos' ? await repoLines(w) : what === 'items' ? await itemLines(w) : what === 'documents' ? await documentLines(w) : [];
+      return { ...base, lines, reads: await run({ workspace: w.name }), shown: lines.length > 0 || b.entries.length > 0 || read.length > 0 };
+    }
+    return { ...base, reads: await run({ workspace: w.name }), shown: b.entries.length > 0 || read.length > 0 };
+  }));
   return { name, workspace: w.name, title: canvas.title, template: canvas.template, date: canvas.date, by: canvas.by, blocks };
 }
