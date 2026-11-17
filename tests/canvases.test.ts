@@ -51,6 +51,7 @@ const { createTeamRoster } = await import('../src/team-rosters.js');
 const { upsertProjectRoot } = await import('../src/project-roots.js');
 const { registerCanvases } = await import('../src/routes/canvases-api.js');
 const { registerWorkspaces } = await import('../src/routes/workspaces-api.js');
+const { registerDocs } = await import('../src/routes/docs-api.js');
 const { createItem } = await import('../src/work-items.js');
 const { teamLayers } = await import('../src/team-layers.js');
 const { readCatalogs } = await import('../src/catalog.js');
@@ -80,6 +81,7 @@ const app = express();
 app.use(express.json());
 registerCanvases(app);
 registerWorkspaces(app);
+registerDocs(app);
 const server = app.listen(0, '127.0.0.1');
 await new Promise((resolve) => server.once('listening', resolve));
 test.after(() => server.close());
@@ -228,6 +230,13 @@ test('a fact is filled per argument: a value with a space stays one argument', a
 test('the Workspace page\'s list carries each Workspace\'s canvases by name', async () => {
   const body = await (await fetch(`${base}/api/workspaces?campaign_id=camp`)).json() as { workspaces: Array<{ name: string; canvases: string[] }> };
   assert.deepEqual(body.workspaces.find((w) => w.name === 'ronin_site')?.canvases, ['probe', 'site']);
+});
+
+test('the Team\'s Docs pane has a Canvases shelf: its Workspace\'s canvases, each opened by name', async () => {
+  const body = await (await fetch(`${base}/api/docs?shelf=canvases&team=web`)).json() as { scope: { workspace: string }; groups: Array<{ root: string; files: string[]; hints: string[] }> };
+  assert.deepEqual(body.scope, { workspace: 'ronin_site' });
+  assert.deepEqual(body.groups.map((g) => [g.root, g.files]), [['ronin_site', ['canvas:ronin_site/probe', 'canvas:ronin_site/site']]]);
+  assert.match(body.groups[0]!.hints[1]!, /^from netlify · \d{4}-\d\d-\d\d$/);
 });
 
 test('the Team\'s line lists the Workspace\'s canvases by name', async () => {

@@ -35,9 +35,9 @@ export function canvasMarkdown(c) {
   return out.join('\n');
 }
 
-/** Open `name`, a canvas of Workspace `workspace`, over the surface that holds `from`. */
-export async function openCanvas(from, workspace, name) {
-  const surface = from.closest('.wk-surface-content') || from.parentElement;
+/** Open `name`, a canvas of Workspace `workspace`, over `host`, else the surface that holds `from`. */
+export async function openCanvas(from, workspace, name, host = null) {
+  const surface = host || from.closest('.wk-surface-content') || from.parentElement;
   if (!surface) return;
   surface.querySelector(':scope > .canvas-view')?.remove();
   // Set aside, not `hidden`: a surface's own CSS may show a hidden child (the stone rail does).
@@ -50,12 +50,17 @@ export async function openCanvas(from, workspace, name) {
   close.addEventListener('click', () => { view.remove(); for (const [child, was] of kept) child.style.display = was; });
   head.append(close);
   const body = el('div', 'canvas-view-body');
-  body.append(el('p', 'fs-step-help', t('canvas.reading', 'Reading {name}: Netlify, repos, work items…', { name })));
   view.append(head, body);
   surface.append(view);
+  await paintCanvas(body, workspace, name);
+}
+
+/** Read `name` of `workspace` now and paint it into `into`: "Reading…" at once, then the canvas. */
+export async function paintCanvas(into, workspace, name) {
+  into.replaceChildren(el('p', 'fs-step-help', t('canvas.reading', 'Reading {name}: Netlify, repos, work items…', { name })));
   const query = new URLSearchParams({ workspace, name });
   const r = await request(`/api/canvases/read?${query}`, { cache: 'no-store' });
-  if (!view.isConnected) return;
-  if (!r.ok || !r.data?.canvas) { body.replaceChildren(el('p', 'fs-step-help', r.message || t('canvas.unread', 'The canvas could not be read.'))); return; }
-  body.replaceChildren(renderMarkdownDocument(canvasMarkdown(r.data.canvas)));
+  if (!into.isConnected) return;
+  if (!r.ok || !r.data?.canvas) { into.replaceChildren(el('p', 'fs-step-help', r.message || t('canvas.unread', 'The canvas could not be read.'))); return; }
+  into.replaceChildren(renderMarkdownDocument(canvasMarkdown(r.data.canvas)));
 }

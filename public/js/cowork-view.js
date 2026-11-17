@@ -14,6 +14,7 @@ import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
 import { buildArchives } from './archives.js';
 import { onProjects, projectData, stanceLabel } from './home.js';
 import { request } from './request.js';
+import { paintCanvas } from './canvas-view.js';
 import { teamPageHandlers } from './events.js';
 import { createArranger, parseDraft, reportView as sendView } from './team-arrange.js';
 import { t } from './lexicon.js';
@@ -247,6 +248,22 @@ export function createCoworkView(options = {}) {
     },
     release: (name, id) => seats[id]?.pool.releaseBorrow(name),
   });
+  // THE TEAM'S CANVASES (KAN-329): its Workspace's canvases, read once per Team entered (the Docs
+  // API's canvases shelf); each is a selector card, and placed it paints the canvas read now.
+  let canvasOffer = { team: null, workspace: '', names: [] };
+  const teamCanvases = () => {
+    if (campaign || team === UNASSIGNED) return [];
+    if (canvasOffer.team !== team) {
+      const asked = team;
+      canvasOffer = { team: asked, workspace: '', names: [] };
+      void request(`/api/docs?${new URLSearchParams({ shelf: 'canvases', team: asked })}`, { cache: 'no-store' }).then((r) => {
+        if (!r.ok || canvasOffer.team !== asked) return;
+        canvasOffer = { team: asked, workspace: r.data.scope?.workspace || '', names: (r.data.groups || []).flatMap((g) => g.files || []).map((f) => String(f).split('/').pop()) };
+        if (canvasOffer.names.length) bench.refreshSelector();
+      });
+    }
+    return canvasOffer.names.map((name) => ({ key: name, label: name, summary: t('canvas.card_summary', 'Canvas: {workspace}, read live', { workspace: canvasOffer.workspace }) }));
+  };
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: commonsFor(id).el, show: (detail = {}) => { const item = commonsFor(id); if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
@@ -301,6 +318,13 @@ export function createCoworkView(options = {}) {
     // Epics (KAN-232): the bench keeps one per seat across Teams, so it reads the Team entered now.
     teamEpics: () => keepTeamSurface(createTeamEpics({ team: () => team })),
     teamFindItem: () => keepTeamSurface(createFindItem()),
+    canvases: teamCanvases,
+    canvas: (_id, detail = {}) => {
+      const surface = createSurface({ label: detail.key, className: 'tw-canvas' });
+      const body = document.createElement('div'); body.className = 'tw-canvas-body';
+      surface.content.append(body);
+      return { el: surface.el, show: () => void paintCanvas(body, canvasOffer.workspace, detail.key) };
+    },
     epics: () => [],
     epicRecord: (id, detail) => keepTeamSurface(createEpicRecord(detail.key, { epicsRead: createEpicsRead(() => '') })),
     archives: (id) => ({ el: archivesBySeat[id].el, show: () => void archivesBySeat[id].room.enter() }),
