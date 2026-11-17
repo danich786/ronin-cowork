@@ -36,3 +36,33 @@ export function buildTileDocView(tile) {
     dispose: () => docs.close(),
   };
 }
+
+/**
+ * Docs over a chat that has no tile around it (Irasshai's): the same editor, painted over its
+ * `.tile-body` as the Docs surface; × hands the chat back. One per body, reused.
+ */
+export function openDocOver(body, path) {
+  if (!body) return;
+  let view = body.querySelector(':scope > .tile-doc-view');
+  if (!view) {
+    view = document.createElement('div');
+    view.className = 'home-docs tile-doc-view';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tile-doc-close';
+    close.textContent = '×';
+    close.title = t('docs.close_chat', 'Close documents and return to Chat');
+    view.append(close);
+    view.docs = buildDocs(view, () => false);
+    close.addEventListener('click', () => {
+      if (!view.docs.leave()) return;
+      view.docs.close();
+      body.dataset.surface = view.back;
+    });
+    body.append(view);
+  }
+  if (body.dataset.surface !== 'docs') view.back = body.dataset.surface;
+  body.dataset.surface = 'docs';
+  view.docs.enter();
+  void view.docs.open(path);
+}

@@ -2,7 +2,8 @@
  * become executable. Editing surfaces swap this DOM reading for their own source control. */
 const safeHref = (value) => {
   const href = String(value || '').trim();
-  return href && !href.startsWith('//') && (!/^[a-z][a-z0-9+.-]*:/i.test(href) || /^(?:https?|mailto):/i.test(href)) ? href : '';
+  // A file on the box (file:///…, README.md:12) is a link too; what it opens is the reader's.
+  return href && !href.startsWith('//') && (!/^[a-z][a-z0-9+.-]*:/i.test(href) || /^(?:https?|mailto|file):/i.test(href) || /^[\w-]+(?:\.[\w-]+)+:\d+(?::\d+)?$/.test(href)) ? href : '';
 };
 
 export const markdownHeadingId = (text) => String(text).toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
