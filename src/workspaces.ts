@@ -136,6 +136,21 @@ export async function teamRepos(roster: { campaign_id: string; workspace: string
   return (await readWorkspace(roster.campaign_id, roster.workspace))?.repos.map((repo) => repo.name) ?? [];
 }
 
+/** The one repository of the Workspace(s) called `name`, in any Campaign; null unless exactly one.
+ * `work-record workspace list` leads with the Workspace name, so Agents type it for the repo (KAN-627). */
+export async function soleWorkspaceRepo(name: string): Promise<string | null> {
+  const repos = new Set<string>();
+  for (const campaign of await campaignNames()) {
+    for (const repo of (await readWorkspace(campaign, name))?.repos ?? []) repos.add(repo.name);
+  }
+  return repos.size === 1 ? [...repos][0] : null;
+}
+
+async function campaignNames(): Promise<string[]> {
+  try { return (await readdir(storeDir('workspaces'), { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name); }
+  catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; return []; }
+}
+
 /* WHAT A WORKSPACE HOLDS (owner, 2026-11-10; KAN-352). A Workspace holds items as a Team or an
  * Agent does: its Icebox epic, made by Ronin, and the parked ideas under it. The list lives
  * beside the record, <workspaces>/<campaign>/<name>.holds.json, so a page Save of the record
@@ -166,10 +181,7 @@ export async function writeWorkspaceHolds(campaign: string, name: string, change
 
 /** Every Workspace's holds, in every Campaign: one row per Workspace record. */
 export async function listWorkspaceHolds(): Promise<WorkspaceHolds[]> {
-  let campaigns: string[] = [];
-  try { campaigns = (await readdir(storeDir('workspaces'), { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name); }
-  catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
   const out: WorkspaceHolds[] = [];
-  for (const campaign of campaigns) for (const w of await listWorkspaces(campaign)) out.push(await readWorkspaceHolds(campaign, w.name));
+  for (const campaign of await campaignNames()) for (const w of await listWorkspaces(campaign)) out.push(await readWorkspaceHolds(campaign, w.name));
   return out;
 }

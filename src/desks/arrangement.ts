@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFile as run } from '../spawn-broker.js';
 
 import { listProjectRoots, type ProjectRootInfo } from '../project-roots.js';
+import { soleWorkspaceRepo } from '../workspaces.js';
 import type {
   WorktreesManagedCandidate,
   WorktreesRepositoryInput,
@@ -199,8 +200,12 @@ export async function readArrangement(repo: string, dir: string): Promise<RepoAr
 
 export async function arrangementOf(root: string, roots?: ProjectRootInfo[]): Promise<RepoArrangement> {
   const all = roots ?? (await listProjectRoots());
-  const r = all.find((x) => x.name === root);
-  if (!r) throw new Error(`no project_root named '${root}'`);
+  const named = (name: string | null) => all.find((x) => x.name === name);
+  const r = named(root) ?? named(await soleWorkspaceRepo(root));
+  if (!r) {
+    const handles = all.filter((x) => !x.archived).map((x) => x.name).join(', ');
+    throw new Error(`no project_root named '${root}'; repo handles: ${handles || 'none'}`);
+  }
   return readArrangement(r.name, r.dir);
 }
 

@@ -16,7 +16,8 @@
 - A commit is a private checkpoint. `worktree-desk hand-in <repo> --item <id>` admits it to
   Team review, moves the item to In Review and tells the lead. None of this is Git push.
 - No worktree named: `worktree-desk open <repo>` opens one or says the repo uses its
-  checkout. If the assignment and status disagree, stop and say so on the wipeboard; don't
+  checkout. `<repo>` is the repo handle; a Workspace name with one repo works too, and an
+  unknown name is answered with the valid handles. If the assignment and status disagree, stop and say so on the wipeboard; don't
   make the branch yourself.
 - After the last hand-in, status says `CERTIFIED CLEAN`. `session_end` closes your worktrees
   with you; never close the one you were born in by hand.
