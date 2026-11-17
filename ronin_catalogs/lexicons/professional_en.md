@@ -419,6 +419,7 @@ nothing paints exactly this.
 - **home.stance_working:** working…
 - **home.stance_awaiting_you:** awaiting you
 - **home.stance_asking:** asking you
+- **home.stance_no_progress:** no progress for 12 min
 
 ## settei — settei.js (the ⚙ Configuration tab)
 - **settei.saving:** saving…
@@ -1076,6 +1077,7 @@ The catalog entry goes. {dir} is not touched.
 ## work_record — work-record.js (the work record chip and panel)
 - **work_record.items:** Work items
 - **work_record.agent_asking:** Asking you: answer in its terminal
+- **work_record.agent_no_progress:** No progress for 12 min: look in its terminal
 - **work_record.no_items:** No work items held.
 - **work_record.task_at_hand:** Task at hand
 - **work_record.task_unstated:** No task stated in this work record.
@@ -1187,7 +1189,9 @@ The catalog entry goes. {dir} is not touched.
 - **transcript.stance_working:** Working
 - **transcript.stance_asking:** Waiting for your answer in Terminal
 - **transcript.answer_in_terminal:** Answer in Terminal
-- **transcript.back_to_chat:** Back to Chat
+- **transcript.stance_no_progress:** No progress for 12 min
+- **transcript.open_in_terminal:** Open in Terminal
+- **transcript.back_to_chat:** Continue in Chat
 
 ## output — output.js (the RIREKI view picker)
 - **output.locked:** Locked
@@ -1225,6 +1229,7 @@ The catalog entry goes. {dir} is not touched.
 - **island.handed_in:** handed in
 - **island.on_dev:** on dev
 - **island.stance_asking:** Question: a dialog is waiting for you
+- **island.stance_no_progress:** No progress for 12 min
 - **island.stance_awaiting_you:** Your turn: the turn ended
 - **island.stance_interrupted:** Stopped: interrupted
 - **island.stance_error:** Stopped: a tool failed

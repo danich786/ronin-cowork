@@ -89,12 +89,17 @@ only when the painted fields moved (`homeSignature` leaves out a row's `activity
 `at`); a fresh connection receives the rows once. A session's screen is captured
 and classified only when its `#{window_activity}` stamp moved since the last
 classification (`createActivityCache` in `src/status.ts`); an unchanged session keeps its
-last status, ctx and model.
+last status, ctx and model. The stamp counts whole seconds, so a reading taken while its
+second still runs is used but not kept: a question drawn later in that second would leave
+the stamp where it was (KAN-616).
 
 Which panes had output comes from one tmux subscription on the control client,
-`ACTIVITY_SUBSCRIPTION` in `src/tmux-client.ts`: `name:stamp` per session, comma-separated.
-The comma is written `#,` because a bare comma inside `#{S:…}` is tmux's own separator and is
-dropped. `activityMoved` in `src/ws/events.ts` names the sessions whose stamp moved; each
+`ACTIVITY_SUBSCRIPTION` in `src/tmux-client.ts`: `name:stamp.over` per session,
+comma-separated, where `over` is `0` while the stamp's second runs and `1` once it is past
+(`#{T:@ronin-now}`, an option holding `%s`, is tmux's current second). tmux checks a
+subscription each second, so the flip is one more report after a burst's last draw, and that
+push reads the pane afresh. The comma is written `#,` because a bare comma inside `#{S:…}`
+is tmux's own separator and is dropped. `activityMoved` in `src/ws/events.ts` names the sessions whose stamp moved; each
 wakes the terminal read (`onPaneActivity`) and a home push.
 
 ## Parts: what is on disk, and what runs

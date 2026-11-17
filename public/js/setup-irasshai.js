@@ -10,6 +10,11 @@
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
  *
+ * OPEN IRASSHAI (KAN-615): a hosted office's Setup header carries one button. A press asks Ronin
+ * Services (POST /api/irasshai/open) to open her: it goes to her if she runs, restores her from
+ * her archive if she ended, launches her if she never ran. Once her session is live the pushed
+ * session list seats her chat as above. Self-hosted the button is not there.
+ *
  * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
  * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
@@ -49,6 +54,41 @@ export function irasshaiOrder(onRead) {
   return order;
 }
 
+/** The Open Irasshai button; `onOpen` runs once she is live (to bring her chat forward). */
+export function createOpenIrasshai(onOpen) {
+  const wrap = document.createElement('span');
+  wrap.className = 'setup-open-irasshai';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'setup-open-irasshai-button';
+  const label = t('setup.open_irasshai', 'Open Irasshai');
+  button.textContent = label;
+  const note = document.createElement('span');
+  note.className = 'setup-open-irasshai-note';
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = t('setup.opening_irasshai', 'Opening Irasshai…');
+    note.textContent = '';
+    const result = await request('/api/irasshai/open', { method: 'POST' });
+    button.disabled = false;
+    button.textContent = label;
+    if (result.ok) onOpen?.();
+    else note.textContent = result.data?.error || result.message || '';
+  });
+  wrap.append(button, note);
+  return wrap;
+}
+
+/**
+ * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16; KAN-617): the person's messages and her
+ * replies. It asks for the route's Chat reading, which leaves out Codex's own startup (its system
+ * and developer text, skills, the session-start note) and injected context (AGENTS.md), and it
+ * draws no record of Ronin's birth packet, her first message ("Read first: <packet>…"). Other
+ * Agents' tiles are unchanged.
+ */
+export const CHAT_READING = 'chat';
+export const birthPacket = (rec) => rec?.role === 'user' && /^\s*Read first: \S*AGENT_BIRTH_BRIEF\.md\b/.test(String(rec.text || ''));
+
 /** Her chat: the conversation and the message box, nothing else. */
 export function createIrasshaiChat() {
   const el = document.createElement('div');
@@ -57,7 +97,7 @@ export function createIrasshaiChat() {
   body.className = 'tile-body';
   body.dataset.surface = 'chat';
   el.append(body);
-  const transcript = makeTileTranscript();
+  const transcript = makeTileTranscript({ admit: (rec) => !birthPacket(rec) });
   body.append(transcript.el);
   const say = (text) => {
     const drop = transcript.pending(text);
@@ -76,7 +116,7 @@ export function createIrasshaiChat() {
   return {
     el,
     say,
-    show: () => { transcript.show(IRASSHAI, ''); stance(); },
+    show: () => { transcript.show(IRASSHAI, CHAT_READING); stance(); },
     stance,
     hide: () => transcript.hide(),
     dispose: () => { transcript.dispose(); composer.dispose(); },

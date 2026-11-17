@@ -180,13 +180,19 @@ screen. While it works, the end of the conversation names the tool it is in (for
 *Bash · npm test*). Every Agent gets this, whichever provider it runs on: a CLI that keeps a
 log is read from its log, and one that keeps none is read from its terminal, less fully.
 
-*Asking you* comes from the terminal for every CLI: a permission prompt is drawn on the screen
-and no CLI writes it down.
+*Asking you* comes from the CLI itself: Claude Code and Codex tell Ronin through their hooks
+when they stop at a question, a permission or a plan approval, and when they move on. Where a CLI tells nothing
+(a login that lapsed mid-run, Codex's own question list, a first-run menu), Ronin reads the
+numbered choices off the terminal.
+
+An Agent that reads *working…* with nothing new in its conversation for 12 minutes is flagged
+*no progress for 12 min*, the same way: Chat ends with that sentence and an **Open in
+Terminal** button in place of the dots. Anything new from the Agent clears it.
 
 A question with options is answered in Terminal, never in Chat. While an Agent is asking, Chat
 ends with *Waiting for your answer in Terminal* and an **Answer in Terminal** button; the press
 switches the tile to Terminal, as **Term** would. Once the Agent is no longer asking, a tile
-that went there by that button comes back to Chat by itself. Until then a **Back to Chat**
+that went there by that button (or by **Open in Terminal**) comes back to Chat by itself. Until then a **Continue in Chat**
 button sits at the foot of the terminal, for when the answer does not end the asking. If you switched yourself, or
 switched again after the press, the tile stays where you put it. Nothing switches without a
 press.

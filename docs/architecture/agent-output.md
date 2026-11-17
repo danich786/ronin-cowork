@@ -72,13 +72,24 @@ else that uses the shape takes `tool.name` and `tool.target` only.
   passed over, so a compaction (its summary, then *session started*) leaves an idle Agent
   *awaiting you*. Each write calls `rowChanged`, and Core pushes the
   home rows then; there is no clock.
-- **A question on the screen** (KAN-527) is the one stance read off the pane: no CLI logs its
-  dialogs (Codex's *Update available* before its first turn, a permission prompt). Core's home
-  row reads the pane on each output (`asksForInput`, `src/status.ts`, the vendors' `asking`
-  patterns and the house y/n) and, while it asks, sets the stance *asking* for every provider
-  and puts an Agent flag on the row's work record (`agent_flag: 'asking'`, `flagged`): ⚑ and
-  the flagged amber on its selector pill, a ⚑ line on its work record, until the question
-  leaves the screen. It is not an item flag and is never stored.
+- **A question** (KAN-527, KAN-616) comes from the CLI's own hooks, and from the screen where no
+  hook tells. Claude Code and Codex run `ronin-asking` on their hook events (each CLI's launch
+  doc, `docs/agents/`); it posts the event to `/api/asking` and returns at once. A question
+  (Claude's AskUserQuestion, its plan approval (ExitPlanMode), a permission prompt, an MCP form;
+  Codex's approval) raises the
+  flag, and the CLI moving on (the turn ends, a prompt is sent, the next tool runs) lowers it
+  (`src/asking.ts`). Core's home row also reads the pane on each output (`asksForInput`,
+  `src/status.ts`, the vendors' `asking` patterns and the house y/n) for what no hook tells: a
+  login lapsing mid-run, Codex's request_user_input, a launch menu not set ahead: a numbered
+  choice list with its selector (`❯ 1.`, `› 1.`) reads as a question. Either sets the stance *asking* for the
+  row and puts an Agent flag on its work record (`agent_flag: 'asking'`, `flagged`): ⚑ and
+  the flagged amber on its selector pill, a ⚑ line on its work record. It is not an item flag
+  and is never stored.
+- **No progress** (KAN-618): a row that reads *working* while its conversation's newest line
+  (the stance's `at`) is 12 minutes old reads *no progress for 12 min* instead, with the same
+  Agent flag (`agent_flag: 'no_progress'`). One timer per Agent (`createNoProgress`,
+  `src/asking.ts`) is set for the moment that line turns 12 minutes old; it reads nothing and
+  only asks for the row again. A new line moves it, and the flag goes.
 - **Stale or current** is the `ts` of the newest line; which tool lines count as meaningful
   work is the reader's call.
 

@@ -713,6 +713,7 @@ body {
 #bar > [hidden] { display: none !important; }
 
 #bar .shape-cycle,
+#bar .setup-open-irasshai-button,
 #bar .bar-toggle {
   display: inline-flex;
   align-items: center;
@@ -3561,12 +3562,14 @@ body {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 /* Stopped at a question: the person has to act, so it says so, in the colour that means act. */
-.tile-transcript-stance[data-stance='asking'] {
+.tile-transcript-stance[data-stance='asking'],
+.tile-transcript-stance[data-stance='no_progress'] {
   color: var(--bad);
   font-weight: var(--weight-strong);
 }
-.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer { font-weight: normal; }
-/* Back to Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
+.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer,
+.tile-transcript-stance[data-stance='no_progress'] .tile-transcript-answer { font-weight: normal; }
+/* Continue in Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
    Terminal, above the box when there is one; the right corner leaves the question's options
    and keys hint readable. */
 .tile-back-to-chat { display: none !important; }
@@ -4590,6 +4593,8 @@ body {
 .setup-steps-bar { --slab: 24px; --slab-w: 16px; --slab-gap: 2px; --slab-type: var(--text-body); --skew: -14deg; display: flex; align-items: center; flex: 0 0 auto; gap: var(--slab-gap); }
 .setup-steps-header { display: inline-flex; align-items: center; }
 .setup-steps-header[hidden] { display: none; }
+.setup-open-irasshai { display: inline-flex; align-items: center; gap: var(--space-inline); }
+.setup-open-irasshai-note { color: var(--bad-soft); font-size: var(--text-label); }
 .setup-scan { display: inline-flex; align-items: center; gap: var(--space-inline); margin-left: var(--space-inline); }
 .setup-scan-button { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 auto; border: var(--edge) solid var(--line-2); border-radius: var(--radius-round); background: transparent; color: var(--muted); padding: 0; cursor: pointer; }
 .setup-scan-button:hover { border-color: var(--kaki-fill); color: var(--kaki-fill); }

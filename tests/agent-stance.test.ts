@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { activityMoved } from '../src/ws/events.js';
-import { ACTIVITY_SUBSCRIPTION } from '../src/tmux-client.js';
+import { ACTIVITY_SUBSCRIPTION, NOW_OPTION } from '../src/tmux-client.js';
 
 test('a question on the screen is told apart from work and from a ready prompt', () => {
   const asking = 'Do you want to proceed?\n❯ 1. Yes\n  2. No';
@@ -50,4 +50,23 @@ test('Codex\'s startup update prompt, off a real pane, is a question (KAN-527)',
   const { readFileSync } = await import('node:fs');
   const screen = readFileSync(new URL('./fixtures/codex-update-prompt.txt', import.meta.url), 'utf8');
   assert.equal(asksForInput(screen), true);
+});
+
+test('tmux reports a session again once its stamp\'s second is over (KAN-616)', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'act-'));
+  const tmux = (...args: string[]) => execFileSync('tmux', ['-S', path.join(dir, 's'), ...args], { encoding: 'utf8' });
+  t.after(() => { try { tmux('kill-server'); } catch { /* already gone */ } fs.rmSync(dir, { recursive: true, force: true }); });
+  tmux('new-session', '-d', '-s', 'alpha');
+  tmux('set-option', '-g', NOW_OPTION, '%s');
+  const format = ACTIVITY_SUBSCRIPTION.replace(/^activity::/, '');
+  const stamp = tmux('display-message', '-p', '#{window_activity}').trim();
+  // Two readings of one stamp: inside its second, .0; after it, .1. Set the stamp to an
+  // earlier second by format rather than waiting: compare a stamp against the clock.
+  const settled = tmux('display-message', '-p', `#{e|<|:${Number(stamp) - 1},#{T:${NOW_OPTION}}}`).trim();
+  const open = tmux('display-message', '-p', `#{e|<|:${Number(stamp) + 60},#{T:${NOW_OPTION}}}`).trim();
+  assert.deepEqual([settled, open], ['1', '0']);
+  const last = new Map<string, string>();
+  assert.deepEqual(activityMoved(`alpha:${stamp}.0,`, last), []);
+  assert.deepEqual(activityMoved(`alpha:${stamp}.1,`, last), ['alpha'], 'the second ending is a report of its own');
+  assert.match(tmux('display-message', '-p', format).trim(), new RegExp(`^alpha:${stamp}\\.[01],$`));
 });

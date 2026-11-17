@@ -294,6 +294,57 @@ async function prepareSessionEnding(
 const moved = (before: string[], after: string[]): string[] =>
   [...after.filter((t) => !before.includes(t)), ...before.filter((t) => !after.includes(t))];
 
+type WrapArgv = (argv: string[]) => string[];
+const resumeWraps = new Map<string, WrapArgv>();
+/**
+ * A part's own restore for one session name, as launchSession's wrapArgv is its own launch: the
+ * resume argv Core built is handed to `wrap` just before the session starts again, on every
+ * restore of that name (this route, session_restore, the Archived sessions page).
+ */
+export function wrapResumeArgv(name: string, wrap: WrapArgv): void { resumeWraps.set(name, wrap); }
+
+/** POST /api/archived-sessions/:id/rehydrate from inside the server: the same restore, its answer returned. */
+export function rehydrateSession(id: string): Promise<{ status: number; body: Record<string, unknown> }> {
+  return rehydrate(id, '');
+}
+
+async function rehydrate(id: string, caller: string): Promise<{ status: number; body: Record<string, unknown> }> {
+  try {
+    const archived = await readArchive(id);
+    if (await sessionExists(archived.name)) {
+      return { status: 409, body: { error: `Session "${archived.name}" already exists.` } };
+    }
+    let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
+    if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
+    const wrap = resumeWraps.get(archived.name);
+    if (wrap) argv = wrap([...argv]);
+    await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
+    try {
+      await setSessionKey(archived.name, archived.key);
+      await setTags(archived.name, archived.tags);
+      await setLeads(archived.name, archived.leads);
+      await setWipeboards(archived.name, archived.wipeboards);
+      await setProjectRoot(archived.name, archived.project_root);
+      if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
+      else await setLaunchStamp(archived.name, archived.agent);
+      await setProviderSessionId(archived.name, archived.provider_session_id);
+      await writeTeams(archived.name, archived.tags);
+      await writeConfiguration(archived.name).catch(() => {});
+    } catch (e) {
+      await stopSessionTree(archived.name);
+      throw e;
+    }
+    await removeArchive(archived.id); // only after runtime and all metadata are restored
+    await teamChanged(archived.tags, caller, archived.name).catch(() => {});
+    return { status: 200, body: { ok: true, name: archived.name } };
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException)?.code;
+    return code === 'ENOENT'
+      ? { status: 404, body: { error: 'No such archive.' } }
+      : { status: 500, body: { error: String((e as Error)?.message ?? e) } };
+  }
+}
+
 export function registerSessions(app: express.Express): void {
   app.get('/api/sessions/:name/composition', async (req, res) => {
     const { name } = req.params;
@@ -381,36 +432,8 @@ export function registerSessions(app: express.Express): void {
   });
 
   app.post('/api/archived-sessions/:id/rehydrate', async (req, res) => {
-    try {
-      const archived = await readArchive(req.params.id);
-      if (await sessionExists(archived.name)) {
-        return res.status(409).json({ error: `Session "${archived.name}" already exists.` });
-      }
-      const argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
-      if (!argv.length) return res.status(409).json({ error: `${archived.agent} cannot be resumed on this machine.` });
-      await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
-      try {
-        await setSessionKey(archived.name, archived.key);
-        await setTags(archived.name, archived.tags);
-        await setLeads(archived.name, archived.leads);
-        await setWipeboards(archived.name, archived.wipeboards);
-        await setProjectRoot(archived.name, archived.project_root);
-        if (archived.identity) await setSessionIdentity(archived.name, archived.identity);
-        else await setLaunchStamp(archived.name, archived.agent);
-        await setProviderSessionId(archived.name, archived.provider_session_id);
-        await writeTeams(archived.name, archived.tags);
-        await writeConfiguration(archived.name).catch(() => {});
-      } catch (e) {
-        await stopSessionTree(archived.name);
-        throw e;
-      }
-      await removeArchive(archived.id); // only after runtime and all metadata are restored
-      await teamChanged(archived.tags, callerOf(req), archived.name).catch(() => {});
-      res.json({ ok: true, name: archived.name });
-    } catch (e) {
-      const code = (e as NodeJS.ErrnoException)?.code;
-      res.status(code === 'ENOENT' ? 404 : 500).json({ error: code === 'ENOENT' ? 'No such archive.' : String((e as Error)?.message ?? e) });
-    }
+    const { status, body } = await rehydrate(req.params.id, callerOf(req));
+    res.status(status).json(body);
   });
 
   app.delete('/api/archived-sessions/:id', async (req, res) => {

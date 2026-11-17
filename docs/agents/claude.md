@@ -13,7 +13,7 @@
 - **launch_initial:** positional
 
 CLI id: `claude`. Catalog provider: Anthropic. Reviewed 2026-09-14.
-Version: **2.1.277**. Installed version checked; provider input documentation reviewed.
+Version: **2.1.325**. Installed version checked; hooks and set-ahead verified live (KAN-616).
 
 ## Ronin launch sequence
 
@@ -53,6 +53,23 @@ does not classify that state. Whole browser drafts clear locally.
 `hostside/claude-settings.py` owns the narrow theme/status-line configuration merge;
 `hostside/statusline-ronin.sh` emits the context reading consumed by `src/ctx.ts`.
 Preserve unrelated owner settings.
+
+## Set ahead, and the asking hook (KAN-616)
+
+At every launch and restore, `src/launch-ahead.ts`:
+
+- marks the Agent's folder trusted in `~/.claude.json`
+  (`projects["<dir>"].hasTrustDialogAccepted`), so *Do you trust this folder?* never shows;
+- adds `--settings hostside/claude-asking.json` after `claude`. That file runs `ronin-asking`
+  on PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, Notification,
+  Elicitation, ElicitationResult, UserPromptSubmit and Stop. It merges with the owner's own
+  hooks and holds nothing: the question is still answered in the terminal.
+
+The bypass-permissions warning is `skipDangerousModePermissionPrompt` in the owner's
+`~/.claude/settings.json`; onboarding is done once at sign-in. Login is the owner's, in the
+terminal. Verified with 2.1.325: AskUserQuestion sends PreToolUse, PermissionRequest and a
+`permission_prompt` Notification while it is up, then PostToolUse and Stop once answered.
+Plan approval is PreToolUse(ExitPlanMode), and flags the same way (KAN-618).
 
 ## Sign-in particulars
 
