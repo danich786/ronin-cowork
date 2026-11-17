@@ -62,4 +62,16 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
   assert.ok(resolved.mandates.length >= 3, 'the mandate values are told');
   assert.ok(bytes <= PACKET_BUDGET.bytes, `${bytes} bytes over ${PACKET_BUDGET.bytes}`);
   assert.ok(lines <= PACKET_BUDGET.lines, `${lines} lines over ${PACKET_BUDGET.lines}`);
+
+  // Output code carries its editing rules under the order (KAN-622); no other output does.
+  const editing = [
+    "- Return code, as the repository's arrangement says.",
+    '',
+    "Change files with your harness's edit, write or patch tool, in small exact edits; a large change is several of them or one intentional whole-file write. Use the shell to read, search, build and test, never to rewrite source: no heredoc or inline replacement script, no sed -i. With no edit, write or patch tool, show the complete unified diff and stop; do not hide it in a shell command.",
+    '',
+  ].join('\n');
+  assert.ok(text.includes(editing), 'output code tells how to edit source');
+  const plan: BriefRecord = { ...record, agent: { ...record.agent, output: ['a plan'] } };
+  const planText = renderBrief(plan.session.name, plan, resolveBrief(catalog, plan, []));
+  assert.ok(!planText.includes('never to rewrite source'), 'without output code, no editing rules');
 });
