@@ -50,7 +50,7 @@ snapshot: no browser reads these over REST.
 | `{t:'teams', rosters}` | the Team rosters, the shape of `GET /api/team-rosters`; each row carries the Team's `board`, its epic (the root it holds, else its lead's; none is null) and `items` (what the Team and its members hold, each with its holder), built server-side from the Team reading (`work-items-read.ts`) | a roster, work-item, membership or lead write |
 | `{t:'epics', epics, items}` | every Epic — the level-1 work items, whole, each with its holder — and every live item, slim: no history or comments, with its Epic (`''` under none, KAN-414) and Jira key (`epicsPush`, held as `epicItems`) — the Epics workbench's stones and shadows (`epics-surface.js`, narrowed to the tab's Campaign and picked by Epic id there; KAN-190, KAN-206), and Work Items' one signal to re-read (`work-items-surface.js`; a sessions push reads nothing) | a roster, work-item, membership or lead write, read with the rosters |
 | `{t:'messages', list}` | the message queue | a file in the queue folder changed |
-| `{t:'memory', reading}` | the machine reading behind the memory gauge; `{off:true}` once when watching is off | the machine service's reading moved |
+| `{t:'memory', reading}` | the machine reading (memory, swap, load, disk) behind the machine gauge; `{off:true}` once when watching is off | the machine service's reading moved |
 
 **Asked-for resources.** Per board or per Team, held by nobody until a surface wants one.
 Subscribing sends `{t:'want', resource, board|team}` on the socket, and the server answers
