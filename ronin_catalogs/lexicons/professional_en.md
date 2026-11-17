@@ -910,6 +910,7 @@ The catalog entry goes. {dir} is not touched.
 ## docs — docs.js (the ▧ Docs tab)
 - **docs.back_title:** Back to the list
 - **docs.close_agent:** Close documents and return to this Agent
+- **docs.close_chat:** Close documents and return to Chat
 - **docs.save:** Save
 - **docs.pill_tracked:** Tracked
 - **docs.pill_plans:** Plans

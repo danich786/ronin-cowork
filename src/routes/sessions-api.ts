@@ -61,7 +61,8 @@ import type { EndingRequest } from '../desks/ending.js';
 import { resolveEndingRequest } from '../desks/ending-response.js';
 import { randomUUID } from 'node:crypto';
 import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
-import { listDesks } from '../desks/registry.js';
+import { listDeskRecords, listDesks } from '../desks/registry.js';
+import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
 
@@ -571,6 +572,19 @@ export function registerSessions(app: express.Express): void {
       console.error(`[ronin] harakiri: ${name} (pane ${pane}) failed: ${error}`);
       res.status(500).json({ error });
     }
+  });
+
+  // A file link in this Agent's Chat, written as ~/… or relative to where it works, as the full
+  // path Docs opens (public/js/tile-transcript.js fileLinkPath).
+  app.get('/api/sessions/:name/file-link', async (req, res) => {
+    const { name } = req.params;
+    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
+    const desks = await listDeskRecords({ owner: name }).catch(() => []);
+    const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
+    const roots = await listProjectRoots().catch(() => []);
+    const file = resolveFileLink(String(req.query.path ?? ''), [...desks.map((d) => d.worktree), cwd, ...roots.filter((r) => !r.archived).map((r) => r.dir)]);
+    if (!file) return res.status(404).json({ error: 'No such file.' });
+    res.json({ path: file });
   });
 
   app.get('/api/sessions/:name/project-root', async (req, res) => {

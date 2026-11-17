@@ -4,6 +4,8 @@ import { transcriptHandlers, transcriptWatch } from './events.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
+import { openDocOver } from './tile-doc-view.js';
+import { fileLinkPath } from './document-links.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -20,6 +22,7 @@ export function setChatMarkdown(session, on) {
   for (const view of views) if (view.shows() === session) view.redraw();
 }
 const views = new Set();
+
 /** What the person has sent and the CLI has not yet written down, shown light until it lands. */
 const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
 
@@ -43,6 +46,17 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   // Focusable, so a click here keeps the keys on this tile: Esc stops the Agent (owner, 2026-11-03).
   el.tabIndex = -1;
   let session = null;
+  // Every chat opens a file link in Docs: the caller's own Docs (a tile's), else one painted over
+  // this chat. ~/… and relative paths are the Agent's; the server says which file they name.
+  const openDoc = onDoc || ((path) => openDocOver(el.parentElement, path));
+  const openFileLink = (href) => {
+    const path = fileLinkPath(href);
+    if (!path) return false;
+    if (path.startsWith('/')) openDoc(path);
+    else void request('/api/sessions/' + encodeURIComponent(session || '') + '/file-link?path=' + encodeURIComponent(path), { cache: 'no-store' })
+      .then((r) => { if (r.ok && r.data?.path) openDoc(r.data.path); });
+    return true;
+  };
   let active = false;
   let generation = 0;
   /*
@@ -231,8 +245,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       entry.setAttribute('data-md', 'true');
       // A link to a file on the Ronin box opens in Docs, as the work record's attachments do: its
       // path means nothing to a browser on another machine.
-      const onLink = onDoc ? (href) => { if (!/^\/(?!\/)/.test(href)) return false; onDoc(href); return true; } : undefined;
-      entry.append(renderMarkdownDocument(text, document, { onLink }));
+      entry.append(renderMarkdownDocument(text, document, { onLink: openFileLink }));
       return entry;
     }
     // A blank line in what was written is a paragraph break, drawn as the paragraph space

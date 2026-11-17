@@ -1041,3 +1041,34 @@ test('a new Agent\'s Chat is a conversation at once, and a row push re-sends its
   assert.equal(watched.length, 2, 'once records arrive, a row push asks nothing');
   view.dispose();
 });
+
+test('a file link in Chat opens in Docs in every form a path is written; a web link keeps the browser (KAN-619)', async () => {
+  const { fileLinkPath } = await import('../public/js/document-links.js');
+  assert.equal(fileLinkPath('/home/me/a.md'), '/home/me/a.md');
+  assert.equal(fileLinkPath('~/notes/a.md'), '~/notes/a.md');
+  assert.equal(fileLinkPath('file:///home/me/my%20notes.md'), '/home/me/my notes.md');
+  assert.equal(fileLinkPath('src/index.ts'), 'src/index.ts');
+  assert.equal(fileLinkPath('src/index.ts:42'), 'src/index.ts', 'the file opens; the line is dropped');
+  assert.equal(fileLinkPath('README.md:12:3'), 'README.md');
+  assert.equal(fileLinkPath('docs/a.md#L12'), 'docs/a.md');
+  for (const web of ['https://example.com/a.md', 'http://x:8080', 'mailto:me@x', '#heading', '//cdn.x/a.js']) assert.equal(fileLinkPath(web), null, web);
+
+  const opened = [];
+  const view = makeTileTranscript({
+    read: async () => ({ ok: true, data: { available: true, records: [{ seq: 1, role: 'agent', kind: 'say', text: '[a](/home/me/a.md) [b](file:///home/me/b.md) [c](README.md:12) [w](https://example.com)' }], since: 1, seq: 1, view: 'chat', readings: READINGS } }),
+    watch: () => {},
+    onDoc: (path) => opened.push(path),
+  });
+  view.show('agent', 'chat');
+  await tick();
+  const links = [];
+  const walk = (n) => { if (n.href !== undefined && n.listeners) links.push(n); (n.children || []).forEach(walk); };
+  walk(view.el);
+  assert.deepEqual(links.map((a) => a.href), ['/home/me/a.md', 'file:///home/me/b.md', 'README.md:12', 'https://example.com'], 'every form stays a link');
+  const click = (a) => { let kept = true; a.dispatchEvent({ type: 'click', preventDefault: () => { kept = false; } }); return kept; };
+  assert.equal(click(links[0]), false);
+  assert.equal(click(links[1]), false);
+  assert.equal(click(links[3]), true, 'the web link goes to the browser');
+  assert.deepEqual(opened, ['/home/me/a.md', '/home/me/b.md']);
+  view.dispose();
+});
