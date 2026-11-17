@@ -1,9 +1,9 @@
 /* Editable reading of one complete durable team_roster. Membership is intentionally absent.
  * THE SAME FORMAT AS NEW AGENT AND NEW TEAM (owner, 2026-09-13): the launch forms' numbered
  * steps (createStep), the kit's labelled fields (createField) and ERABI at the forms' tight
- * density. Step 1 · Team — Team ID, Title and Kind on one line, then Purpose. Step 2 · New
- * Agent defaults — Where it works, Model, Mandate, Runtime: what the next Agent starts from,
- * never the Team's own behaviour. Step 3 · Behaviors — what this Team's Agents are told: its
+ * density. Step 1 · Team (open) — Team ID, Title and Kind on one line, then Purpose and the
+ * Team's own Workspace. Step 2 · New Agent defaults (starts folded) — Mandate: what the next
+ * Agent starts from, never the Team's own behaviour. Step 3 · Behaviors (starts folded) — what this Team's Agents are told: its
  * add, block and only lists, integrations and project management (brief-step.js, docs/architecture/brief.md, Where it is set in the UI). */
 import { t } from './lexicon.js';
 import { request } from './request.js';
@@ -62,31 +62,41 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
     identity.append(identityField(t('team_config.cowork_id', 'Team ID'), idInput), identityField(t('team_config.title', 'Title'), title), kind.el);
     const objective = el('textarea'); objective.name = 'objective'; objective.rows = 3; objective.value = roster.objective || '';
     objective.placeholder = t('new_team.objective_placeholder', 'what this team is for');
-    stepTeam.body.append(identity, createField({ label: t('team_config.objective', 'Purpose'), control: objective }).el);
+    // The Team's own Workspace (roster.workspace), beside Purpose, read by its title.
+    const workspaceRows = () => workspaces.map((w) => ({ v: w.name, l: w.title || w.name, sub: w.objective || '' }));
+    const workspaceRow = el('div', 'tw-config-wide');
+    const teamWorkspace = ask([{ group: t('new_team.workspace', 'Workspace'), fields: [
+      { key: 'workspace', label: t('new_team.workspace', 'Workspace'), blank: t('new_team.workspace_none', 'None'), options: workspaceRows },
+    ] }], { value: { workspace: roster.workspace || '' }, density: 'tight', trayHost: workspaceRow });
+    workspaceRow.append(teamWorkspace.el);
+    stepTeam.body.append(identity, createField({ label: t('team_config.objective', 'Purpose'), control: objective }).el, workspaceRow);
     form.append(stepTeam.el);
 
+    // Team stays open; the two sections below start folded and open on their head (the kit's step fold).
+    const open = { defaults: false, brief: false };
+    const foldable = (key, title) => {
+      const step = createStep({ key, title, onToggle: () => { open[key] = !open[key]; step.setCollapsed(!open[key], null); } });
+      step.setCollapsed(true, null);
+      return step;
+    };
+
     /* ---- New Agent defaults (unnumbered): what the next Agent starts from, never the Team's own behaviour ---- */
-    const stepDefaults = createStep({ key: 'defaults', title: t('team_config.agent_defaults', 'New Agent defaults') });
+    const stepDefaults = foldable('defaults', t('team_config.agent_defaults', 'New Agent defaults'));
     stepDefaults.body.append(el('p', 'fs-step-help', t('team_config.next_form', 'What each new Agent on this Team starts from. Nothing live changes.')));
-    const workspaceRows = () => workspaces.map((w) => ({ v: w.name, l: w.title || w.name, sub: w.objective || '' }));
     const defaultsRow = el('div', 'tw-config-wide');
     const agentDefaults = ask([
-      { group: t('new_team.workspace', 'Workspace'), fields: [
-        { key: 'workspace', label: t('new_team.workspace', 'Workspace'), blank: t('new_team.workspace_none', 'None'), options: workspaceRows },
-      ] },
       { group: t('mandate', 'Mandate'), fields: [
         { key: 'reach', label: t('team_config.reach', 'Reach'), options: mandateRows('reach', screen) },
         { key: 'recruit', label: t('team_config.recruit', 'Recruit'), options: mandateRows('recruit', screen) },
         { key: 'output', label: t('team_config.output', 'Output'), many: true, options: mandateRows('output', screen) },
       ] },
     ], { value: {
-      workspace: roster.workspace || '',
       reach: defaults.reach || firstMandate('reach'), recruit: defaults.recruit || firstMandate('recruit'), output: [defaults.output || firstMandate('output')].flat().filter(Boolean),
     }, density: 'tight', trayHost: defaultsRow });
     defaultsRow.append(agentDefaults.el); stepDefaults.body.append(defaultsRow); form.append(stepDefaults.el);
 
     /* ---- Behaviors (unnumbered): what every Agent on this Team is told, saved with the form ---- */
-    const stepBrief = createStep({ key: 'brief', title: t('behaviours', 'Behaviors') });
+    const stepBrief = foldable('brief', t('behaviours', 'Behaviors'));
     const brief = createBriefSettingsPanel({ layer: 'team', id: roster.name, campaignId: roster.campaign_id || '', ownSave: false,
       preview: { team: roster.name, campaign_id: roster.campaign_id || undefined }, linkFor: layerLinks() });
     stepBrief.body.append(el('p', 'fs-step-help', t('team_config.brief_help', 'What every Agent on this Team is told. Agents already working are sent the change.')), brief.el);
@@ -99,7 +109,7 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
       const picked = agentDefaults.value();
       const briefSaved = await brief.save();
       const saved = await request(`/api/team-rosters/${encodeURIComponent(roster.name)}`, { method: 'PUT', json: {
-        title: title.value, kind: kind.value().kind, objective: objective.value, workspace: picked.workspace,
+        title: title.value, kind: kind.value().kind, objective: objective.value, workspace: teamWorkspace.value().workspace,
         // Spread what was read so a key this card does not draw is carried rather than
         // dropped — but NOT `permissions` or the model, which are ruled out of agent_defaults;
         // spreading them would rewrite a retired field on every save.
