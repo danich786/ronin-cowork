@@ -149,9 +149,11 @@ to where it works, or `path:line` (the file opens; the line is not jumped to). W
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in
 italic, set apart from its replies.
 
-What you send shows in Chat straight away, in a lighter shade, and turns to the normal shade
-when the Agent's CLI takes it. A busy Agent takes a message at the end of what it is doing,
-so a light message is one still waiting.
+What you send leaves the box at once and shows at the end of Chat in a lighter shade. When the
+Agent's CLI takes it, it shows in the normal shade where the conversation puts it, after
+anything the Agent wrote in between. A busy Agent takes a message at the end of what it is
+doing, so a light message is one still waiting. A message that could not be sent comes back
+into the box with the reason.
 
 On a phone the button sits in the bar at the top, because the tile's own header is not on
 screen there, and it is a two-state toggle: **Term** or **Chat**. The fuller readings are a

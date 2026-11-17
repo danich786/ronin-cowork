@@ -3773,9 +3773,6 @@ body {
 .tile:is(.tape-on, .keys-on, .transcript-on) .composer.held textarea {
   border-color: var(--bad-deep);
 }
-.tile:is(.tape-on, .keys-on, .transcript-on) .composer.sending textarea {
-  opacity: 0.6;
-}
 /* The reason a send was held — its own row above the box, only while it is true. */
 .tile:is(.tape-on, .keys-on, .transcript-on) .composer .cwhy {
   display: none;

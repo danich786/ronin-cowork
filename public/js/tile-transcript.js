@@ -296,10 +296,11 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     follow();
     return () => { const at = sent.indexOf(mark); if (at >= 0) sent.splice(at, 1); node.remove(); };
   }
-  /** A person's record arrived: the light copy of the same words goes. */
+  /** A person's record arrived: the light copy of the same words goes. In a hosted office the
+   *  record leads with who sent it ("From … [Message box]:"), so the words end it (KAN-623). */
   function landed(rec) {
     if (rec.role !== 'user' || typeof rec.seq !== 'number') return;
-    const at = sent.findIndex((mark) => rec.seq > mark.after && mark.text === said(rec.text));
+    const at = sent.findIndex((mark) => rec.seq > mark.after && said(rec.text).endsWith(mark.text));
     if (at < 0) return;
     sent[at].node.remove();
     sent.splice(at, 1);

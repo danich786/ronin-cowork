@@ -871,6 +871,25 @@ test('a sent message shows at once, light, and goes when the CLI writes it down'
   view.dispose();
 });
 
+test('a light message goes when it lands with who sent it, and sits where the log puts it (KAN-623)', async () => {
+  const view = makeTileTranscript({
+    read: async () => ({ ok: true, data: { available: true, records: [record('earlier')].map((r) => ({ ...r, seq: 4 })), since: 1, seq: 5, view: 'chat', readings: READINGS } }),
+    watch: () => {},
+  });
+  view.show('agent', 'chat');
+  await tick();
+  view.pending('time zone is better');
+  const light = () => view.el.children.filter((n) => n.getAttribute('data-pending') === 'true');
+  const push = (rec) => { for (const handler of transcriptHandlers) handler({ t: 'transcript', session: 'agent', reading: 'chat', records: [rec] }); };
+  push({ seq: 5, role: 'agent', kind: 'say', text: 'still on the deploy' });
+  assert.equal(view.el.children.at(-1), light()[0], 'still on its way: after what has landed');
+  // A hosted office: the record names the person ahead of the words.
+  push({ seq: 6, role: 'user', kind: 'say', text: 'From Ann Lee <a@x.com>, owner [Message box]:\ntime zone is better' });
+  assert.equal(light().length, 0, 'never left light beside its own record');
+  assert.deepEqual(contents(view.el), ['earlier', 'still on the deploy', 'From Ann Lee <a@x.com>, owner [Message box]:\ntime zone is better']);
+  view.dispose();
+});
+
 test('a tile leaving its Chat never stops another tile\'s Chat hearing its Agent', async () => {
   // Owner, 2026-11-01: "the balls stopped bouncing and then nothing". The tab had one watch
   // slot; any tile that stopped showing a Chat cleared it for every tile on the page.

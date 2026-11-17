@@ -49,10 +49,12 @@ Past the deadline, with no dialog open, the worker attempts delivery once and de
 
 Ronin's message box posts plain text to `POST /api/messages`, in either terminal view,
 and enters the same queue as every other complete message. It does not depend on the
-terminal WebSocket. One Enter or tap enqueues; a second press while the request is in
-flight does nothing. Shift+Enter inserts a newline. A bare Enter in an empty box remains a direct key.
-The box clears when the server accepts responsibility for the message, unless the owner
-has edited it in the meantime. A refusal or network error keeps the text with a reason.
+terminal WebSocket. One Enter or tap hands the text over and the box clears on that press,
+whatever the answer or the terminal is doing; the box never sends it again (KAN-623: a box
+that waited on a late answer kept the text, and the next press delivered it twice). Messages
+leave in press order, each after the one before has its answer. Shift+Enter inserts a newline.
+A bare Enter in an empty box remains a direct key, except while a message is on its way.
+A refusal or network error gives the text back, ahead of anything typed since, with a reason.
 
 Every producer only writes a queue file. One server worker reads letters oldest first by
 `created_at`, which the queue keeps total: each letter a process queues is stamped at least
