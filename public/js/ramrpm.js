@@ -9,15 +9,30 @@ const pct = (share) => Math.round(share * 100);
 
 /**
  * HOW FULL THE MACHINE IS: the tightest of memory, CPU and disk (owner, 17 Nov: "we're
- * selling agents", not RAM). Memory counts RAM in use (total less MemAvailable, so page
- * cache is free) plus swap in use; CPU is the 5-minute load per core; disk is Ronin's home.
+ * selling agents", not RAM). Memory is RAM in use (total less MemAvailable, so page cache
+ * is free) over RAM total; swap in use is cold pages, not pressure, so it has its own row
+ * and adds nothing (KAN-635). CPU is the 5-minute load per core; disk is Ronin's home.
+ * `by` names the share that set Full.
  */
 export function occupancy(m) {
   const total = m.mem.total_mb || 1;
-  const memory = Math.min(1, (total - Math.max(0, m.mem.available_mb) + (m.swap.used_mb || 0)) / total);
+  const memory = Math.min(1, Math.max(0, total - Math.max(0, m.mem.available_mb)) / total);
   const cpu = Math.min(1, m.load[1] / (m.cpus || 1));
   const disk = m.disk && m.disk.total_mb ? Math.min(1, m.disk.used_mb / m.disk.total_mb) : null;
-  return { full: Math.max(memory, cpu, disk ?? 0), memory, cpu, disk };
+  const full = Math.max(memory, cpu, disk ?? 0);
+  const by = full === memory ? 'memory' : full === cpu ? 'cpu' : 'disk';
+  return { full, by, memory, cpu, disk };
+}
+
+/** The words the title and the popup share: "76% · CPU" and "Memory 49%, CPU 80%, Disk 61%". */
+function words(o) {
+  const name = {
+    memory: t('gauge.share_memory', 'Memory'),
+    cpu: t('gauge.share_cpu', 'CPU'),
+    disk: t('gauge.share_disk', 'Disk'),
+  };
+  const shares = ['memory', 'cpu', 'disk'].filter((k) => o[k] !== null).map((k) => `${name[k]} ${pct(o[k])}%`).join(', ');
+  return { full: `${pct(o.full)}% · ${name[o.by]}`, shares };
 }
 
 function bandFor(full) {
@@ -33,14 +48,9 @@ function render(el, m) {
   if (el.children.length !== 5) el.replaceChildren(...Array.from({ length: 5 }, () => document.createElement('i')));
   Array.from(el.children).forEach((seg, i) => seg.classList.toggle('on', i < filled));
 
-  // The title carries the state and the detail; the face carries none.
-  const total = m.mem.total_mb || 1;
-  const used = Math.max(0, total - Math.max(0, m.mem.available_mb));
-  const swap = m.swap.used_mb > 0 ? ' ' + t('gauge.swap_in_use', '(swap {used})', { used: gb(m.swap.used_mb) }) : '';
-  const where = m.scope === 'container' ? ' ' + t('gauge.container_limit', '(container limit)') : '';
-  const disk = o.disk === null ? '' : ' · ' + t('gauge.disk_share', 'disk {pct}%', { pct: pct(o.disk) });
-  el.title = t('gauge.title', '{full}% full · memory {used} of {total}{swap}{where} · CPU {cpu}%{disk}',
-    { full: pct(o.full), used: total >= 1024 ? (used / 1024).toFixed(1) : String(used), total: gb(total), swap, where, cpu: pct(o.cpu), disk });
+  // The title carries the popup's Full words; the face carries none.
+  const w = words(o);
+  el.title = t('gauge.title', 'Full {full} — {shares}', { full: w.full, shares: w.shares });
   el.setAttribute('aria-label', el.title);
 }
 
@@ -62,8 +72,10 @@ function details() {
     const swap = m.swap.total_mb === 0
       ? t('gauge.no_swap', 'no swap')
       : t('gauge.swap_detail', '{used} of {total} used', { used: gb(m.swap.used_mb), total: gb(m.swap.total_mb) });
+    const w = words(occupancy(m));
     pop.replaceChildren(
-      row(t('gauge.full_label', 'Full'), `${pct(occupancy(m).full)}%`),
+      row(t('gauge.full_label', 'Full'), w.full),
+      row(t('gauge.shares_label', 'Shares'), w.shares),
       row(t('gauge.ram_available', 'RAM available'), `${gb(Math.max(0, m.mem.available_mb))} ${t('gauge.free', 'free')}`),
       row(t('gauge.ram_total', 'RAM total'), `${gb(m.mem.total_mb)}${where}`),
       row(t('gauge.load', 'Load'), `${m.load[0]} ${t('gauge.on_cpus', 'on {cpus} CPUs', { cpus: m.cpus })}`),
