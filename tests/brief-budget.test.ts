@@ -61,7 +61,7 @@ test('the fullest stock brief fits one read (docs/architecture/brief.md, The bri
   const bytes = Buffer.byteLength(text), lines = text.split('\n').length;
   assert.ok(resolved.mandates.length >= 3, 'the mandate values are told');
   assert.ok(bytes <= PACKET_BUDGET.bytes, `${bytes} bytes over ${PACKET_BUDGET.bytes}`);
-  assert.ok(lines <= PACKET_BUDGET.lines, `${lines} lines over ${PACKET_BUDGET.lines}`);
+  assert.ok(lines < PACKET_BUDGET.lines, `${lines} lines: keep at least one line under ${PACKET_BUDGET.lines}`);
 
   // Output code carries its editing rules under the order (KAN-622); no other output does.
   const editing = [
