@@ -699,6 +699,8 @@ nothing paints exactly this.
 - **machine.load:** load
 - **machine.load_value:** {one} · {five} · {fifteen}  on {cpus} cores
 - **machine.load_note:** 1, 5 and 15 minute averages. Compare against the core count, not against zero.
+- **machine.disk:** disk
+- **machine.disk_note:** The filesystem holding Ronin’s home.
 - **machine.scope:** scope
 - **machine.scope_container:** container limit
 - **machine.scope_note:** These are this container’s numbers, not the host’s.
@@ -1202,11 +1204,14 @@ The catalog entry goes. {dir} is not touched.
 
 ## term — termview.js (the copy hint)
 
-## gauge — ramrpm.js (the RAM gauge)
+## gauge — ramrpm.js (the machine gauge: how full the machine is)
 - **gauge.no_swap:** no swap
-- **gauge.swap:** swap {used}
+- **gauge.swap_in_use:** (swap {used})
 - **gauge.container_limit:** (container limit)
-- **gauge.ram_title:** RAM_RPM — {free} free of {total}{where} · load {load} on {cpus} · {swap}
+- **gauge.disk_share:** disk {pct}%
+- **gauge.title:** {full}% full · memory {used} of {total}{swap}{where} · CPU {cpu}%{disk}
+- **gauge.disk_label:** Disk
+- **gauge.full_label:** Full
 - **gauge.ram_details:** Machine memory
 - **gauge.ram_available:** RAM available
 - **gauge.ram_total:** RAM total

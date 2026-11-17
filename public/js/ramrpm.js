@@ -5,25 +5,43 @@ import { t } from './lexicon.js';
 
 const gb = (mb) => (mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`);
 
-/** Headroom, not usage: the share of memory a new allocation could still get. */
-function bandFor(freeShare) {
-  if (freeShare < 0.10) return 'red';
-  if (freeShare < 0.25) return 'warn';
+const pct = (share) => Math.round(share * 100);
+
+/**
+ * HOW FULL THE MACHINE IS: the tightest of memory, CPU and disk (owner, 17 Nov: "we're
+ * selling agents", not RAM). Memory counts RAM in use (total less MemAvailable, so page
+ * cache is free) plus swap in use; CPU is the 5-minute load per core; disk is Ronin's home.
+ */
+export function occupancy(m) {
+  const total = m.mem.total_mb || 1;
+  const memory = Math.min(1, (total - Math.max(0, m.mem.available_mb) + (m.swap.used_mb || 0)) / total);
+  const cpu = Math.min(1, m.load[1] / (m.cpus || 1));
+  const disk = m.disk && m.disk.total_mb ? Math.min(1, m.disk.used_mb / m.disk.total_mb) : null;
+  return { full: Math.max(memory, cpu, disk ?? 0), memory, cpu, disk };
+}
+
+function bandFor(full) {
+  if (full >= 0.9) return 'red';
+  if (full >= 0.6) return 'warn';
   return 'ok';
 }
 
 function render(el, m) {
-  const total = m.mem.total_mb || 1;
-  const free = Math.max(0, m.mem.available_mb);
-  const share = free / total;
-  el.dataset.band = bandFor(share);
-  el.textContent = gb(free);
+  const o = occupancy(m);
+  el.dataset.band = bandFor(o.full);
+  const filled = Math.min(5, Math.ceil((o.full * 100) / 20));
+  if (el.children.length !== 5) el.replaceChildren(...Array.from({ length: 5 }, () => document.createElement('i')));
+  Array.from(el.children).forEach((seg, i) => seg.classList.toggle('on', i < filled));
 
-  // The title carries what the face cannot. Kept short: the help box is a FIXED
-  // rectangle and a long label spills out of it (scripts/check-tips.mjs).
-  const swap = m.swap.total_mb === 0 ? t('gauge.no_swap', 'no swap') : t('gauge.swap', 'swap {used}', { used: gb(m.swap.used_mb) });
+  // The title carries the state and the detail; the face carries none.
+  const total = m.mem.total_mb || 1;
+  const used = Math.max(0, total - Math.max(0, m.mem.available_mb));
+  const swap = m.swap.used_mb > 0 ? ' ' + t('gauge.swap_in_use', '(swap {used})', { used: gb(m.swap.used_mb) }) : '';
   const where = m.scope === 'container' ? ' ' + t('gauge.container_limit', '(container limit)') : '';
-  el.title = t('gauge.ram_title', 'RAM_RPM — {free} free of {total}{where} · load {load} on {cpus} · {swap}', { free: gb(free), total: gb(total), where, load: m.load[0], cpus: m.cpus, swap });
+  const disk = o.disk === null ? '' : ' · ' + t('gauge.disk_share', 'disk {pct}%', { pct: pct(o.disk) });
+  el.title = t('gauge.title', '{full}% full · memory {used} of {total}{swap}{where} · CPU {cpu}%{disk}',
+    { full: pct(o.full), used: total >= 1024 ? (used / 1024).toFixed(1) : String(used), total: gb(total), swap, where, cpu: pct(o.cpu), disk });
+  el.setAttribute('aria-label', el.title);
 }
 
 function details() {
@@ -45,10 +63,12 @@ function details() {
       ? t('gauge.no_swap', 'no swap')
       : t('gauge.swap_detail', '{used} of {total} used', { used: gb(m.swap.used_mb), total: gb(m.swap.total_mb) });
     pop.replaceChildren(
+      row(t('gauge.full_label', 'Full'), `${pct(occupancy(m).full)}%`),
       row(t('gauge.ram_available', 'RAM available'), `${gb(Math.max(0, m.mem.available_mb))} ${t('gauge.free', 'free')}`),
       row(t('gauge.ram_total', 'RAM total'), `${gb(m.mem.total_mb)}${where}`),
       row(t('gauge.load', 'Load'), `${m.load[0]} ${t('gauge.on_cpus', 'on {cpus} CPUs', { cpus: m.cpus })}`),
       row(t('gauge.swap_label', 'Swap'), swap),
+      ...(m.disk ? [row(t('gauge.disk_label', 'Disk'), t('gauge.swap_detail', '{used} of {total} used', { used: gb(m.disk.used_mb), total: gb(m.disk.total_mb) }))] : []),
     );
   };
   return { pop, paint };
