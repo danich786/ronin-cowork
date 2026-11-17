@@ -233,12 +233,14 @@ export function editCanvas(w: Workspace, name: string, op: string, blockName: st
  * commands as run, with what it printed. `shown` false: the Workspace hasn't this part (no such
  * integration, nothing in it). `unavailable`: why an integration block has no reading (its
  * template or its block is not in the catalog). */
-export interface CardLink { text: string; url: string }
+/** `button`: painted as a button, the act the row is for (Open). */
+export interface CardLink { text: string; url: string; button?: boolean }
 /** A card a canvas paints (KAN-630): a title, rows of plain words, each with short-named links. A
  * read command gives cards by printing one line of JSON, `{"cards":[…]}` (`netlify … --card`). */
 /** A row: its words; `detail` the quieter line under them; `lead` the one to look at first; `warn` what is wrong with it. */
 export interface CardRow { text: string; detail?: string; links?: CardLink[]; lead?: boolean; warn?: string }
-export interface Card { title: string; rows: CardRow[] }
+/** `section`: the heading a card sits under in its block (Drafts, Live). */
+export interface Card { title: string; rows: CardRow[]; section?: string }
 export interface CommandReading { command: string; lines: string[]; cards?: Card[] }
 export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; cards: Card[]; reads: CommandReading[]; entries: CanvasEntry[]; shown: boolean; unavailable: string }
 export interface CanvasReading { name: string; workspace: string; title: string; template: string; date: string; by: string; blocks: ReadBlock[] }
@@ -277,14 +279,15 @@ function cardsOf(lines: string[]): Card[] | null {
     const raw = JSON.parse(lines[0]!).cards;
     if (!Array.isArray(raw)) return null;
     const text = (v: unknown) => String(v ?? '').slice(0, 300);
-    return raw.map((c: { title?: unknown; rows?: unknown }) => ({
+    return raw.map((c: { title?: unknown; rows?: unknown; section?: unknown }) => ({
       title: text(c?.title),
+      ...(c?.section ? { section: text(c.section) } : {}),
       rows: (Array.isArray(c?.rows) ? c.rows : []).map((r: { text?: unknown; detail?: unknown; lead?: unknown; warn?: unknown; links?: unknown }) => ({
         text: text(r?.text),
         ...(r?.detail ? { detail: text(r.detail) } : {}),
         ...(r?.lead === true ? { lead: true } : {}),
         ...(r?.warn ? { warn: text(r.warn) } : {}),
-        links: (Array.isArray(r?.links) ? r.links : []).filter((l: { url?: unknown }) => /^https?:\/\//.test(String(l?.url ?? ''))).map((l: { text?: unknown; url?: unknown }) => ({ text: text(l.text), url: String(l.url) })),
+        links: (Array.isArray(r?.links) ? r.links : []).filter((l: { url?: unknown }) => /^https?:\/\//.test(String(l?.url ?? ''))).map((l: { text?: unknown; url?: unknown; button?: unknown }) => ({ text: text(l.text), url: String(l.url), ...(l.button === true ? { button: true } : {}) })),
       })),
     }));
   } catch { return null; }

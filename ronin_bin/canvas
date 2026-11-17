@@ -79,11 +79,14 @@ for b in c["blocks"]:
     for l in b["lines"]: print("- %s" % l)
     if b.get("unavailable"): print("(no reading: %s)" % b["unavailable"])
     def cards(cs, pad):
+        at = None
         for card in cs:
-            print("%s%s" % (pad, card["title"]))
+            if card.get("section") and card.get("section") != at: print("%s[%s]" % (pad, card["section"]))
+            at = card.get("section")
+            if card["title"]: print("%s%s" % (pad, card["title"]))
             for row in card["rows"]:
                 links = " · ".join("%s %s" % (l["text"], l["url"]) for l in row.get("links") or [])
-                print("%s  - %s%s%s" % (pad, "LATEST: " if row.get("lead") else "", row["text"], ("  [%s]" % links) if links else ""))
+                print("%s  - %s%s" % (pad, row["text"], ("  [%s]" % links) if links else ""))
                 if row.get("detail"): print("%s      %s" % (pad, row["detail"]))
                 if row.get("warn"): print("%s      ! %s" % (pad, row["warn"]))
     cards(b.get("cards") or [], "")

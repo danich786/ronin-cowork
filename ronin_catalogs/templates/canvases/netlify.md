@@ -16,7 +16,7 @@ block: the item behind a preview shows on that preview.
 ### Netlify
 - **source:** integration netlify
 - **holds:** The site itself, read from Netlify each time the canvas opens.
-- **entries:** previews (the newest ready one first: what it is, who made it, for which item, Open and Compare with live; then the other open PRs and two more drafts), page or app (up, and whether the last change went out), traffic (visitors and errors, today), forms (only if the site has one: new messages)
+- **entries:** Draft and Live buttons on top (the newest ready preview, the live site), then Drafts (each open PR and the newest drafts its own entry with Open: what it is, who made it, for which item), then Live (up, published when, the latest build, the code), traffic (visitors and errors, today), forms (only if the site has one: new messages)
 - **read:** netlify previews --card --workspace {workspace}; netlify sites --card --workspace {workspace}; netlify traffic --card --days 1 --workspace {workspace}; netlify forms --card --workspace {workspace}
 
 ### Database

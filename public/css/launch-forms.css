@@ -569,9 +569,9 @@
   .canvas-card-warn { color: var(--warn); }
   .canvas-card-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
   .canvas-card-link { white-space: nowrap; }
-  .canvas-card-lead .canvas-card-text { font-size: var(--text-heading); color: var(--fg-strong); }
-  .canvas-card-lead .canvas-card-links { margin-top: var(--space-row); }
-  .canvas-card-open { display: inline-flex; align-items: center; text-decoration: none; }
+  .canvas-card-button { display: inline-flex; align-items: center; text-decoration: none; }
+  .canvas-card-plain { padding: 0; border: 0; }
+  .canvas-section-title { margin: var(--space-paragraph) 0 0; font-size: var(--text-label); font-weight: var(--weight-strong); color: var(--fg-strong); }
   .tw-canvas-body { padding: var(--space-inline); }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }
   .workspace-location-note { width: 100%; border: 0; background: transparent; color: var(--fg); padding: 0; }
