@@ -50,6 +50,7 @@ const { saveWorkspace } = await import('../src/workspaces.js');
 const { createTeamRoster } = await import('../src/team-rosters.js');
 const { upsertProjectRoot } = await import('../src/project-roots.js');
 const { registerCanvases } = await import('../src/routes/canvases-api.js');
+const { registerWorkspaces } = await import('../src/routes/workspaces-api.js');
 const { createItem } = await import('../src/work-items.js');
 const { teamLayers } = await import('../src/team-layers.js');
 const { readCatalogs } = await import('../src/catalog.js');
@@ -78,6 +79,7 @@ const held = (await createItem({ title: 'Make the canvas', kind: 'Task', campaig
 const app = express();
 app.use(express.json());
 registerCanvases(app);
+registerWorkspaces(app);
 const server = app.listen(0, '127.0.0.1');
 await new Promise((resolve) => server.once('listening', resolve));
 test.after(() => server.close());
@@ -221,6 +223,11 @@ test('a fact is filled per argument: a value with a space stays one argument', a
   await ok(['create', 'probe', '--template', 'probe']);
   const out = await ok(['read', 'probe']);
   assert.match(out, /> netlify sites --site 'my site'\n  netlify said: \[sites\] \[--site\] \[my site\]\n/);
+});
+
+test('the Workspace page\'s list carries each Workspace\'s canvases by name', async () => {
+  const body = await (await fetch(`${base}/api/workspaces?campaign_id=camp`)).json() as { workspaces: Array<{ name: string; canvases: string[] }> };
+  assert.deepEqual(body.workspaces.find((w) => w.name === 'ronin_site')?.canvases, ['probe', 'site']);
 });
 
 test('the Team\'s line lists the Workspace\'s canvases by name', async () => {

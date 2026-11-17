@@ -308,6 +308,12 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     row.append(el('b', null, t('workspaces.plans', 'Plans')), el('code', null, where), el('small', 'folder-kind', recommended ? t('workspaces.plans_recommended', 'recommended') : ''));
     row.addEventListener('click', () => { plansOpen = !plansOpen; paintPlans(); });
     plansBox.append(row);
+    // CANVASES (KAN-329): read-only, the Workspace's canvases by name; an Agent reads one with canvas read <name>.
+    const canvasNames = Array.isArray(w?.canvases) ? w.canvases : [];
+    const canvases = el('p', 'workspace-canvases-row');
+    canvases.append(el('b', null, t('workspaces.canvases', 'Canvases')), el('span', null, canvasNames.length ? canvasNames.join(', ') : t('workspaces.canvases_none', 'none yet')));
+    if (canvasNames.length) canvases.title = canvasNames.map((name) => `canvas read ${name}`).join('\n');
+    plansBox.append(canvases);
     if (!plansOpen) return;
     const names = [...new Set([LAB, ...picked.keys()])];
     const options = names.map((name) => ({ v: name, l: rootByName(name)?.title || name }));

@@ -540,6 +540,10 @@
   .workspace-plans-row b { color: var(--fg-strong); font-size: var(--form-key); font-weight: var(--weight-regular); white-space: nowrap; }
   .workspace-plans-row code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); background: transparent; padding: 0; }
   .workspace-plans-row .folder-kind { color: var(--muted); }
+  /* Canvases (KAN-329): one read-only line under Plans, the names in full, wrapping. */
+  .workspace-canvases-row { display: flex; align-items: baseline; gap: var(--space-inline); margin: 0; min-width: 0; }
+  .workspace-canvases-row b { color: var(--fg-strong); font-size: var(--form-key); font-weight: var(--weight-regular); white-space: nowrap; }
+  .workspace-canvases-row span { min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }
   .workspace-location-note { width: 100%; border: 0; background: transparent; color: var(--fg); padding: 0; }
   .workspace-location-note::placeholder { color: var(--muted); }
