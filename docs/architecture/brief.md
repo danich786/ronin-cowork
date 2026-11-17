@@ -120,7 +120,9 @@ Each Reach, Recruit and Output value is a behaviour with
 each axis, in `order:`; no list of values is kept by hand. Choosing a value brings its file into
 play at its depth, and the behaviours its `with:` names. The server reads the value as the title
 lower-cased (`# Propose agents`). A mandate file is an order, not how-to ("Plan; don't build."), and prints in
-the brief's Mandate section, never among the behaviours. A value is added by adding its file
+the brief's Mandate section, never among the behaviours. At `depth: full` its text follows the
+order: only what holding that value always requires (Code: edit source through the harness's
+edit, write or patch tool, never a shell rewrite). A value is added by adding its file
 (stock or the user's store); blocking it takes it off the menu; a screen narrows the menu.
 
 ## The work record is the source of truth
