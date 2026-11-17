@@ -550,20 +550,28 @@
   .canvas-view-head { display: flex; justify-content: flex-end; }
   .canvas-view-close { background: transparent; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
   .canvas-view-body, .tw-canvas-body { min-width: 0; overflow-wrap: anywhere; }
-  /* The painted canvas (KAN-630): a block's cards in a grid that wraps to one column on a phone. */
-  .canvas-reading { display: flex; flex-direction: column; gap: var(--space-paragraph); min-width: 0; }
-  .canvas-title { margin: 0; font-weight: var(--weight-regular); color: var(--fg-strong); }
+  /* The painted canvas (KAN-630, KAN-631): the kit's spacing, a section's room between blocks,
+     a subsection's between cards; a block's cards in a grid that wraps to one column on a phone. */
+  .canvas-reading { display: flex; flex-direction: column; gap: var(--space-section); min-width: 0; }
+  .canvas-title { margin: 0; font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); }
   .canvas-meta { margin: 0; color: var(--muted); }
-  .canvas-block { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
-  .canvas-block-title { margin: 0; font-weight: var(--weight-regular); color: var(--fg-strong); }
+  .canvas-block { display: flex; flex-direction: column; gap: var(--space-paragraph); min-width: 0; }
+  .canvas-block-title { margin: 0; font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); }
   .canvas-cards {
     --canvas-card-w: 256px; /* a card's narrowest; one column below it */
   }
-  .canvas-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--canvas-card-w)), 1fr)); gap: var(--space-inline); }
-  .canvas-card { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; padding: var(--space-inline); border: var(--edge) solid var(--line); border-left: var(--edge-2) solid var(--info); }
-  .canvas-card-title { margin: 0; font-weight: var(--weight-strong); color: var(--fg-strong); }
-  .canvas-card-row { margin: 0; overflow-wrap: anywhere; }
+  .canvas-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--canvas-card-w)), 1fr)); gap: var(--space-subsection); }
+  .canvas-card { display: flex; flex-direction: column; gap: var(--space-subsection); min-width: 0; padding: var(--space-inset); border: var(--edge) solid var(--line); border-left: var(--edge-2) solid var(--info); }
+  .canvas-card-title { margin: 0; font-size: var(--text-label); font-weight: var(--weight-strong); color: var(--fg-strong); }
+  .canvas-card-row { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
+  .canvas-card-row p { margin: 0; overflow-wrap: anywhere; }
+  .canvas-card-detail { color: var(--muted); font-size: var(--text-body); }
+  .canvas-card-warn { color: var(--warn); }
+  .canvas-card-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
   .canvas-card-link { white-space: nowrap; }
+  .canvas-card-lead .canvas-card-text { font-size: var(--text-heading); color: var(--fg-strong); }
+  .canvas-card-lead .canvas-card-links { margin-top: var(--space-row); }
+  .canvas-card-open { display: inline-flex; align-items: center; text-decoration: none; }
   .tw-canvas-body { padding: var(--space-inline); }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }
   .workspace-location-note { width: 100%; border: 0; background: transparent; color: var(--fg); padding: 0; }

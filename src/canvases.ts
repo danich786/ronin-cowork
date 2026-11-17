@@ -236,7 +236,9 @@ export function editCanvas(w: Workspace, name: string, op: string, blockName: st
 export interface CardLink { text: string; url: string }
 /** A card a canvas paints (KAN-630): a title, rows of plain words, each with short-named links. A
  * read command gives cards by printing one line of JSON, `{"cards":[…]}` (`netlify … --card`). */
-export interface Card { title: string; rows: Array<{ text: string; links?: CardLink[] }> }
+/** A row: its words; `detail` the quieter line under them; `lead` the one to look at first; `warn` what is wrong with it. */
+export interface CardRow { text: string; detail?: string; links?: CardLink[]; lead?: boolean; warn?: string }
+export interface Card { title: string; rows: CardRow[] }
 export interface CommandReading { command: string; lines: string[]; cards?: Card[] }
 export interface ReadBlock { name: string; source: string; holds: string; lines: string[]; cards: Card[]; reads: CommandReading[]; entries: CanvasEntry[]; shown: boolean; unavailable: string }
 export interface CanvasReading { name: string; workspace: string; title: string; template: string; date: string; by: string; blocks: ReadBlock[] }
@@ -277,8 +279,11 @@ function cardsOf(lines: string[]): Card[] | null {
     const text = (v: unknown) => String(v ?? '').slice(0, 300);
     return raw.map((c: { title?: unknown; rows?: unknown }) => ({
       title: text(c?.title),
-      rows: (Array.isArray(c?.rows) ? c.rows : []).map((r: { text?: unknown; links?: unknown }) => ({
+      rows: (Array.isArray(c?.rows) ? c.rows : []).map((r: { text?: unknown; detail?: unknown; lead?: unknown; warn?: unknown; links?: unknown }) => ({
         text: text(r?.text),
+        ...(r?.detail ? { detail: text(r.detail) } : {}),
+        ...(r?.lead === true ? { lead: true } : {}),
+        ...(r?.warn ? { warn: text(r.warn) } : {}),
         links: (Array.isArray(r?.links) ? r.links : []).filter((l: { url?: unknown }) => /^https?:\/\//.test(String(l?.url ?? ''))).map((l: { text?: unknown; url?: unknown }) => ({ text: text(l.text), url: String(l.url) })),
       })),
     }));
@@ -312,13 +317,22 @@ const factsOf = (row: Record<string, unknown>): Record<string, string> =>
 
 const CAP = 25;
 
-async function repoLines(w: Workspace): Promise<string[]> {
-  const { peekProjectRoots } = await import('./project-roots.js');
-  const roots = await peekProjectRoots().catch(() => []);
-  return w.repos.map((repo) => {
-    const dir = roots.find((root) => root.name === repo.name)?.dir ?? '';
-    return [repo.name, repo.note, dir].filter(Boolean).join(' — ');
-  });
+/** A git remote as the page a person opens: git@github.com:o/r.git and https://…/o/r.git both read https://github.com/o/r. */
+export const remoteUrl = (remote: string): string => {
+  const ssh = /^git@([^:]+):(.+?)(?:\.git)?$/.exec(remote.trim());
+  if (ssh) return `https://${ssh[1]}/${ssh[2]}`;
+  return /^https?:\/\//.test(remote.trim()) ? remote.trim().replace(/\.git$/, '').replace(/\/\/[^@/]+@/, '//') : '';
+};
+
+/** The Workspace's repos as cards (KAN-631), shaped like Live site: the name, what it serves, its page. */
+async function repoCards(w: Workspace): Promise<Card[]> {
+  const { listProjectRoots, repoFacts } = await import('./project-roots.js');
+  const roots = await listProjectRoots().catch(() => []);
+  return Promise.all(w.repos.map(async (repo) => {
+    const root = roots.find((one) => one.name === repo.name);
+    const url = root ? remoteUrl((await repoFacts(root).catch(() => null))?.repo?.remote ?? '') : '';
+    return { title: repo.name, rows: [{ text: repo.note || 'Code', ...(url ? { links: [{ text: url.replace(/^https?:\/\/(www\.)?/, '').replace(/^github\.com\//, ''), url }] } : {}) }] };
+  }));
 }
 
 /** The Workspace's items: those its Teams, their members and the Workspace itself hold. */
@@ -389,8 +403,8 @@ export async function readCanvas(w: Workspace, name: string): Promise<CanvasRead
       return { ...base, reads: link ? await run({ ...factsOf(link), workspace: w.name }) : [], unavailable: link ? whyNot(b) : '', shown: !!link || b.entries.length > 0 };
     }
     if (kind === 'live') {
-      const lines = what === 'repos' ? await repoLines(w) : what === 'documents' ? await documentLines(w) : [];
-      const cards = what === 'items' ? await itemCards(w) : [];
+      const lines = what === 'documents' ? await documentLines(w) : [];
+      const cards = what === 'items' ? await itemCards(w) : what === 'repos' ? await repoCards(w) : [];
       return { ...base, lines, cards, reads: await run({ workspace: w.name }), shown: lines.length > 0 || cards.length > 0 || b.entries.length > 0 || read.length > 0 };
     }
     return { ...base, reads: await run({ workspace: w.name }), shown: b.entries.length > 0 || read.length > 0 };

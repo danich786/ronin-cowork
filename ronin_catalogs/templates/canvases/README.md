@@ -30,7 +30,9 @@ Workspace's own, with only provenance left.
 
 A read command that prints one line like
 `{"cards":[{"title":"Live site","rows":[{"text":"up","links":[{"text":"open","url":"https://example.com"}]}]}]}`
-is painted as cards: a title, rows of plain words and short link labels. `netlify <tool> --card`
+is painted as cards: a title, rows of plain words and short link labels. A row may also carry
+`detail` (a quieter line), `warn` (what is wrong with it) and `"lead": true` (the one to look at
+first, its first link a button). `netlify <tool> --card`
 prints this form. Anything else it prints is shown as lines. The work items block is cards too:
 one per epic, with its open items under it.
 

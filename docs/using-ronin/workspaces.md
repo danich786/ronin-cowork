@@ -42,8 +42,9 @@ onto the page. Under the rows, **Plans** says where the Workspace keeps its plan
 `<campaign>/<workspace>/plans`, marked recommended. Press it to pick another Location and a
 subfolder. On Save the plans move there; a plan of the same name already there stops the Save,
 so one plan never overwrites another. Under Plans, **Canvases** names the Workspace's canvases:
-press one and it opens over the page, read fresh (the site from Netlify, the repos, the work items
-and documents, and the services an Agent typed in), with × to go back. Agents make and keep
+press one and it opens over the page, read fresh, with × to go back. A Netlify site's canvas leads
+with its newest preview (what it is, who made it, for which item, Open and Compare with live), then
+the live site, traffic, forms, the repos and the services an Agent typed in. Agents make and keep
 canvases with the `canvas` tool. On a Team's workbench the same canvases are on the Docs pane's
 **Canvases** shelf (its Workspace's): press one and it opens there, read now.
 Agents never see the folder: they use the `plan` tool. Nothing is kept until you press **Save** (or **Create**) at the top: it lights up once there

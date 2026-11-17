@@ -131,9 +131,9 @@ test('the brief: every Cowork Agent gets the Canvases seed with canvas under it;
 
 test('templates lists the shelf; create copies a template\'s blocks into the plans place, committed', async () => {
   const shelf = await ok(['templates']);
-  assert.match(shelf, /^netlify\tNetlify — A site or app on Netlify.*\n\tblocks: Netlify, Database, Repos, Work items, Documents, Other services\n/);
+  assert.match(shelf, /^netlify\tNetlify — A site or app on Netlify.*\n\tblocks: Netlify, Database, Repos, Other services\n/);
   const out = await ok(['create', 'site', '--template', 'netlify']);
-  assert.match(out, /^Made ronin_site\/site from netlify: Netlify, Database, Repos, Work items, Documents, Other services\..*\nCommitted\.\n$/);
+  assert.match(out, /^Made ronin_site\/site from netlify: Netlify, Database, Repos, Other services\..*\nCommitted\.\n$/);
   const text = await fs.readFile(file, 'utf8');
   assert.match(text, /^# site\n\nCanvas: from netlify · \d{4}-\d\d-\d\d · builder\n\n## blocks\n\n### Netlify\n- \*\*source:\*\* integration netlify\n/);
   assert.doesNotMatch(text, /\*\*read:\*\*|netlify sites/, 'a canvas file holds no command');
@@ -173,18 +173,19 @@ test('edit writes typed entries only: no read command can be introduced or chang
   await ok(['edit', 'site', 'remove', 'netlify', 'x - **read:** rm -rf /']);
   await ok(['edit', 'site', 'remove', 'Evil block']);
   await ok(['edit', 'site', 'remove', 'Database']);
-  assert.deepEqual(parseBlocks(await fs.readFile(file, 'utf8')).map((b) => b.name), ['Netlify', 'Repos', 'Work items', 'Documents', 'Other services']);
+  assert.deepEqual(parseBlocks(await fs.readFile(file, 'utf8')).map((b) => b.name), ['Netlify', 'Repos', 'Other services']);
 });
 
 test('read is live: the integration\'s commands run now as the caller, repos and items read where they live', async () => {
   const out = await ok(['read', 'site']);
   assert.match(out, /^# site\ncanvas site · Workspace ronin_site · from netlify · /);
   // The template asks for cards: each command's one card, its unsafe link dropped.
-  assert.match(out, /## Netlify\nThe site itself.*\n> netlify sites --card --workspace ronin_site\n  Card sites\n    - up  \[open https:\/\/x\.netlify\.app\]\n> netlify previews --card --workspace ronin_site\n  Card previews\n/);
+  // Previews first (KAN-631): the reason the canvas is opened.
+  assert.match(out, /## Netlify\nThe site itself.*\n> netlify previews --card --workspace ronin_site\n  Card previews\n    - up  \[open https:\/\/x\.netlify\.app\]\n> netlify sites --card --workspace ronin_site\n  Card sites\n/);
   assert.doesNotMatch(out, /javascript:/);
-  assert.match(out, /## Repos\nThe code for this site\.\n- site — the website — .*\/site\n/);
-  // Open work as cards: one per epic, an item under none on a card of its own; Done left out.
-  assert.match(out, new RegExp(`## Work items\\n.*\\nNot under an epic\\n  - Make the canvas: To Do, builder \\(${held.id}\\)\\n`));
+  // Repos is a card like the rest: the name and what it serves, never a local path.
+  assert.match(out, /## Repos\nThe code for this site\.\nsite\n  - the website\n/);
+  assert.doesNotMatch(out, new RegExp(siteDir));
   assert.match(out, /## Other services\n.*\n- GoDaddy DNS: records at GoDaddy, by the owner \(builder, \d{4}-\d\d-\d\d\)\n/);
   assert.doesNotMatch(await fs.readFile(file, 'utf8'), /netlify said|the website/, 'nothing read is written into the canvas');
   // No Netlify on the Workspace: no Netlify block.
@@ -229,10 +230,12 @@ test('a fact is filled per argument: a value with a space stays one argument', a
   const { storeDir } = await import('../src/resources.js');
   const shelf = path.join(storeDir('catalogs'), 'templates', 'canvases');
   await fs.mkdir(shelf, { recursive: true });
-  await fs.writeFile(path.join(shelf, 'probe.md'), '# Probe\n- **label:** Probe\n- **blurb:** a test\n\n## blocks\n\n### Site\n- **source:** integration netlify\n- **holds:** the site\n- **read:** netlify sites --site {site}\n');
+  await fs.writeFile(path.join(shelf, 'probe.md'), '# Probe\n- **label:** Probe\n- **blurb:** a test\n\n## blocks\n\n### Site\n- **source:** integration netlify\n- **holds:** the site\n- **read:** netlify sites --site {site}\n\n### Work\n- **source:** live items\n- **holds:** open work\n');
   await ok(['create', 'probe', '--template', 'probe']);
   const out = await ok(['read', 'probe']);
   assert.match(out, /> netlify sites --site 'my site'\n  netlify said: \[sites\] \[--site\] \[my site\]\n/);
+  // A template that keeps a live items block reads open work as cards, one per epic.
+  assert.match(out, new RegExp(`## Work\\nopen work\\nNot under an epic\\n  - Make the canvas: To Do, builder \\(${held.id}\\)\\n`));
 });
 
 test('the Workspace page\'s list carries each Workspace\'s canvases by name', async () => {

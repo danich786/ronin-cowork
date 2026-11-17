@@ -1,6 +1,6 @@
 # Netlify
 - **label:** Netlify
-- **blurb:** A site or app on Netlify: the live page, previews, traffic and forms, then its database, repos, work and documents.
+- **blurb:** A site or app on Netlify, for checking a change: the newest preview first, then the live page, traffic and forms, its database and repos.
 - **order:** 10
 - **kinds:** site, app
 - **integration:** netlify
@@ -8,15 +8,16 @@
 
 The Netlify block first, then the Workspace's own parts. A block holds only what
 the Workspace uses: no Netlify site linked, no Netlify block; no database, no Database block.
-No credits entry: Netlify's API gives no credits-left figure to read.
+No credits entry: Netlify's API gives no credits-left figure to read. No work items or documents
+block: the item behind a preview shows on that preview.
 
 ## blocks
 
 ### Netlify
 - **source:** integration netlify
 - **holds:** The site itself, read from Netlify each time the canvas opens.
-- **entries:** page or app (up, and whether the last change went out), previews (the three newest PRs and the two newest drafts: state and link), traffic (visitors and errors, today), forms (only if the site has one: new messages)
-- **read:** netlify sites --card --workspace {workspace}; netlify previews --card --workspace {workspace}; netlify traffic --card --days 1 --workspace {workspace}; netlify forms --card --workspace {workspace}
+- **entries:** previews (the newest ready one first: what it is, who made it, for which item, Open and Compare with live; then the other open PRs and two more drafts), page or app (up, and whether the last change went out), traffic (visitors and errors, today), forms (only if the site has one: new messages)
+- **read:** netlify previews --card --workspace {workspace}; netlify sites --card --workspace {workspace}; netlify traffic --card --days 1 --workspace {workspace}; netlify forms --card --workspace {workspace}
 
 ### Database
 - **source:** integration
@@ -26,17 +27,7 @@ No credits entry: Netlify's API gives no credits-left figure to read.
 ### Repos
 - **source:** live repos
 - **holds:** The code for this site.
-- **entries:** repo (what it holds)
-
-### Work items
-- **source:** live items
-- **holds:** Epics and items in this Workspace, open ones first.
-- **entries:** epic or item (status and who holds it)
-
-### Documents
-- **source:** live documents
-- **holds:** Plans and documents the Agents keep for this site.
-- **entries:** plan or document (what it covers)
+- **entries:** repo (what it serves, and its page)
 
 ### Other services
 - **source:** typed

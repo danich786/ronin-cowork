@@ -15,17 +15,26 @@ const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls)
  * is a star, so the reader never takes it for emphasis. */
 const mdLine = (line) => String(line).trim().replace(/\*/g, '★').replace(/\bhttps?:\/\/[^\s)]+/g, (url) => `[${url}](${url})`);
 
-/** A card (KAN-630): its title, then each row's plain words and its short-named links. */
+/** A card (KAN-630): its title, then each row: its words, a quieter detail line, what is wrong
+ * with it, and its short-named links. The lead row (KAN-631) is the one to look at first: larger,
+ * its first link a button. */
 function paintCard(card) {
   const box = el('section', 'canvas-card');
   box.append(el('h4', 'canvas-card-title', card.title));
   for (const row of card.rows || []) {
-    const line = el('p', 'canvas-card-row');
-    line.append(document.createTextNode(row.text));
-    for (const link of row.links || []) {
-      const a = el('a', 'canvas-card-link', link.text);
-      a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      line.append(document.createTextNode(' '), a);
+    const line = el('div', row.lead ? 'canvas-card-row canvas-card-lead' : 'canvas-card-row');
+    if (row.text) line.append(el('p', 'canvas-card-text', row.text));
+    if (row.detail) line.append(el('p', 'canvas-card-detail', row.detail));
+    if (row.warn) line.append(el('p', 'canvas-card-warn', row.warn));
+    const links = row.links || [];
+    if (links.length) {
+      const bar = el('p', 'canvas-card-links');
+      links.forEach((link, n) => {
+        const a = el('a', row.lead && n === 0 ? 'wk-action canvas-card-open' : 'canvas-card-link', link.text);
+        a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        bar.append(a);
+      });
+      line.append(bar);
     }
     box.append(line);
   }
@@ -40,13 +49,14 @@ export function paintReading(c) {
     if (!b.shown) continue;
     const block = el('section', 'canvas-block');
     block.append(el('h3', 'canvas-block-title', b.name));
-    const cards = [...(b.cards || []), ...b.reads.flatMap((r) => r.cards || [])];
+    // A typed entry is a card like the rest: its name, its line, who wrote it and when.
+    const typed = b.entries.map((e) => ({ title: e.name, rows: [{ text: e.line, detail: [e.by, e.at].filter(Boolean).join(' · ') }] }));
+    const cards = [...b.reads.flatMap((r) => r.cards || []), ...(b.cards || []), ...typed];
     if (cards.length) { const grid = el('div', 'canvas-cards'); grid.append(...cards.map(paintCard)); block.append(grid); }
     const lines = [
       ...b.lines.map(mdLine),
       ...(b.unavailable ? [`No reading: ${b.unavailable}`] : []),
       ...b.reads.flatMap((r) => r.lines.map(mdLine)),
-      ...b.entries.map((e) => `**${e.name}**: ${mdLine(e.line)} (${e.by || '?'}, ${e.at || '?'})`),
     ];
     if (lines.length) block.append(renderMarkdownDocument(lines.map((l) => `- ${l}`).join('\n')));
     doc.append(block);
