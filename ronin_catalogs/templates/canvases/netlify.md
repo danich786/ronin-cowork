@@ -15,7 +15,7 @@ No credits entry: Netlify's API gives no credits-left figure to read.
 ### Netlify
 - **source:** integration netlify
 - **holds:** The site itself, read from Netlify each time the canvas opens.
-- **entries:** page or app (up, and whether the last change went out), preview (the latest per PR: state and link), traffic (visitors and errors, today), forms (only if the site has one: new messages)
+- **entries:** page or app (up, and whether the last change went out), preview (the latest per PR, and the latest drafts: state and link), traffic (visitors and errors, today), forms (only if the site has one: new messages)
 - **read:** netlify sites --workspace {workspace}; netlify previews --workspace {workspace}; netlify traffic --days 1 --workspace {workspace}; netlify forms --workspace {workspace}
 
 ### Database
