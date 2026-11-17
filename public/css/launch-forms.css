@@ -546,15 +546,14 @@
   .workspace-canvases-row span { display: flex; flex-wrap: wrap; gap: var(--space-inline); min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
   .workspace-canvas-open { background: transparent; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
   /* A canvas over the surface (KAN-626): its name and ×, then the painted reading. */
-  .canvas-view { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
-  .canvas-view-head { display: flex; justify-content: flex-end; }
+  .canvas-view { display: flex; flex-direction: column; gap: var(--space-subsection); min-width: 0; }
+  .canvas-view-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-inline); }
+  .canvas-view-name { font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); overflow-wrap: anywhere; }
   .canvas-view-close { background: transparent; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
   .canvas-view-body, .tw-canvas-body { min-width: 0; overflow-wrap: anywhere; }
   /* The painted canvas (KAN-630, KAN-631): the kit's spacing, a section's room between blocks,
      a subsection's between cards; a block's cards in a grid that wraps to one column on a phone. */
   .canvas-reading { display: flex; flex-direction: column; gap: var(--space-section); min-width: 0; }
-  .canvas-title { margin: 0; font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); }
-  .canvas-meta { margin: 0; color: var(--muted); }
   .canvas-block { display: flex; flex-direction: column; gap: var(--space-paragraph); min-width: 0; }
   .canvas-block-title { margin: 0; font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); }
   .canvas-cards {

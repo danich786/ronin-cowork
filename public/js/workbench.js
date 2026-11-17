@@ -276,7 +276,7 @@ export function createWorkbench(options = {}) {
   };
   const snapshot = () => ({ count, selected, selectorDensity, arrangement: layout.arrangement.state(), seats: Object.fromEntries(WORKBENCH_IDS.map((id) => {
     const type = typeAt(id), key = resourceAt(id), detail = instanceDetails.get(holding(id)) || {};
-    return [id, key ? { type, key, ...(['root', 'path', 'tab', 'doc'].reduce((kept, field) => detail[field] ? { ...kept, [field]: detail[field] } : kept, {})) } : type];
+    return [id, key ? { type, key, ...(['root', 'path', 'tab', 'doc', 'workspace'].reduce((kept, field) => detail[field] ? { ...kept, [field]: detail[field] } : kept, {})) } : type];
   })) });
   // ONE OFFER MOVES, ONE CARD REPAINTS (owner, 2026-11-12, KAN-414): the kit's keyed list. A
   // selector card is kept by its type and resource and repaints only when what it shows moves;

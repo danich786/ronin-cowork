@@ -61,7 +61,7 @@ function paintCards(cards) {
 /** The reading painted: a heading per block; its cards in a grid, its other lines as a list. */
 export function paintReading(c) {
   const doc = el('article', 'canvas-reading');
-  doc.append(el('h2', 'canvas-title', c.title), el('p', 'canvas-meta', `Workspace ${c.workspace} · from ${c.template || 'no template'} · made ${c.date} by ${c.by}`));
+  // No title or provenance: the surface's header names the canvas (KAN-634); the body is its blocks.
   for (const b of c.blocks) {
     if (!b.shown) continue;
     const block = el('section', 'canvas-block');
@@ -94,7 +94,8 @@ export async function openCanvas(from, workspace, name, host = null) {
   const close = el('button', 'canvas-view-close', '×'); close.type = 'button';
   close.title = t('canvas.close', 'Close the canvas');
   close.addEventListener('click', () => { view.remove(); for (const [child, was] of kept) child.style.display = was; });
-  head.append(close);
+  // The page has no surface header of its own here: the head names the canvas beside its ×.
+  head.append(el('b', 'canvas-view-name', name), close);
   const body = el('div', 'canvas-view-body');
   view.append(head, body);
   surface.append(view);

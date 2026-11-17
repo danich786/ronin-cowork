@@ -251,18 +251,25 @@ export function createCoworkView(options = {}) {
   // THE TEAM'S CANVASES (KAN-329): its Workspace's canvases, read once per Team entered (the Docs
   // API's canvases shelf); each is a selector card, and placed it paints the canvas read now.
   let canvasOffer = { team: null, workspace: '', names: [] };
+  let canvasLoad = Promise.resolve(canvasOffer);
+  // One read per Team entered; a card placed before it answers (a restored one, after a refresh)
+  // waits for it rather than reading with no Workspace (KAN-634).
+  const loadCanvases = () => {
+    if (canvasOffer.team === team) return canvasLoad;
+    const asked = team;
+    canvasOffer = { team: asked, workspace: '', names: [] };
+    canvasLoad = request(`/api/docs?${new URLSearchParams({ shelf: 'canvases', team: asked })}`, { cache: 'no-store' }).then((r) => {
+      if (!r.ok || canvasOffer.team !== asked) return canvasOffer;
+      canvasOffer = { team: asked, workspace: r.data.scope?.workspace || '', names: (r.data.groups || []).flatMap((g) => g.files || []).map((f) => String(f).split('/').pop()) };
+      if (canvasOffer.names.length) bench.refreshSelector();
+      return canvasOffer;
+    });
+    return canvasLoad;
+  };
   const teamCanvases = () => {
     if (campaign || team === UNASSIGNED) return [];
-    if (canvasOffer.team !== team) {
-      const asked = team;
-      canvasOffer = { team: asked, workspace: '', names: [] };
-      void request(`/api/docs?${new URLSearchParams({ shelf: 'canvases', team: asked })}`, { cache: 'no-store' }).then((r) => {
-        if (!r.ok || canvasOffer.team !== asked) return;
-        canvasOffer = { team: asked, workspace: r.data.scope?.workspace || '', names: (r.data.groups || []).flatMap((g) => g.files || []).map((f) => String(f).split('/').pop()) };
-        if (canvasOffer.names.length) bench.refreshSelector();
-      });
-    }
-    return canvasOffer.names.map((name) => ({ key: name, label: name, summary: t('canvas.card_summary', 'Canvas: {workspace}, read live', { workspace: canvasOffer.workspace }) }));
+    void loadCanvases();
+    return canvasOffer.names.map((name) => ({ key: name, workspace: canvasOffer.workspace, label: name, summary: t('canvas.card_summary', 'Canvas: {workspace}, read live', { workspace: canvasOffer.workspace }) }));
   };
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
@@ -323,7 +330,9 @@ export function createCoworkView(options = {}) {
       const surface = createSurface({ label: detail.key, className: 'tw-canvas' });
       const body = document.createElement('div'); body.className = 'tw-canvas-body';
       surface.content.append(body);
-      return { el: surface.el, show: () => void paintCanvas(body, canvasOffer.workspace, detail.key) };
+      // The card carries its Workspace (saved with the placement); an older placement without one
+      // waits for the Team's canvases to load, never reading with none (KAN-634).
+      return { el: surface.el, show: () => void (detail.workspace ? Promise.resolve({ workspace: detail.workspace }) : loadCanvases()).then((offer) => paintCanvas(body, offer.workspace, detail.key)) };
     },
     epics: () => [],
     epicRecord: (id, detail) => keepTeamSurface(createEpicRecord(detail.key, { epicsRead: createEpicsRead(() => '') })),
@@ -418,7 +427,7 @@ export function createCoworkView(options = {}) {
   // A remembered surface keeps its tab and document too: a preset seats the commons on
   // the Wipeboard or Cron jobs, and a document beside its agent, in the tab it opens.
   const surfaceRequest = (token) => token && typeof token === 'object'
-    ? { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}) } }
+    ? { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}), ...(token.workspace ? { workspace: token.workspace } : {}) } }
     : { type: token || '', detail: {} };
   /** A surface other than the seat's own is in this workspace. */
   const surfaceIn = (id) => !bench?.isDefault(id);
