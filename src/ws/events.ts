@@ -277,6 +277,11 @@ export function handleEvents(ws: WebSocket): void {
 export const listening = (): boolean => eventClients.size > 0;
 /** How many browsers are on /events now: the office's presence count (src/presence.ts). */
 export const browserCount = (): number => eventClients.size;
+/** The last held message of a type, parsed, or null before the first. */
+export const heldMessage = (t: string): Record<string, unknown> | null => {
+  const text = held.get(t);
+  return text ? JSON.parse(text) as Record<string, unknown> : null;
+};
 
 export function broadcastEvent(msg: Record<string, unknown>): number {
   const text = JSON.stringify(msg);

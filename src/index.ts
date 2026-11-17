@@ -66,7 +66,7 @@ import { registerCli } from './routes/cli-api.js';
 import { listQueuedMessages, startMessageQueue } from './message-queue.js';
 import { isValidTeam, listAllJobs, listJobs } from './jikan.js';
 import { isValidBoardName, seedHouseBoard, WIPEBOARD_DIR } from './wipeboards.js';
-import { joinPresence, presence, stampInput } from './presence.js';
+import { agentCounts, joinPresence, machine, presence, stampInput } from './presence.js';
 import { person, startOfficePeople } from './office-people.js';
 import { readOfficeRecord } from './office-record.js';
 import { handleEvents, pushJikan, pushMessages, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
@@ -261,13 +261,14 @@ app.use('/api', (_req, res, next) => {
 app.use('/api', resourceRequestCache);
 app.use('/api', stampInput); // office presence: when a person last acted — src/presence.ts
 
-app.get('/api/health', (_req, res) =>
+app.get('/api/health', async (_req, res) =>
   res.json({
     ok: true,
     auth: authEnabled,
     login: passwordAuthEnabled(),
     transcribe: Boolean(config.scribeUrl),
-    presence: presence(),
+    presence: { ...presence(), agents: await agentCounts() },
+    machine: machine(),
   }),
 );
 

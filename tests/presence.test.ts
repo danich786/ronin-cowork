@@ -10,7 +10,7 @@ import type { WebSocket } from 'ws';
 
 const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-presence-'));
 process.env.RONIN_OFFICE_UNIT_DIR = dir;
-const { presence, stampInput, joinPresence } = await import('../src/presence.js');
+const { presence, stampInput, joinPresence, agentCounts, machine } = await import('../src/presence.js');
 const people = await import('../src/office-people.js');
 
 const req = (method: string, email?: string) => ({ method, headers: email ? { 'x-forwarded-email': email } : {} });
@@ -24,6 +24,20 @@ test('presence counts browsers and stamps only a non-GET request as a person act
   hit('POST');
   const at = presence().last_input_at;
   assert.ok(at && !Number.isNaN(Date.parse(at)), 'an ISO time');
+});
+
+test('presence.agents counts live Agents and restorable archives', async () => {
+  const now = new Date().toISOString();
+  const old = new Date(Date.now() - 8 * 86_400_000).toISOString();
+  const archives = [{ archived_at: now }, { archived_at: old }] as never[];
+  const counts = await agentCounts(async () => [{ agent: 'claude' }, { agent: '' }, { agent: 'codex' }], async () => archives);
+  assert.deepEqual(counts, { live: 2, archived: 1 });
+});
+
+test('machine.swap_used_mb comes from the held memory reading, null before it', () => {
+  assert.deepEqual(machine(null), { swap_used_mb: null });
+  assert.deepEqual(machine({ t: 'memory', reading: { off: true } }), { swap_used_mb: null });
+  assert.deepEqual(machine({ t: 'memory', reading: { swap: { total_mb: 2048, used_mb: 312 } } }), { swap_used_mb: 312 });
 });
 
 test('self-hosted: a forwarded email is not trusted, people stays []', async () => {
