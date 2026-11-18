@@ -27,8 +27,8 @@ export interface OfficeRecord {
   /** The gateway_office this office's house calls go to, reachable from inside the office. */
   gateway_office: string;
   provisioned_at: string;
-  /** The office kind's Agents, written by Cloud's kohai at provisioning: the header gauge's
-   * floor (fewest) and ceiling (most) marks, in 0.6 GB slots. Absent: no marks. */
+  /** The office kind's Agents, written by Cloud's kohai at provisioning: `most` is the
+   * header gauge popup's Agents max. Absent: max is RAM total ÷ 0.6 GB. */
   agents?: { fewest: number; most: number };
 }
 

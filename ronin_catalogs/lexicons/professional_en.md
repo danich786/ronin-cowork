@@ -1209,8 +1209,7 @@ The catalog entry goes. {dir} is not touched.
 - **gauge.compute:** Compute
 - **gauge.storage:** Storage
 - **gauge.storage_of:** {used} of {total} GB
-- **gauge.agents_room:** Room for about {room} more Agents ({used} of {slots} in use)
-- **gauge.closest:** Closest to full
+- **gauge.agents_of:** {live} of {max}
 - **gauge.details:** How full this office is
 
 ## request — request.js (the client's own two messages)
