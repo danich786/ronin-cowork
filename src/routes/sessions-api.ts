@@ -1,6 +1,8 @@
 import { readLaunchIdentity } from '../launch-binding.js';
 import { resolveLaunchJournal } from '../launch-journal.js';
 import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import type express from 'express';
 import {
   getLeads,
@@ -322,7 +324,11 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     const part = providerPart(archived.identity?.provider ?? '');
     if (wrap) argv = wrap([...argv]);
     // An Agent born on a part's provider (src/provider-parts.ts) is restored on it.
-    else if (part?.wrapResume) argv = part.wrapResume([...argv], archived.identity?.model ?? '');
+    else if (part?.wrapResume) {
+      // The person it was born for, from its birth receipt, so its house calls stay theirs (KAN-659).
+      const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { user_email?: unknown };
+      argv = part.wrapResume([...argv], archived.identity?.model ?? '', typeof receipt.user_email === 'string' ? receipt.user_email : '');
+    }
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
     try {
       await setSessionKey(archived.name, archived.key);

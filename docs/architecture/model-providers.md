@@ -104,7 +104,9 @@ registers once with `addProviderPart`; `providerRows` puts its entry first, mark
 every picker offers it as its own provider and the Model providers surface gives it its own
 stone, never inside the list of the CLI it runs on. Its rows name a registry CLI (`cli`), so
 launch, identity and resume are Core's; the part may wrap the argv of an Agent born on it
-(`wrapLaunch`) and of its restore (`wrapResume`, with the model it was born on). It is counted
+(`wrapLaunch`) and of its restore (`wrapResume`, with the model it was born on), both given the
+launching person's email from the birth receipt so the part can label its house calls
+(`X-Ronin-Person`, KAN-659, as Hermes's do, KAN-621). It is counted
 as an activated provider when operational, and Refresh all asks it to read its list again
 (`refresh`). Self-hosted, no part answers and nothing changes.
 

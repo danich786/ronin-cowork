@@ -16,10 +16,11 @@ export interface ProviderPart {
   rows(): Promise<ProviderRows | null>;
   /** Refresh all: read its model list again. */
   refresh?(): Promise<void>;
-  /** An Agent's argv just before birth on one of its rows. */
-  wrapLaunch?(argv: string[]): string[];
-  /** Core's resume argv for an Agent born on it, with the model it was born on. */
-  wrapResume?(argv: string[], model: string): string[];
+  /** An Agent's argv just before birth on one of its rows; `person` is the launching person's
+   * email (the birth receipt's user_email), '' when none. */
+  wrapLaunch?(argv: string[], person: string): string[];
+  /** Core's resume argv for an Agent born on it, with the model it was born on and the same person. */
+  wrapResume?(argv: string[], model: string, person: string): string[];
 }
 
 const parts: ProviderPart[] = [];

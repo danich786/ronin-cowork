@@ -392,7 +392,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (wrapArgv && launch.argv.length) launch = { ...launch, argv: wrapArgv([...launch.argv]) };
       // A part's provider (src/provider-parts.ts) wraps the argv of an Agent born on its rows.
       const part = providerPart(resolved.identity?.provider ?? '');
-      if (part?.wrapLaunch && launch.argv.length) launch = { ...launch, argv: part.wrapLaunch([...launch.argv]) };
+      if (part?.wrapLaunch && launch.argv.length) launch = { ...launch, argv: part.wrapLaunch([...launch.argv], form.person?.email ?? '') };
       if (resolved.agent && !launch.argv.length) {
         if (birthDir) await rm(birthDir, { recursive: true, force: true });
         return res.status(400).json({
