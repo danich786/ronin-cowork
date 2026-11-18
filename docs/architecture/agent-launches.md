@@ -21,6 +21,11 @@ Native` does not prevent an explicit model. Only Native + Native produces the ba
 command. Resume is separate: it revives a known provider conversation and is not either
 a model choice or a launch mode.
 
+**The default Mode is Dangerously** (owner, 2026-11-18): a Campaign or Workspace that sets no
+Mode launches its Agents Dangerously; Native is only an explicit choice. A bare-metal Agent, which
+has no Workspace, stays Native unless Dangerously is chosen. **Mika always launches Dangerously**,
+whatever the Campaign says: an approval prompt would stop her mid-answer.
+
 ## The standard command forms
 
 Every Agent page declares JSON argv arrays for the same set of permutations:

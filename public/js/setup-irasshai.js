@@ -10,6 +10,11 @@
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
  *
+ * OPENING SETUP OPENS HER (KAN-676): a hosted office's Setup, on opening, asks Ronin Services for her
+ * (POST /api/irasshai/open): live, she is there; not live, she is made fresh, as any Agent is made.
+ * Once her session is live the pushed session list seats her chat as above; a new birth (a new key)
+ * gets a new chat. Self-hosted Setup asks for nothing.
+ *
  * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
  * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
@@ -22,7 +27,7 @@ import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { IRASSHAI, irasshaiIn, irasshaiShown } from './setup-journey.js';
+import { IRASSHAI, irasshaiIn, irasshaiShown, onboardingDone } from './setup-journey.js';
 import { createIntegrationsPanel } from './integrations-panel.js';
 import { campaigns, loadCampaigns } from './campaigns.js';
 import { subscribe } from './store.js';
@@ -36,6 +41,10 @@ export const INTEGRATIONS_STEP = 'Integrations';
 export const stepSurface = (step) => (step?.title === INTEGRATIONS_STEP ? IRASSHAI_INTEGRATIONS_TYPE : null);
 /** Whether her session is live, as the pushed session list says. */
 export const irasshaiLive = () => irasshaiIn(S.sessions);
+/** A hosted Setup is hers while she runs or her onboarding is not over: opening it is what makes her (KAN-676). */
+export const irasshaiSetup = () => irasshaiLive() || !onboardingDone(get('epics'));
+/** Her session's birth key, as the pushed session list says; '' when she is not live. */
+export const irasshaiKey = () => (irasshaiIn(S.sessions) ? String(S.sessions.find((one) => one.name === IRASSHAI)?.key || IRASSHAI) : '');
 
 /** The onboarding template's task titles, read once: the steps' order. */
 let order = null;
@@ -48,6 +57,9 @@ export function irasshaiOrder(onRead) {
   });
   return order;
 }
+
+/** Ask for her: one POST, answered at once; her chat follows the session push. */
+export const askIrasshai = () => { void request('/api/irasshai/open', { method: 'POST' }); };
 
 /**
  * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16 and 18; KAN-617): the person's messages and

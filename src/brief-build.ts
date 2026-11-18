@@ -124,7 +124,7 @@ async function birthRecord(form: SpawnForm, facts: LaunchFacts, launch: LaunchId
       provider: launch.provider ?? '',
       model: launch.model ?? '',
       harness: launch.harness ?? '',
-      launch_mode: launch.launch_mode ?? 'configured',
+      launch_mode: launch.launch_mode ?? 'live_dangerously',
     },
     work: {
       repos: facts.repositories.map((repo) => repo.name),

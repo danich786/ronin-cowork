@@ -36,7 +36,7 @@ export function createAgentDefaultsSurface(campaign) {
     body.append(el('p', 'cv-note', t('campaign_view.defaults_models', 'Models are set in Models > Defaults.')));
     let picked = edited || {
       reach: current.reach || firstMandate('reach'), recruit: current.recruit || firstMandate('recruit'),
-      output: list(current.output), launch_mode: current.launch_mode || 'configured',
+      output: list(current.output), launch_mode: current.launch_mode || 'live_dangerously',
     };
     const questions = ask([
       { group: t('mandate', 'Mandate'), fields: [

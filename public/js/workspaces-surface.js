@@ -123,7 +123,7 @@ function folderBrowser({ ticked, onTick, onLoad = () => {} }) {
 export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDiscard = () => {} }) {
   const { createAction, createField } = WorkspaceKit.primitives;
   const isNew = !w;
-  const draft = w ? JSON.parse(JSON.stringify(w)) : { name: '', title: '', objective: '', instructions: '', repos: [], folders: [], launch_mode: 'configured', integrations: [] };
+  const draft = w ? JSON.parse(JSON.stringify(w)) : { name: '', title: '', objective: '', instructions: '', repos: [], folders: [], launch_mode: 'live_dangerously', integrations: [] };
   if (!Array.isArray(draft.integrations)) draft.integrations = [];
   const page = el('div', 'ntf-form fs-steps workspace-form');
   // The page's own status line, first under its head: what Save, a tick or Clone answered.

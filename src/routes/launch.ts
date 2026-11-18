@@ -160,7 +160,6 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
     prompt: typeof source.prompt === 'string' ? source.prompt : '',
     ...(selection ? { provider: selection.provider, model: selection.model } : {}),
-    launch_mode: 'configured',
   };
 }
 

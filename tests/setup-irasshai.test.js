@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { irasshaiIn, irasshaiShown, irasshaiSteps, takeStepLine } from '../public/js/setup-journey.js';
+import { irasshaiIn, irasshaiShown, irasshaiSteps, onboardingDone, takeStepLine } from '../public/js/setup-journey.js';
 
 const source = (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
 const ORDER = ['Agent Harness', 'Workspace', 'Integrations', 'Ronin Tour', 'Meet your Agents'];
@@ -31,6 +31,9 @@ test('Irasshai’s steps: her epic’s tasks in the template’s order, done one
   assert.equal(takeStepLine({ id: 'KAN-3', title: 'Workspace' }), "Let's do Workspace (KAN-3).", 'a press is one line');
   assert.equal(irasshaiIn([{ name: 'mika_agent' }, { name: 'irasshai' }]), true);
   assert.equal(irasshaiIn([{ name: 'mika_agent' }]), false);
+  assert.equal(onboardingDone([]), false, 'before her epic exists, onboarding is not over (KAN-676)');
+  assert.equal(onboardingDone(epics), false);
+  assert.equal(onboardingDone([{ ...epics[1], status: 'Done' }]), true);
 });
 
 test('Setup while Irasshai runs: Assist seats her chat, the selector offers only her steps, a press goes to her through the message queue (KAN-573)', async () => {
@@ -59,10 +62,12 @@ test('Irasshai’s Integrations step seats the integrations panel, embedded, and
   assert.match(view, /if \(type && now && !started\.has\(step\.id\)\) bench\?\.place\(type, 'workspace2'\)/, 'a step she starts herself seats it too');
 });
 
-test('No Open Irasshai: the Setup header carries no button and asks for nothing (KAN-676)', async () => {
+test('Opening a hosted Setup opens her; no button; a new birth gets a new chat (KAN-676)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
-  assert.doesNotMatch(view + chat, /createOpenIrasshai|\/api\/irasshai\/open/);
-  assert.match(view, /actions: \[themeToggle\]/);
+  assert.match(view, /if \(HOSTED\) askIrasshai\(\);/, 'hosted only, on opening Setup');
+  assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one request; Services shows her or makes her fresh');
+  assert.doesNotMatch(view + chat, /createOpenIrasshai|setup-open-irasshai/, 'the Open Irasshai button is gone');
+  assert.match(view, /if \(chat && chat\.key !== irasshai\) \{ garden\.chat\(null\); chat\.dispose\(\); chat = null; \}/, 'a new birth key: the last chat goes');
 });
 
 test('Irasshai’s chat reads as a conversation: the Chat reading, the person’s messages without Ronin’s head, her replies, nothing else (KAN-617)', async () => {

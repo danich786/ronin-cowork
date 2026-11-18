@@ -228,7 +228,8 @@ every terminal agent behaves like Claude.
 
 The model id and the command must agree: `openai · gpt-5.6-terra` resolves to a Codex
 command carrying `--model gpt-5.6-terra`; it must never resolve to bare `codex` and
-inherit an unseen local default. The internal `configured` launch mode is labelled Native;
+inherit an unseen local default. The internal `configured` launch mode is labelled Native, and is
+only an explicit choice: an absent launch mode is `live_dangerously`;
 on that axis it means no permission override, independently of Model. `live_dangerously`
 uses the Agent page's complete dangerous form and is unavailable when none is declared.
 

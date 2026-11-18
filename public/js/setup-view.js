@@ -20,7 +20,7 @@ import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
 import { setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, createIrasshaiChat, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -68,8 +68,9 @@ export function createSetupView() {
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
   // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
-  // her epic's steps. `irasshai` is whether she was live at the last look.
-  let irasshai = false;
+  // her epic's steps. `irasshai` is her session's birth key at the last look ('' not live): a new
+  // birth gets a new chat, never the last one's records (KAN-676).
+  let irasshai = '';
   let chat = null;
   let epics = [];
   let epicItems = [];
@@ -78,7 +79,8 @@ export function createSetupView() {
   const seatChat = () => {
     if (!garden) return;
     if (irasshai) {
-      chat ||= createIrasshaiChat();
+      if (chat && chat.key !== irasshai) { garden.chat(null); chat.dispose(); chat = null; }
+      chat ||= Object.assign(createIrasshaiChat(), { key: irasshai });
       garden.chat(chat.el);
       chat.show();
     } else if (chat) {
@@ -87,7 +89,7 @@ export function createSetupView() {
     }
   };
   const followIrasshai = () => {
-    const live = irasshaiLive();
+    const live = irasshaiKey();
     if (live !== irasshai) {
       irasshai = live;
       seatChat();
@@ -118,7 +120,7 @@ export function createSetupView() {
     word.textContent = progress.scanning ? 'Looking at this machine…' : progress.reason || '';
     scan.append(scanButton, word);
     setupStepsHeader.replaceChildren(createSetupStepsBar(progress), scan, reading);
-    setupStepsHeader.hidden = irasshai; // her steps are the selector's; the five marks are not hers
+    setupStepsHeader.hidden = Boolean(irasshai); // her steps are the selector's; the five marks are not hers
   };
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
@@ -363,6 +365,8 @@ export function createSetupView() {
       paint();
       open(sceneOverride);
       seatChat();
+      // A hosted office's Setup is Irasshai's: opening it asks for her (shown live, else a fresh launch).
+      if (HOSTED) askIrasshai();
       void request('/api/setup/progress', { cache: 'no-store' }).then((result) => {
         if (generation !== enterGeneration || !result.ok || !acceptProgress(result.data)) return;
         const first = firstUnansweredSetupStep(progress);

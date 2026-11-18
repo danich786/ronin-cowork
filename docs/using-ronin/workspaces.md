@@ -8,7 +8,7 @@ A Workspace holds:
 - **Objective** — what the project is for.
 - **Instructions** — anything every Agent on it should know.
 - **Locations** — the folders and repositories its Agents work in, each with a short note.
-- **Mode** — Native, or Dangerously for providers that offer it (Native where they don't).
+- **Mode** — Dangerously unless you choose Native (Native for providers that offer no Dangerously form).
 - **Plans** — where its plans are kept ([Writing a plan](planning.md)).
 - **Canvases** — one-page maps of the Workspace: its live site, repos, work, documents and outside services.
 

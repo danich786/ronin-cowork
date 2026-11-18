@@ -19,6 +19,9 @@ export const irasshaiIn = (sessions) => (sessions || []).some((session) => sessi
 
 const holds = (item) => item?.holder === HELD || (Array.isArray(item?.holders) && item.holders.includes(HELD));
 
+/** Whether her onboarding is over: an epic she holds is Done (KAN-676). Before it exists, it is not. */
+export const onboardingDone = (epics) => (epics || []).some((one) => one?.level === 1 && holds(one) && one.status === 'Done');
+
 /**
  * Her epic's tasks as Setup's steps: the epic she holds, its level-0 children, in `order` (the
  * template's task titles) with any other after them, each { id, title, done }.
