@@ -100,6 +100,25 @@ apply to future launches; key rotation reaches existing homes on process restart
 a referenced connection is refused; removed connection credentials are retained for live
 agents. Hosted tenant isolation is not supplied by these local profiles.
 
+## Provider parts
+
+A model provider a Services part serves, beside the CLIs (`src/provider-parts.ts`, KAN-650). In
+a hosted office it is **Ronin models**, the house connection (Services `ronin_models`;
+`samurai_lab/ronin_cloud/MODEL_MANAGEMENT.md` §1, §5): Light, Standard and Frontier first, the
+office record's `tier` the default row, then the gateway model list's real models. A part
+registers once with `addProviderPart`; `providerRows` puts its entry first, marked `part`, so
+every picker offers it as its own provider and the Model providers surface gives it its own
+stone, never inside the list of the CLI it runs on. Its rows name a registry CLI (`cli`), so
+launch, identity and resume are Core's; the part may wrap the argv of an Agent born on it
+(`wrapLaunch`) and of its restore (`wrapResume`, with the model it was born on). It is counted
+as an activated provider when operational, and Refresh all asks it to read its list again
+(`refresh`). Self-hosted, no part answers and nothing changes.
+
+The office record (`src/office-record.ts`) carries `tier` (`light` | `standard` | `frontier`,
+the office's tier) and `tier_providers` (the member's provider per tier), both written by
+Cloud's park; Ronin reads them and asks the house connection for a tier or `default`, never a
+model name (KAN-652).
+
 ## Model info
 
 `src/model-info.ts` owns it. One shape in three places:
@@ -191,13 +210,16 @@ What this machine *has* is measured, not derived on every read. The Campaign rec
 `src/provider-summary.ts` has two writers and one record:
 
 - `measureAndRecordProviders` — the machine facts; the recorded lists, the last npm answer
-  and `refreshed_at` ride along unchanged. At Ronin start, after **Cancel** on a sign-in (a
+  and `refreshed_at` ride along unchanged. After **Cancel** on a sign-in (a
   sign-in closed without Done may still have left a credential file), after Turn off / on,
   and in the Setup scan.
 - `refreshProviders` — **Refresh all**'s first step: the same facts, then every activated
-  CLI's own list read again, then npm asked. Its second step is model info's own route. The owner's press (`POST /api/setup/providers/refresh`), and
-  once on **Done**, because activating a provider is a press too (owner, 2026-09-25).
-  Never a timer, never on open.
+  CLI's own list read again, each [provider part](#provider-parts)'s list, then npm asked.
+  Its second step is model info's own route. It runs at every Ronin start, so after every
+  Update (which restarts Ronin), with nobody pressing anything (KAN-651); in a hosted office
+  the park calls `POST /api/setup/providers/refresh` over the unit's socket when it moved the
+  CLIs in place (`ronin_cloud` office_kohai); the member's press; and once on **Done**,
+  because activating a provider is a press too (owner, 2026-09-25). Never a timer, never on open.
 
 **How a list is read is the registry's declaration.** `AGENTS[].operations.models` in
 `src/agents.ts` names the reader: `claude-cache` (`~/.claude/cache/model-catalog/*-cc.json`,
@@ -322,9 +344,10 @@ One drawing (`public/js/provider-surface.js`), seated by two selector cards — 
 door as one stone per provider (`public/js/models-surface.js`). The two cards read *N providers · M models · K activated here ·
 model info from <date>*. At the top sits the one door: **Refresh all model providers**,
 with *Last ran <date>* beside it, or *Never run — every provider offers Native only until
-it runs*. It is the owner's press, never a timer: it measures the machine, reads every
+it runs*. Ronin runs it at start too, never on a timer: it measures the machine, reads every
 activated CLI's own model list, and asks npm for each one's newest release. Below it the
-whole inventory on the shared stone work surface: one stone per CLI the registry knows,
+whole inventory on the shared stone work surface: first a stone per [provider part](#provider-parts)
+(Ronin models, in a hosted office), then one stone per CLI the registry knows,
 wearing its measured state and the vendor it serves with its model count, then any catalog
 provider no registry CLI serves. The Models workbench's **Model refresh** surface carries
 the same door with the model info review under it ([Model info](#model-info)).

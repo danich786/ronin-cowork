@@ -93,10 +93,15 @@ const catalogOnly = (runtime) => {
  * state, then every catalog provider no CLI serves. The Settings surface, the Models workbench
  * and its selector cards all read this. */
 export function providerStones(runtime) {
-  const rows = providerCatalog().rows;
+  // A part's provider (Ronin models, in a hosted office) runs on a CLI but is never in that CLI's list.
+  const parts = (providerCatalog().providers || []).filter((entry) => entry.part);
+  const parted = new Set(parts.map((entry) => entry.provider));
+  const rows = providerCatalog().rows.filter((row) => !parted.has(row.provider));
   const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
   const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
   const items = [
+    ...parts.map((entry) => stoneOf(entry.provider, entry.label, t('setup_surface.part_models_n', '{n} models', { n: entry.models.length }),
+      entry.operational ? t('setup_surface.ready_launch', 'Activated for Launch') : '', entry.operational === true)),
     ...providers.map((provider) => {
       const own = rows.filter((row) => row.cli === provider.id);
       const vendor = own[0]?.provider_label || provider.from || '';
@@ -524,9 +529,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     if (list.unavailable) return list.unavailable;
     return t('setup_surface.models_read', 'Model list read {date} by {cli} {version}', { date: list.read_at, cli: entry.label || entry.id, version: list.by || '' }).trim();
   };
-  const paintCatalog = (rows, entry, host, label = '') => {
+  const paintCatalog = (rows, entry, host, label = '', { facts: withFacts = true } = {}) => {
     const section = el('section', 'setup-provider-catalog');
     section.append(el('h3', 'setup-provider-eyebrow', label || t('setup_surface.section_models', 'Models')));
+    if (!withFacts) return paintModels(rows, section, host);
     const facts = el('dl', 'setup-provider-facts');
     for (const [label, on] of [
       [t('setup_surface.fact_installed', 'Installed'), entry?.installed === true],
@@ -536,6 +542,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     section.append(facts);
     const state = listState(entry);
     if (state) section.append(el('p', 'setup-fine setup-provider-list-state', state));
+    paintModels(rows, section, host);
+  };
+  /** The model table under a provider's page; the section is the caller's, appended to host here. */
+  const paintModels = (rows, section, host) => {
     if (!rows.length) { section.append(el('p', 'setup-fine', t('setup_surface.no_models', 'The catalog lists no models for this provider.'))); host.append(section); return; }
     const from = el('p', 'setup-fine setup-provider-provenance', provenance(rows));
     from.dataset.origin = rows[0].origin || 'stock'; from.dataset.shadowed = String(rows[0].shadowed === true);
@@ -570,6 +580,15 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     const rows = providerCatalog().rows.filter((row) => (provider ? row.cli === provider.id : row.provider === id));
     if (!provider && !rows.length) { host.append(el('p', 'setup-notice bad', t('setup_surface.provider_missing', 'This provider is no longer in the model-provider catalog.'))); return null; }
     if (id === 'hermes') return mountHermesSurface(host, provider, paint);
+    const part = (providerCatalog().providers || []).find((entry) => entry.provider === id && entry.part);
+    if (part) {
+      // Nothing to install or sign in: the office's house connection, on the Ronin balance.
+      const yours = el('section', 'setup-provider-yours');
+      yours.append(el('h2', '', part.label), el('p', 'setup-fine', part.note || ''));
+      host.append(yours);
+      paintCatalog(part.models, null, host, '', { facts: false });
+      return null;
+    }
     const yours = el('section', 'setup-provider-yours');
     yours.append(el('h3', 'setup-provider-eyebrow', t('setup_surface.section_yours', 'Yours')));
     if (provider) paintYours(provider, yours);

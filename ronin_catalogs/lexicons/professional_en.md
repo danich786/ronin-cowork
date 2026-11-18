@@ -1559,6 +1559,7 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.models_read:** Model list read {date} by {cli} {version}
 - **setup_surface.models_not_read:** Model list not read yet — press Refresh all model providers.
 - **setup_surface.provider_models_n:** {vendor} · {n} models
+- **setup_surface.part_models_n:** {n} models
 - **setup_surface.fact_installed:** Installed
 - **setup_surface.fact_signed_in:** Signed in
 - **setup_surface.fact_activated:** Activated

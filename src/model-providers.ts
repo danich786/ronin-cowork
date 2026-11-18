@@ -26,6 +26,7 @@ import path from 'node:path';
 import { mergeSections, readUserCatalog, STOCK_DIR, storeDir, type CatalogSection, type Origin } from './resources.js';
 import { commandText, readAgentLaunches, renderLaunch, type AgentLaunches } from './agent-launches.js';
 import { AGENTS } from './agents.js';
+import { partProviderRows } from './provider-parts.js';
 import { readModelInfo, type ModelInfo, type ModelInfoFile } from './model-info.js';
 
 export const CATALOG_FILE = 'MODEL_PROVIDERS.md';
@@ -112,6 +113,10 @@ export interface ProviderRows extends ProviderCatalogEntry {
   native?: string;
   nativeDangerousCmd?: string;
   launch_modes?: Array<'configured' | 'live_dangerously'>;
+  /** The Services part that serves this provider (src/provider-parts.ts); absent for a CLI's own. */
+  part?: string;
+  /** A part's one line for its provider page, in the part's words. */
+  note?: string;
   models: ProviderRow[];
 }
 
@@ -498,7 +503,9 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
     const { families: _families, connection_rows: _connectionRows, ...rest } = entry;
     return { ...rest, cli_label: base.cli_label, operational: on, off, ...launch, models };
   }));
-  return [...joined.filter((entry) => entry.operational), ...joined.filter((entry) => !entry.operational)];
+  // A part's provider (Ronin models, in a hosted office) leads, apart from every CLI's list.
+  const parts = await partProviderRows();
+  return [...parts, ...joined.filter((entry) => entry.operational), ...joined.filter((entry) => !entry.operational)];
 }
 
 /** The joined rows flat: what a launch resolves against. */

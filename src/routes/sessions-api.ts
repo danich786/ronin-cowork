@@ -65,6 +65,7 @@ import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
+import { providerPart } from '../provider-parts.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
@@ -318,7 +319,10 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
     if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
     const wrap = resumeWraps.get(archived.name);
+    const part = providerPart(archived.identity?.provider ?? '');
     if (wrap) argv = wrap([...argv]);
+    // An Agent born on a part's provider (src/provider-parts.ts) is restored on it.
+    else if (part?.wrapResume) argv = part.wrapResume([...argv], archived.identity?.model ?? '');
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
     try {
       await setSessionKey(archived.name, archived.key);

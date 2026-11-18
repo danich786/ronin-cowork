@@ -30,7 +30,18 @@ export interface OfficeRecord {
   /** The office kind's Agents, written by Cloud's kohai at provisioning: `most` is the
    * header gauge popup's Agents max. Absent: max is RAM total ÷ 0.6 GB. */
   agents?: { fewest: number; most: number };
+  /** The office's model tier, the member's choice in the lounge, written by Cloud's park
+   * (samurai_lab/ronin_cloud/MODEL_MANAGEMENT.md §2, §5). Absent: Ronin asks for `default`. */
+  tier?: OfficeTier;
+  /** The provider the member picked behind each tier, as the gateway model list names it
+   * (`openai`, `anthropic`); a tier left out uses the list's default for it. Shown, never sent:
+   * the gateway applies the pick behind the tier Ronin asks for. */
+  tier_providers?: Partial<Record<OfficeTier, string>>;
 }
+
+export const OFFICE_TIERS = ['light', 'standard', 'frontier'] as const;
+export type OfficeTier = typeof OFFICE_TIERS[number];
+const isOfficeTier = (v: unknown): v is OfficeTier => (OFFICE_TIERS as readonly unknown[]).includes(v);
 
 export type OfficeView =
   | { hosting: 'self_hosted'; host: string }
@@ -67,6 +78,17 @@ export function parseOfficeRecord(raw: unknown): OfficeRecord {
       throw new Error('agents must be { fewest, most }, whole numbers, fewest no more than most');
     }
     record.agents = { fewest: a.fewest, most: a.most };
+  }
+  if (r.tier !== undefined) {
+    if (!isOfficeTier(r.tier)) throw new Error('tier must be light, standard or frontier');
+    record.tier = r.tier;
+  }
+  if (r.tier_providers !== undefined) {
+    const p = r.tier_providers as Record<string, unknown> | null;
+    if (!p || typeof p !== 'object' || Array.isArray(p) || Object.entries(p).some(([k, v]) => !isOfficeTier(k) || typeof v !== 'string' || !NAME.test(v))) {
+      throw new Error('tier_providers must map light, standard or frontier to a provider id');
+    }
+    record.tier_providers = p as Partial<Record<OfficeTier, string>>;
   }
   return record;
 }

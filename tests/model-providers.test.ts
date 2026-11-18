@@ -313,17 +313,34 @@ test('latest is asked only of a CLI whose install line names an npm package, and
   assert.equal(catalog.newerVersion('', '1.0.0'), false, 'unreadable on either side is never "newer"');
 });
 
-test('the start-up measure follows the Campaign record and its migration, never beside them, and reads no list', async () => {
+test('the start-up refresh follows the Campaign record and its migration, never beside them', async () => {
   // Both the summary write and the scope migration read-modify-write the campaigns section
   // of machine settings; run concurrently on a fresh install, one write is lost. The chain
   // in src/index.ts is the seam, so it is pinned here. The Desk model move also rewrites
-  // machine settings, so it sits in the same chain, before the measure.
+  // machine settings, so it sits in the same chain, before the refresh. Every start refreshes,
+  // so nobody presses Refresh all after an Update (KAN-651).
   const source = await readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
-  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => moveDeskModelDefault\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? measureAndRecordProviders\(\) : undefined\)\)/);
-  assert.equal(source.match(/measureAndRecordProviders\(\)/g)?.length, 1, 'measured at start in one place only');
-  assert.doesNotMatch(source, /refreshProviders/, 'Refresh all is the owner\'s press, never start-up');
+  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => moveDeskModelDefault\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? refreshProviders\(\) : undefined\)\)/);
+  assert.equal(source.match(/refreshProviders\(\)/g)?.length, 1, 'refreshed at start in one place only');
   const progress = await readFile(new URL('../src/setup-progress.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(progress, /refreshProviders|Inventory/, 'the Setup scan measures; it reads no list');
+});
+
+// Last: the part registered here stays registered for the rest of the file.
+test('a provider part (Ronin models) leads, apart from its CLI\'s list, counts as a provider, and refreshes with Refresh all', async () => {
+  const parts = await import('../src/provider-parts.js');
+  let refreshed = 0;
+  const row = { provider: 'house', cli: 'codex', provider_label: 'House', cli_label: 'House', operational: true, off: false, selectable: true,
+    origin: 'stock' as const, shadowed: false, model: 'standard', name: 'Standard', cmd: 'codex --model standard', tier: 'standard' as const, default: true, info: null };
+  parts.addProviderPart({ provider: 'house', refresh: async () => { refreshed++; },
+    rows: async () => ({ provider: 'house', cli: 'codex', label: 'House', cli_label: 'House', origin: 'stock', shadowed: false, launchable: true, operational: true, off: false, part: 'house', models: [row] }) });
+  const rows = await catalog.providerRows(measured({ operational: ['codex'], models: { codex: listed(['gpt-5.6-sol']) } }));
+  assert.equal(rows[0].provider, 'house', 'the part leads');
+  assert.deepEqual(rows.find((entry) => entry.provider === 'openai')?.models.map((r) => r.model), ['native', 'gpt-5.6-sol'], 'never inside Codex\'s list');
+  assert.equal(catalog.providerDefault(await catalog.listSessionLaunchSpecs(measured()), 'house')?.cmd, 'codex --model standard', 'a launch naming it resolves to its default row');
+  assert.equal((await summary.measureProviders({}, { availability: [], signedIn: async () => false, catalog: [] })).activated_count, 1, 'counted: no "No provider found"');
+  await summary.refreshProviders({}, { availability: [], signedIn: async () => false, catalog: [] }, { npmView: async () => '', egress: async () => {} });
+  assert.equal(refreshed, 1);
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });
