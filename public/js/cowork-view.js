@@ -12,7 +12,7 @@ import { createTeamJikan } from './team-jikan.js';
 import { buildMessageQueue } from './message-queue.js';
 import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
 import { buildArchives } from './archives.js';
-import { agentSituation, onProjects, projectData, situationTitle, stanceLabel } from './home.js';
+import { agentSituation, onAgeTick, onProjects, projectData, situationTitle, stanceLabel } from './home.js';
 import { request } from './request.js';
 import { paintCanvas } from './canvas-view.js';
 import { teamPageHandlers } from './events.js';
@@ -748,6 +748,7 @@ export function createCoworkView(options = {}) {
     for (const view of leagueTeamSurfaces.values()) view.render?.();
   };
   let hearRows = null; // the unsubscribe, while entered
+  let stopAging = null; // the age clock's unsubscribe, while entered
   const onRows = (list) => {
     rows = new Map(list.map((row) => [row.name, row]));
     renderCards();
@@ -931,6 +932,9 @@ export function createCoworkView(options = {}) {
       else paint();
       hearRows?.();
       hearRows = subscribeStore('home', onRows);
+      // Ready ages into idle with no push (KAN-665): the one local clock looks again.
+      stopAging?.();
+      stopAging = onAgeTick(renderCards);
       reportView();
     },
     leave: () => {
@@ -940,6 +944,8 @@ export function createCoworkView(options = {}) {
       disarmPrewarm();
       hearRows?.();
       hearRows = null;
+      stopAging?.();
+      stopAging = null;
       // No transport survives outside the entered Team destination.
       for (const seat of Object.values(seats)) { seat.pool.destroyAll(); seat.empty?.destroy(); seat.empty = null; }
       for (const commons of builtCommons()) commons.channels.leave();

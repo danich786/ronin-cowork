@@ -17,7 +17,7 @@ import { sayWhenUnreachable, sessionsHandlers } from './events.js';
 import { connect, get as held, subscribe as hear } from './store.js';
 import { membersOfTeam, subscribe, teamByName, teamsFromState, UNASSIGNED, unassignedSessions } from './team-controller.js';
 import { listedTeam } from './roster-groups.js';
-import { agentSituation, loadProjects, projectData, situationTitle } from './home.js';
+import { agentSituation, loadProjects, onAgeTick, projectData, situationTitle } from './home.js';
 import { buildDocs } from './docs.js';
 import { createTerminalTileHost } from './terminal-tile-host.js';
 import { closeMenu } from './menu.js';
@@ -386,6 +386,8 @@ export async function buildPhone() {
   subscribe(() => { if (route.screen !== 'terminal') render(); });
   // A card change redraws only that Agent's card (the keyed list compares its situation).
   hear('home', () => { if (route.screen === 'agents') paintAgents(); });
+  // Ready ages into idle with no push: the one local clock looks again.
+  onAgeTick(() => { if (route.screen === 'agents') paintAgents(); });
 
   // Ask the operator which optional surfaces are plugged in BEFORE a tile is born, the
   // way main.js does: `stream:false` means the 🔓 views are off and every tile is 🔒.

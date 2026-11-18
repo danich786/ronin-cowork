@@ -109,12 +109,13 @@
     background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */
   }
   .team-agent-card.flagged .wk-card-heading, .team-agent-card.flagged .wk-card-mark { color: var(--warn); }
-  /* WORKING (KAN-665): one of the Chat's dots after the name. Stopped (its pane died): muted ink,
-     no icon. Your move: the plain pill. */
-  .team-agent-card.working .wk-card-heading::after {
-    content: ''; display: inline-block; width: 6px; height: 6px; margin-left: var(--space-inline); vertical-align: middle;
-    border-radius: 50%; background: var(--kaki); /* kaki: the Chat's working dot */
+  /* WORKING (KAN-665): one of the Chat's dots after the name; Ready (its turn just ended) the
+     same dot as a hollow ring. Stopped (its pane died): muted ink, no icon. Idle: the plain pill. */
+  .team-agent-card:is(.working, .ready) .wk-card-heading::after {
+    content: ''; display: inline-block; box-sizing: border-box; width: 6px; height: 6px; margin-left: var(--space-inline); vertical-align: middle;
+    border: var(--edge) solid var(--kaki); border-radius: 50%; background: var(--kaki); /* kaki: the Chat's working dot */
   }
+  .team-agent-card.ready .wk-card-heading::after { background: transparent; }
   .team-agent-card.stopped .wk-card-heading, .team-agent-card.stopped .wk-card-mark { color: var(--muted); }
   .league-team-agent.flagged, .league-team-member.flagged > .league-team-member-toggle {
     background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */

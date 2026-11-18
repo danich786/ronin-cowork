@@ -38,17 +38,31 @@ export async function loadProjects() {
  */
 // AN AGENT PILL'S ONE SITUATION (owner, 2026-11-18, KAN-665), read from its card alone:
 // stopped (its pane died) > flagged (a person is needed: asking, no progress, the CLI's error,
-// a flagged item) > working > '' (your move: the plain pill is the calm state).
-export const agentSituation = (card = {}) => (card.stance === 'stopped' ? 'stopped'
+// a flagged item) > working > ready (its turn ended under READY_MS ago, by the card's `at`)
+// > '' (idle: the plain pill is the calm state).
+export const READY_MS = 10 * 60_000;
+export const agentSituation = (card = {}, now = Date.now()) => (card.stance === 'stopped' ? 'stopped'
   : ['asking', 'no_progress', 'error'].includes(card.stance) || card.tegami?.flagged ? 'flagged'
-    : card.stance === 'working' ? 'working' : '');
+    : card.stance === 'working' ? 'working'
+      : ['awaiting_you', 'interrupted'].includes(card.stance) && now - Date.parse(card.at) < READY_MS ? 'ready' : '');
+// ONE LOCAL CLOCK FOR EVERY PILL LIST: Ready ages into idle with no push, so the open lists
+// look again each half minute. The tick carries no data and asks nothing (owner's no-polling
+// rule is about data); each list's keyed rows redraw only the pills whose look moved.
+const agers = new Set();
+let ageClock = null;
+export const onAgeTick = (fn) => {
+  agers.add(fn);
+  ageClock ??= setInterval(() => { for (const one of [...agers]) one(); }, 30_000);
+  return () => { agers.delete(fn); if (!agers.size) { clearInterval(ageClock); ageClock = null; } };
+};
 // The situation in words, for the tip and the accessible name (tips.js moves a title into both,
 // so it carries the Agent's name too).
 export const situationTitle = (label, situation) => `${label} · ${{
   working: () => t('team.situation_working', 'Working'),
+  ready: () => t('team.situation_ready', 'Ready: just finished'),
   flagged: () => t('team.situation_flagged', 'Needs you'),
   stopped: () => t('team.situation_stopped', 'Stopped'),
-}[situation]?.() || t('team.situation_your_move', 'Your move')}`;
+}[situation]?.() || t('team.situation_idle', 'Idle')}`;
 export function stanceLabel(stance) {
   return {
     working: t('home.stance_working', 'working…'),

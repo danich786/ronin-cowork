@@ -113,16 +113,17 @@ to comment); press it again to fold it.
 ### The Agent pills
 
 On a Team's workbench the discovery column lists its Agents as pills (on a phone, the Team's
-**Agents** list). Each pill says, at a glance, which of four situations its Agent is in:
+**Agents** list). Each pill says, at a glance, which of five situations its Agent is in:
 
 | Pill | Situation |
 |---|---|
 | a small dot after the name | **Working**: mid-turn, a tool out |
-| plain | **Your move**: its turn ended, idle, interrupted, just born, or not known |
+| a small ring after the name | **Ready**: its turn ended (or was interrupted) less than 10 minutes ago; it just finished, look at it |
+| plain | **Idle**: 10 minutes or more since its turn ended, just born, or not known |
 | ⚑ and amber | **Needs you**: it is asking (a question, a permission, a plan), has made no progress for 12 minutes, its CLI hit an error (a login expired, an API error), or it holds a flagged item |
 | dimmed | **Stopped**: its pane died; open it to resume |
 
-When more than one holds, Stopped wins, then Needs you, then Working. Hover a pill, or use a
+When more than one holds, Stopped wins, then Needs you, then Working, then Ready. Hover a pill, or use a
 screen reader, for the situation in words.
 
 Each Agent's tile on a Team shows the work items that Agent holds as pills in its header,
