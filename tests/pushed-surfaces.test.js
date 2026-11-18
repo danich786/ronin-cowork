@@ -102,11 +102,21 @@ test('the memory gauge paints the pushed reading and hides when the box is off',
   assert.equal(gaugeEl.hidden, false, 'a reading shows the gauge');
   assert.equal(gaugeEl.dataset.band, 'ok', '50% full is green');
   store.receive({ t: 'memory', reading: { mem: { total_mb: 8192, available_mb: 1126 }, swap: { total_mb: 2048, used_mb: 1229 }, load: [2, 3.2, 3], cpus: 8, disk: { total_mb: 100000, used_mb: 55000 } } });
-  assert.equal(gaugeEl.dataset.band, 'warn', 'swap in use adds nothing: 86% RAM in use is orange');
-  assert.equal(gaugeEl.title, 'Full 86% · Memory — Memory 86%, CPU 40%, Disk 55%');
+  assert.equal(gaugeEl.dataset.band, 'ok', 'self-hosted has no ceiling: 86% RAM in use (swap not counted) is green');
+  assert.equal(gaugeEl.title, 'Room for about 0 more Agents (12 of 13 in use) · Compute 40% · Storage 54 of 98 GB · Closest to full: Agents');
   store.receive({ t: 'memory', reading: { mem: { total_mb: 15360, available_mb: 7782 }, swap: { total_mb: 4096, used_mb: 3379 }, load: [6, 6.4, 6], cpus: 8, disk: { total_mb: 100000, used_mb: 61000 } } });
-  assert.equal(gaugeEl.title, 'Full 80% · CPU — Memory 49%, CPU 80%, Disk 61%', 'the owner\'s 17 Nov box: Full names CPU');
+  assert.equal(gaugeEl.title, 'Room for about 10 more Agents (12 of 25 in use) · Compute 80% · Storage 60 of 98 GB · Closest to full: Compute', 'the owner\'s 17 Nov box: closest is Compute');
+  store.receive({ t: 'memory', reading: { mem: { total_mb: 8192, available_mb: 500 }, swap: { total_mb: 0, used_mb: 0 }, load: [1, 1, 1], cpus: 8 } });
+  assert.equal(gaugeEl.dataset.band, 'red', '90% of RAM is red');
   store.receive({ t: 'memory', reading: { off: true } });
   assert.equal(gaugeEl.hidden, true, 'off hides it');
-  assert.deepEqual(requests, [], 'the gauge never asks');
+  assert.deepEqual(requests, ['/api/office'], 'the gauge asks only for the office record, once');
+});
+
+test('the office kind\'s ceiling turns the Agents fill orange', async () => {
+  const { occupancy } = await import('../public/js/ramrpm.js');
+  const m = { mem: { total_mb: 8192, available_mb: 6692 }, load: [0, 0, 0], cpus: 4 };
+  assert.equal(occupancy(m).band, 'ok', 'no kind: green below 90%');
+  assert.equal(occupancy(m, { fewest: 1, most: 2 }).band, 'warn', 'past most x 0.6 GB: orange');
+  assert.equal(occupancy(m, { fewest: 1, most: 3 }).band, 'ok', 'within the ceiling: green');
 });

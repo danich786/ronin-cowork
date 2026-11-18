@@ -4278,13 +4278,16 @@ body {
 }
 
 .ramrpm { margin-left: var(--space-inline); border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); padding: var(--space-row) var(--space-inline); font: var(--text-small) var(--font-mono); cursor: pointer; user-select: none; }
-.ramrpm { display: inline-flex; align-items: center; gap: 2px; }
+.ramrpm { display: inline-flex; align-items: center; gap: var(--space-inline); white-space: nowrap; }
+@media (max-width: 560px) { .ramrpm .ramrpm-more { display: none; } }
 .ramrpm[hidden] { display: none; }
-.ramrpm i { display: block; width: 6px; height: 10px; border-radius: 1px; background: var(--line-2); }
-.ramrpm i.on { background: currentColor; }
-.ramrpm[data-band='ok'] { color: var(--ok); }
-.ramrpm[data-band='warn'] { color: var(--warn); }
-.ramrpm[data-band='red'] { color: var(--bad); }
+/* Agents: the bar is all of RAM; a thin line every 0.6 GB (its background, sized per slot). */
+.ramrpm-bar { position: relative; display: block; width: 72px; height: 10px; border-radius: 1px; background-color: var(--line); background-image: linear-gradient(to right, var(--line-2) 1px, transparent 1px); background-repeat: repeat-x; }
+.ramrpm-fill { position: absolute; inset: 0 auto 0 0; background: currentColor; opacity: 0.85; }
+.ramrpm-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--fg-strong); }
+.ramrpm[data-band='ok'] .ramrpm-bar { color: var(--ok); }
+.ramrpm[data-band='warn'] .ramrpm-bar { color: var(--warn); }
+.ramrpm[data-band='red'] .ramrpm-bar { color: var(--bad); }
 .ramrpm-pop { position: fixed; z-index: 50; width: min(300px, calc(100vw - 16px)); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); box-shadow: var(--shadow-menu); padding: var(--space-inset); color: var(--fg); font: var(--text-body) var(--font-ui); }
 .ramrpm-pop p { display: flex; justify-content: space-between; gap: var(--space-inline); margin: 0; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }
 .ramrpm-pop p:last-child { border-bottom: 0; }

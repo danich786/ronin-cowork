@@ -1204,24 +1204,14 @@ The catalog entry goes. {dir} is not touched.
 
 ## term — termview.js (the copy hint)
 
-## gauge — ramrpm.js (the machine gauge: how full the machine is)
-- **gauge.no_swap:** no swap
-- **gauge.container_limit:** (container limit)
-- **gauge.title:** Full {full} — {shares}
-- **gauge.share_memory:** Memory
-- **gauge.share_cpu:** CPU
-- **gauge.share_disk:** Disk
-- **gauge.disk_label:** Disk
-- **gauge.full_label:** Full
-- **gauge.shares_label:** Shares
-- **gauge.ram_details:** Machine memory
-- **gauge.ram_available:** RAM available
-- **gauge.ram_total:** RAM total
-- **gauge.free:** free
-- **gauge.load:** Load
-- **gauge.on_cpus:** on {cpus} CPUs
-- **gauge.swap_label:** Swap
-- **gauge.swap_detail:** {used} of {total} used
+## gauge — ramrpm.js (the header gauge: Agents, Compute, Storage)
+- **gauge.agents:** Agents
+- **gauge.compute:** Compute
+- **gauge.storage:** Storage
+- **gauge.storage_of:** {used} of {total} GB
+- **gauge.agents_room:** Room for about {room} more Agents ({used} of {slots} in use)
+- **gauge.closest:** Closest to full
+- **gauge.details:** How full this office is
 
 ## request — request.js (the client's own two messages)
 - **request.cancelled:** cancelled

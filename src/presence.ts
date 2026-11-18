@@ -16,7 +16,8 @@
  * `archived` the archives still restorable (src/session-archive.ts, younger than ARCHIVE_DAYS).
  * Counted on each health call from tmux and the archive folder; self-hosted the same.
  *
- * Beside it, `machine: { swap_used_mb }`: the swap in use, whole MB, taken from the reading the
+ * Beside it, `machine: { swap_used_mb, mem_available_mb }`: the swap in use and MemAvailable,
+ * whole MB, taken from the reading the
  * Services machine service already publishes once a minute (the held {t:'memory'}); null before
  * that reading exists, with watching off, or without Services. No read of its own.
  */
@@ -62,10 +63,15 @@ export async function agentCounts(
   return { live: live.filter((s) => s.agent).length, archived: archived.filter((a) => !expired.has(a)).length };
 }
 
-/** `machine.swap_used_mb`: from the Services machine reading held as {t:'memory'}, or null before it is there. */
-export function machine(memory = heldMessage('memory')): { swap_used_mb: number | null } {
-  const used = (memory?.reading as { swap?: { used_mb?: unknown } } | undefined)?.swap?.used_mb;
-  return { swap_used_mb: typeof used === 'number' ? used : null };
+/** `machine.{swap_used_mb, mem_available_mb}`: from the Services machine reading held as {t:'memory'}, or null before it is there. */
+export function machine(memory = heldMessage('memory')): { swap_used_mb: number | null; mem_available_mb: number | null } {
+  const reading = memory?.reading as { swap?: { used_mb?: unknown }; mem?: { available_mb?: unknown } } | undefined;
+  const used = reading?.swap?.used_mb;
+  const available = reading?.mem?.available_mb;
+  return {
+    swap_used_mb: typeof used === 'number' ? used : null,
+    mem_available_mb: typeof available === 'number' ? Math.round(available) : null,
+  };
 }
 
 export const presence = () => ({

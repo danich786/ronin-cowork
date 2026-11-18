@@ -35,9 +35,9 @@ test('presence.agents counts live Agents and restorable archives', async () => {
 });
 
 test('machine.swap_used_mb comes from the held memory reading, null before it', () => {
-  assert.deepEqual(machine(null), { swap_used_mb: null });
-  assert.deepEqual(machine({ t: 'memory', reading: { off: true } }), { swap_used_mb: null });
-  assert.deepEqual(machine({ t: 'memory', reading: { swap: { total_mb: 2048, used_mb: 312 } } }), { swap_used_mb: 312 });
+  assert.deepEqual(machine(null), { swap_used_mb: null, mem_available_mb: null });
+  assert.deepEqual(machine({ t: 'memory', reading: { off: true } }), { swap_used_mb: null, mem_available_mb: null });
+  assert.deepEqual(machine({ t: 'memory', reading: { swap: { total_mb: 2048, used_mb: 312 }, mem: { total_mb: 8192, available_mb: 5120 } } }), { swap_used_mb: 312, mem_available_mb: 5120 });
 });
 
 test('self-hosted: a forwarded email is not trusted, people stays []', async () => {
