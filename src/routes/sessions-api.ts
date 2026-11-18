@@ -67,7 +67,7 @@ import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
-import { clearHookRecord, hookRecord } from '../asking.js';
+import { clearHookRecord, readFields } from '../asking.js';
 import { providerPart } from '../provider-parts.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
@@ -449,7 +449,7 @@ export function registerSessions(app: express.Express): void {
   app.post('/api/sessions/:name/resume', async (req, res) => {
     const session = (await listSessions()).find((s) => s.name === req.params.name);
     if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
-    if ((await hookRecord(session.name))?.stance !== 'stopped') return res.status(409).json({ error: `${session.name} is running.` });
+    if ((await readFields(session.name)).stance !== 'stopped') return res.status(409).json({ error: `${session.name} is running.` });
     try {
       const archived = await archiveAgent(session.name);
       if (!archived) return res.status(409).json({ error: `${session.name}'s conversation cannot be resumed.` });

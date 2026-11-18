@@ -47,8 +47,7 @@ snapshot: no browser reads these over REST.
 | Message | What it is | Changes when |
 |---|---|---|
 | `{t:'sessions', list}` | the session listing with its Team and lead axes | a tmux session event or listed option (title, Teams, lead, Campaign) changed, and a painted field moved |
-| `{t:'cards', rev, cards}` | every listed Agent's card, in listing order: its listing entry, stance and newest line, model, context gauge, secret ask, and work record (`tegami`, with an Agent flag on it); held as `home` | the listing moved; whole to every fresh connection, a reconnect included |
-| `{t:'card', rev, card}` | one Agent's card, swapped in by name. `rev` counts every card message: a tab whose next card is not `rev + 1` missed one and renews its socket for a whole copy | a part of that card moved (below) |
+| `{t:'cards', rev, cards}`, `{t:'card', rev, card}` | every Agent's card whole, then one card that moved; held as `home`: [The Agent card](agent-card.md) | the listing moved / a part of that card moved |
 | `{t:'teams', rosters}` | the Team rosters, the shape of `GET /api/team-rosters`; each row carries the Team's `board`, its epic (the root it holds, else its lead's; none is null) and `items` (what the Team and its members hold, each with its holder), built server-side from the Team reading (`work-items-read.ts`) | a roster, work-item, membership or lead write |
 | `{t:'epics', epics, items}` | every Epic — the level-1 work items, whole, each with its holder — and every live item, slim: no history or comments, with its Epic (`''` under none, KAN-414) and Jira key (`epicsPush`, held as `epicItems`) — the Epics workbench's stones and shadows (`epics-surface.js`, narrowed to the tab's Campaign and picked by Epic id there; KAN-190, KAN-206), and Work Items' one signal to re-read (`work-items-surface.js`; a sessions push reads nothing) | a roster, work-item, membership or lead write, read with the rosters |
 | `{t:'messages', list}` | the message queue | a file in the queue folder changed |
@@ -117,17 +116,7 @@ poll.
   option the listing carries), takes one session listing. When a painted field moved
   (`activity` is left out) it sends `sessions`, makes every card again from its entry, and
   sends `cards` whole.
-- **A card is marked, and made in one place (KAN-641).** What changes a part of an Agent's
-  card marks that part: its pane drawing marks `pane`; a part's `rowChanged` (a CLI hook,
-  which is the status of a CLI with hooks, thinking included; a transcript line; a dead
-  pane; an answer from Chat; the no-progress timer, a Stop, a secret ask) marks `fields`; an item
-  write marks `record` on the cards it touches (`cardsOf`: holders, watchers, the holder
-  it moved from, a holding Team's leads); and the Agent's own folder marks `record` when its
-  `tegami.md`, `AGENT_BRIEF.md` or `drop/` changes, whoever wrote it (the routes, the
-  `work-record` CLI, any tool). `rebuild` in `src/ws/events.ts` reads only the marked parts
-  (`cardOf`), keeps the rest, and sends `card` when it moved. Nothing is read on a clock,
-  and a pane draw never reads the work record.
-- **With no tab connected** nothing is marked; the next connection's tick makes every card.
+- **An Agent's card** is marked by part and made in one place: [The Agent card](agent-card.md).
 - **Write routes push.** Roster routes push `teams` after a successful write;
   so do the work-item routes and a session's membership and lead routes, since a Team's
   row carries its epic and items.
@@ -187,5 +176,5 @@ when its context gauge and its terminal read are looked at again.
 | the store, the socket, wants, the failure bar | `public/js/store.js`, `public/js/errors.js` |
 | what each message means to the page (chips, feeds) | `public/js/events.js` |
 | the tick, held values, watchers, `want` | `src/ws/events.ts`, `src/ws/watchers.ts` |
-| an Agent's card | `cardOf` in `src/routes/launch.ts`; marking and `rebuild` in `src/ws/events.ts`; whose cards an item write touches, `cardsOf` in `src/work-items.ts` |
+| an Agent's card | [The Agent card](agent-card.md), In the code |
 | pushes from services | `src/services/machine` (the `ronin-services` repository) |
