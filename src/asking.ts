@@ -13,14 +13,15 @@
  * typing the option the way the CLI's own prompt takes it (`answerKeys`); Ronin then records the
  * answer itself, since a prompt cancelled with Escape fires no hook.
  */
-import { mkdir, open, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { sessionDir, sessionKey } from './session-dir.js';
 import { collectRowFields } from './sockets.js';
 import type { RowFields } from './sockets-contract.js';
 
-export type HookStance = 'working' | 'asking' | 'awaiting_you' | 'interrupted' | 'error';
-export const HOOK_STANCES: readonly HookStance[] = ['working', 'asking', 'awaiting_you', 'interrupted', 'error'];
+/** `stopped`: the CLI's pane died (src/pane-death.ts), written for any CLI, hooks or none. */
+export type HookStance = 'working' | 'asking' | 'awaiting_you' | 'interrupted' | 'error' | 'stopped';
+export const HOOK_STANCES: readonly HookStance[] = ['working', 'asking', 'awaiting_you', 'interrupted', 'error', 'stopped'];
 
 interface Choice { question: string; header: string; options: { label: string; description: string }[]; many: boolean }
 /** choice: Claude's AskUserQuestion, Codex's request_user_input. plan: Claude's ExitPlanMode, Codex's
@@ -30,7 +31,7 @@ export type Question =
   | { kind: 'plan'; plan: string }
   | { kind: 'permission'; tool: string; detail: string; reason: string }
   | { kind: 'form'; message: string };
-export interface HookRecord { stance: HookStance; at: string; tool?: { name: string; target: string }; question?: Question }
+export interface HookRecord { stance: HookStance; at: string; tool?: { name: string; target: string }; question?: Question; exit?: number }
 export type HookEvent = Record<string, unknown>;
 
 const QUESTION_TOOLS = new Set(['AskUserQuestion', 'request_user_input']);
@@ -172,6 +173,11 @@ export async function recordHook(session: string, event: HookEvent): Promise<boo
   return !!next;
 }
 export const forgetHooks = (session: string): void => void records.delete(session);
+/** A resumed Agent starts with no record: its hooks write the next, or its log speaks. */
+export async function clearHookRecord(session: string): Promise<void> {
+  records.delete(session);
+  await rm(await fileOf(session), { force: true });
+}
 
 /** THE CARD'S FIELDS: the parts' row fields and, for a CLI with hooks, its record over them. */
 export async function readFields(session: string): Promise<RowFields & { stance?: unknown; at?: unknown; hooked: boolean }> {

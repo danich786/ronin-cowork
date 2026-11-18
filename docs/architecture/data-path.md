@@ -118,9 +118,9 @@ poll.
   (`activity` is left out) it sends `sessions`, makes every card again from its entry, and
   sends `cards` whole.
 - **A card is marked, and made in one place (KAN-641).** What changes a part of an Agent's
-  card marks that part: its pane drawing marks `pane` and `fields` (a thinking CLI draws
-  but writes no line the transcript part tells); a part's `rowChanged` (a transcript
-  line, a CLI hook, the no-progress timer, a Stop, a secret ask) marks `fields`; an item
+  card marks that part: its pane drawing marks `pane`; a part's `rowChanged` (a CLI hook,
+  which is the status of a CLI with hooks, thinking included; a transcript line; a dead
+  pane; an answer from Chat; the no-progress timer, a Stop, a secret ask) marks `fields`; an item
   write marks `record` on the cards it touches (`cardsOf`: holders, watchers, the holder
   it moved from, a holding Team's leads); and the Agent's own folder marks `record` when its
   `tegami.md`, `AGENT_BRIEF.md` or `drop/` changes, whoever wrote it (the routes, the

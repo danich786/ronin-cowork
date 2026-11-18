@@ -65,6 +65,7 @@ import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
+import { clearHookRecord, hookRecord } from '../asking.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
@@ -430,6 +431,21 @@ export function registerSessions(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
+  });
+
+  // RESUME A STOPPED AGENT (KAN-660): its dead pane is archived and restored at once, so the CLI
+  // starts again on the same provider conversation, Teams, leads and items, as session_restore does.
+  app.post('/api/sessions/:name/resume', async (req, res) => {
+    const session = (await listSessions()).find((s) => s.name === req.params.name);
+    if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
+    if ((await hookRecord(session.name))?.stance !== 'stopped') return res.status(409).json({ error: `${session.name} is running.` });
+    try {
+      const archived = await archiveAgent(session.name);
+      if (!archived) return res.status(409).json({ error: `${session.name}'s conversation cannot be resumed.` });
+      await clearHookRecord(session.name);
+      const { status, body } = await rehydrate(archived.id, callerOf(req));
+      res.status(status).json(body);
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
   app.post('/api/archived-sessions/:id/rehydrate', async (req, res) => {

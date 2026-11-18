@@ -186,17 +186,29 @@ screen. While it works, the end of the conversation names the tool it is in (for
 *Bash · npm test*). Every Agent gets this, whichever provider it runs on: a CLI that keeps a
 log is read from its log, and one that keeps none is read from its terminal, less fully.
 
-*Asking you* comes from the CLI itself: Claude Code and Codex tell Ronin through their hooks
-when they stop at a question, a permission or a plan approval, and when they move on. Where a CLI tells nothing
-(a login that lapsed mid-run, Codex's own question list, a first-run menu), Ronin reads the
-numbered choices off the terminal.
+For Claude Code and Codex all of this comes from the CLI itself, through its hooks: *working…*
+from the moment your message goes in, thinking included, *asking you* when it stops at a
+question, a permission or a plan, *awaiting you* when its turn ends. Where a CLI tells nothing
+(another provider, a first-run menu), Ronin reads the log or the numbered choices off the
+terminal.
+
+**Answer in Chat.** A question shows at the end of Chat with its choices: Claude's and Codex's
+multiple-choice questions (one press answers a single question; several questions, or
+checkboxes, go with **Send**), a plan with **Approve** and **Keep planning**, a permission
+with the exact command and **Yes** and **No**. The press answers it in the terminal for you,
+and the tile stays on Chat.
+
+**Stopped.** If an Agent's CLI exits on its own (a crash, a killed process), Chat ends with
+*Stopped: exit N at HH:MM* and a **Resume** button, which starts it again on the same
+conversation. Its Team's lead is told once, with the items it holds.
 
 An Agent that reads *working…* with nothing new in its conversation for 12 minutes is flagged
 *no progress for 12 min*, the same way: Chat ends with that sentence and an **Open in
 Terminal** button in place of the dots. Anything new from the Agent clears it.
 
-A question with options is answered in Terminal, never in Chat. While an Agent is asking, Chat
-ends with *Waiting for your answer in Terminal* and an **Answer in Terminal** button; the press
+A question Chat cannot answer (free text, an MCP form, a menu no hook names) is answered in
+Terminal. Chat then ends with *Waiting for your answer in Terminal* and an **Answer in
+Terminal** button (also under a multiple-choice question, for typing your own answer); the press
 switches the tile to Terminal, as **Term** would. Once the Agent is no longer asking, a tile
 that went there by that button (or by **Open in Terminal**) comes back to Chat by itself. Until then a **Continue in Chat**
 button sits at the foot of the terminal, for when the answer does not end the asking. If you switched yourself, or

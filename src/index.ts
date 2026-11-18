@@ -22,6 +22,7 @@ import {
   verifyRecord,
 } from './auth.js';
 import { cleanupViewers, listSessions, livePanePids, liveSessionKeys, stopLeftoversOnPaneDeath } from './tmux.js';
+import { paneDied } from './pane-death.js';
 import { sweepLeftovers } from './agent-scope.js';
 import { bindOperatorSocket, isOperatorPeer, operatorSocketPath, SiblingAlive, type BoundOperatorSocket } from './operator-socket.js';
 import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
@@ -479,7 +480,7 @@ await tmuxClient.connect(); // only the long-lived server opts into control mode
 const removed = await cleanupViewers();
 if (removed) console.log(`[tmux-ronin] cleaned up ${removed} stale viewer session(s)`);
 await startBootHooks();
-stopLeftoversOnPaneDeath(); // a pane that dies takes what it started, helpers too — src/tmux.ts
+stopLeftoversOnPaneDeath(paneDied); // a pane that dies takes what it started, helpers too, and reads Stopped — src/tmux.ts, src/pane-death.ts
 // What ended Agents left: their pane scopes (processes) and short temp roots — src/agent-scope.ts
 void (async () => {
   const server = Number(await tmuxClient.run(['display-message', '-p', '#{pid}']).catch(() => '0'));

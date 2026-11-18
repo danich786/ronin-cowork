@@ -40,7 +40,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  *               left out is still held by seq, so paging and catch-up run as if it were drawn
  *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onDoc = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -78,6 +78,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   let stance = ''; // what the Agent is doing, as the roster row last said
   let doing = ''; // the tool it is working on, as the row names it: name and target
   let question = null; // what the CLI is stopped at, as the row carries it (src/asking.ts)
+  let died = ''; // a dead pane's words: exit status and time (src/pane-death.ts)
   /*
    * A READER AT THE END STAYS AT THE END. Where they are is read when they scroll, not at each
    * change: by the time a record or the dots arrive, a longer draft or a smaller tile may
@@ -161,7 +162,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     // Flagged (asking, or no progress for 12 minutes, KAN-618): a sentence and the way to the
     // terminal in place of the dots.
     const flagged = now === 'asking' || now === 'no_progress';
-    const shows = active && (now === 'working' || flagged);
+    const shows = active && (now === 'working' || flagged || now === 'stopped');
     if (!shows) {
       stanceNode?.remove();
       stanceNode = null;
@@ -173,7 +174,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       stanceNode.setAttribute('aria-live', 'polite');
     }
     const asked = now === 'asking' && onChoose && answerable(question) ? question : null;
-    const key = `${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}`;
+    const key = `${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}\u0000${died}`;
     if (stanceNode.getAttribute?.('data-key') !== key) {
       stanceNode.setAttribute('data-key', key);
       stanceNode.setAttribute('data-stance', now);
@@ -186,6 +187,14 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       if (asked) {
         // The question itself, answered here (chat-question.js): the tile stays on Chat.
         stanceNode.append(buildQuestion(asked, { send: onChoose, terminal: onAnswer && (() => onAnswer()) }));
+      } else if (now === 'stopped') {
+        // Its CLI exited (KAN-660): said plainly, with the one way on. Nothing to do in Terminal.
+        stanceNode.append(document.createTextNode(died || t('transcript.stance_stopped', 'Stopped')));
+        if (onResume) {
+          stanceNode.append(WorkspacePrimitives.createAction({
+            label: t('transcript.resume', 'Resume'), kind: 'primary', size: 'compact', className: 'tile-transcript-answer', action: () => onResume(),
+          }).el);
+        }
       } else if (flagged) {
         // A question Chat cannot answer (free text, one no hook names): one press takes the
         // tile to Terminal, and nothing switches without it. The tile owns the switch.
@@ -208,7 +217,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
           stanceNode.append(step);
         }
       }
-      if (asked) stanceNode.removeAttribute('aria-label');
+      if (asked || now === 'stopped') stanceNode.removeAttribute('aria-label');
       else stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
     }
     // Always last: records append above it, so the end of the conversation stays the end.
@@ -619,13 +628,14 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   }
 
   /** The home row's word on what this Agent is doing, the tool it is in, and what it asks. */
-  function setStance(next, tool, asks = null) {
+  function setStance(next, tool, asks = null, ended = '') {
     const value = typeof next === 'string' ? next : '';
     const step = tool?.name ? [tool.name, tool.target].filter(Boolean).join(' · ') : '';
-    if (value === stance && step === doing && JSON.stringify(asks) === JSON.stringify(question)) return;
+    if (value === stance && step === doing && JSON.stringify(asks) === JSON.stringify(question) && ended === died) return;
     stance = value;
     doing = step;
     question = asks || null;
+    died = ended;
     paintStance();
   }
 

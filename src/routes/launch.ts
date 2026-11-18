@@ -198,6 +198,7 @@ const readPane = async (name: string) => {
  * work record carries it, and `flagged` puts ⚑ and the flagged amber on its selector pill. */
 export const ASKING_FLAG = 'asking';
 export const NO_PROGRESS_FLAG = 'no_progress';
+export const STOPPED_FLAG = 'stopped'; // its pane died (src/pane-death.ts, KAN-660)
 const noProgress = createNoProgress((name) => sockets.rowChanged(name));
 
 // Each card's parts as last read, so a rebuild reads only the part that was marked.
@@ -225,7 +226,7 @@ export async function cardOf(s: SessionWithAxes, parts: ReadonlySet<CardPart>) {
   const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
   // Working with nothing new in its conversation for 12 minutes: flagged too (KAN-618).
   const stuck = !asking && !stopped_at && noProgress.check(s.name, contributed.stance, contributed.at);
-  const flag = asking ? ASKING_FLAG : stuck ? NO_PROGRESS_FLAG : null;
+  const flag = asking ? ASKING_FLAG : stuck ? NO_PROGRESS_FLAG : contributed.stance === 'stopped' ? STOPPED_FLAG : null;
   const reports = contributed.stance_reports;
   return {
     ...s,

@@ -3573,13 +3573,11 @@ body {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 /* Stopped at a question: the person has to act, so it says so, in the colour that means act. */
-.tile-transcript-stance[data-stance='asking'],
-.tile-transcript-stance[data-stance='no_progress'] {
+.tile-transcript-stance:is([data-stance='asking'], [data-stance='no_progress'], [data-stance='stopped']) {
   color: var(--bad);
   font-weight: var(--weight-strong);
 }
-.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer,
-.tile-transcript-stance[data-stance='no_progress'] .tile-transcript-answer { font-weight: normal; }
+.tile-transcript-stance:is([data-stance='asking'], [data-stance='no_progress'], [data-stance='stopped']) .tile-transcript-answer { font-weight: normal; }
 /* The question itself (chat-question.js, KAN-657): a card at the end of the conversation, as the
    secret ask is at the tile's foot, with ERABI's stones for the answers. */
 .chat-question {

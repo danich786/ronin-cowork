@@ -13,7 +13,7 @@
 - **launch_initial:** positional
 
 CLI id: `claude`. Catalog provider: Anthropic. Reviewed 2026-09-14.
-Version: **2.1.325**. Installed version checked; hooks and set-ahead verified live (KAN-616).
+Version: **2.1.327**. Installed version checked; hooks, set-ahead and answers from Chat verified live (KAN-616, KAN-656..658).
 
 ## Ronin launch sequence
 
@@ -61,9 +61,17 @@ At every launch and restore, `src/launch-ahead.ts`:
 - marks the Agent's folder trusted in `~/.claude.json`
   (`projects["<dir>"].hasTrustDialogAccepted`), so *Do you trust this folder?* never shows;
 - adds `--settings hostside/claude-asking.json` after `claude`. That file runs `ronin-asking`
-  on PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, Notification,
-  Elicitation, ElicitationResult, UserPromptSubmit and Stop. It merges with the owner's own
-  hooks and holds nothing: the question is still answered in the terminal.
+  on SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PermissionDenied,
+  PostToolUse, PostToolUseFailure, Notification, Elicitation, ElicitationResult, Stop and
+  StopFailure. It merges with the owner's own hooks and holds nothing; these events are the
+  Agent's status and its question (`src/asking.ts`, KAN-656).
+
+**Answered from Chat** (KAN-658), as keys the prompt takes, tried on 2.1.327: a question's
+option is its number, each question in turn; checkboxes are their numbers, then Tab; several
+questions, or checkboxes, end on a review whose `1` submits. A plan is `1` to approve, Escape
+to keep planning; a permission is `1` for Yes, Escape for No. Escape fires no hook, so Ronin
+records the answer itself. AskUserQuestion and ExitPlanMode also send PermissionRequest for
+their own tool: the same question.
 
 The bypass-permissions warning is `skipDangerousModePermissionPrompt` in the owner's
 `~/.claude/settings.json`; onboarding is done once at sign-in. Login is the owner's, in the

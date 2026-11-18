@@ -84,6 +84,7 @@ export class Tile {
       onState: (state) => this.onTranscriptState(state),
       onAnswer: () => this.answerInTerminal(),
       onChoose: (answer) => this.answerQuestion(answer),
+      onResume: () => this.resumeAgent(),
       onDoc: (path) => this.openDoc(path),
     });
     this.body.append(this.transcriptView.el);
@@ -325,7 +326,11 @@ export class Tile {
    */
   refreshStance() {
     const row = this.homeRow();
-    this.transcriptView.setStance(row?.stance || '', row?.tool, row?.question);
+    const ended = row?.stance === 'stopped' ? t('transcript.stopped', 'Stopped: {how} at {time}', {
+      how: Number.isInteger(row.exit) ? t('transcript.stopped_exit', 'exit {code}', { code: row.exit }) : t('transcript.stopped_exited', 'exited'),
+      time: new Date(row.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }) : '';
+    this.transcriptView.setStance(row?.stance || '', row?.tool, row?.question, ended);
     if (this.transcriptOn) this.transcriptView.rewatch(); // a new Agent's Chat: see tile-transcript.js
     // Answered: back to Chat, but only a tile that went to Terminal by Answer in Terminal.
     if (this.answerReturns && row && row.stance !== 'asking' && row.stance !== 'no_progress') this.backToChat();
@@ -347,9 +352,15 @@ export class Tile {
 
   /** ANSWERED IN CHAT (KAN-658): Ronin types the choice into the terminal; the tile stays here. */
   answerQuestion(answer) {
-    const key = this.sessionKey || S.sessions.find((row) => row.name === this.session)?.key;
-    return request(`/api/sessions/${encodeURIComponent(this.session)}/answer`, { method: 'POST', json: { key, answer } });
+    return request(`/api/sessions/${encodeURIComponent(this.session)}/answer`, { method: 'POST', json: { key: this.liveKey(), answer } });
   }
+
+  /** RESUME (KAN-660): a stopped Agent's CLI starts again on its own conversation. */
+  resumeAgent() {
+    return request(`/api/sessions/${encodeURIComponent(this.session)}/resume`, { method: 'POST', json: { key: this.liveKey() } });
+  }
+
+  liveKey() { return this.sessionKey || S.sessions.find((row) => row.name === this.session)?.key; }
 
   /** The answer's way back: the stance left asking, or Continue in Chat was pressed. */
   backToChat() {

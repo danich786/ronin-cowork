@@ -88,8 +88,9 @@ protocol handling, not a provider-specific shortcut, delay, or second Enter.
 ## Set ahead, and the asking hook (KAN-616)
 
 At every launch and restore, `src/launch-ahead.ts` writes `hooks.json` into the birth's
-`CODEX_HOME` (one `ronin-asking` command on PermissionRequest, PreToolUse, PostToolUse,
-UserPromptSubmit and Stop), adds `--dangerously-bypass-hook-trust` after `codex`, so *Hooks
+`CODEX_HOME` (one `ronin-asking` command on SessionStart, UserPromptSubmit, PreToolUse,
+PermissionRequest, PostToolUse, Stop and Interrupt: the Agent's status and its question,
+`src/asking.ts`, KAN-656), adds `--dangerously-bypass-hook-trust` after `codex`, so *Hooks
 need review* never shows, and adds to the linked `config.toml`, each only when absent:
 
 - `check_for_update_on_startup = false`: no *Update available* screen;
@@ -98,10 +99,15 @@ need review* never shows, and adds to the linked `config.toml`, each only when a
 
 The flag runs enabled hooks without persisted trust for that invocation; Codex then runs
 without its shared background server (embedded mode, a startup warning says so). A
-PermissionRequest hook that prints nothing is no decision, so the approval is still answered
-in the terminal. Codex's request_user_input has no
-hook; the screen read covers it. Verified with 0.169.0: an approval sends PreToolUse and
-PermissionRequest, then PostToolUse and Stop once approved.
+PermissionRequest hook that prints nothing is no decision, so the prompt stays for the person.
+Verified with 0.169.0: an approval sends PreToolUse and PermissionRequest, then PostToolUse
+and Stop once approved; request_user_input sends PreToolUse with its questions (the shape of
+Claude's AskUserQuestion); a proposed plan sends only Stop (`last_assistant_message` null), so
+Ronin reads the `<proposed_plan>` from the rollout's last message; Escape sends Interrupt.
+
+**Answered from Chat** (KAN-658), as keys the prompt takes: a question's option is its number,
+each question in turn (the last submits); a plan is `1` to implement, `3` to stay in Plan
+mode; a permission is `y` for Yes, Escape for No. Ronin records the answer itself.
 
 ## Sign-in particulars
 

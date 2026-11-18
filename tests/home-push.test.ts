@@ -73,7 +73,7 @@ test('a tab is sent every card whole at connect, then each card that moved, read
   reads.length = 0;
   mark('b', 'pane', 'fields');
   await settle();
-  assert.deepEqual(reads, ['b fields,pane'], 'a pane draw reads its screen and its CLI\'s log in one read, never the record');
+  assert.deepEqual(reads, ['b fields,pane'], 'two parts marked together are read in one read, never the record');
   assert.equal(first.got('card').length, 3, 'a card that did not move is not sent');
   changed();
   await settle();

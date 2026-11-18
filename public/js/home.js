@@ -42,6 +42,7 @@ export function stanceLabel(stance) {
     awaiting_you: t('home.stance_awaiting_you', 'awaiting you'),
     asking: t('home.stance_asking', 'asking you'),
     no_progress: t('home.stance_no_progress', 'no progress for 12 min'),
+    stopped: t('home.stance_stopped', 'stopped'),
     // Unknown has no words: t() with an empty fallback answers its key (w452).
     unknown: '',
   }[stance];
