@@ -113,7 +113,10 @@ poll.
 
 - **One tick, one listing.** A tmux notification (the session set changed, or a pane had
   output: tmux's activity subscription), or a transcript read writing a line (`rowChanged`),
-  takes one session listing and builds `sessions` and `home` from it. Each is
+  takes one session listing and builds `sessions` and `home` from it. A pane that drew or a
+  `rowChanged` rebuilds only that session's row and keeps the rest (KAN-639: one working
+  Agent rebuilt every row every second, most of a core); the session set or a listing that
+  moved, and a write route's `changed()`, rebuild every row. Each is
   signed on the painted fields (`activity` and a stance's `at` are left out) and sent only
   when the signature moved. A connection that joins mid-tick is sent only what it missed.
 - **Write routes push.** Roster routes push `teams` after a successful write;

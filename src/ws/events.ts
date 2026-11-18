@@ -61,6 +61,13 @@ const waiting = new Set<string>();
 // not read them (a failed listing, or nothing that moved).
 let heldSessions: SessionWithAxes[] | undefined;
 let heldRows: unknown[] | undefined;
+// A home row costs a read of the items, rosters and plans, so a tick builds only the rows that
+// can have moved: the sessions whose pane drew or whose part wrote a line (KAN-639: one working
+// Agent's pane drawing every second rebuilt every row, most of a core). Everything else
+// (changed(), a listing that moved) builds every row.
+let rowsByName = new Map<string, unknown>();
+let everyRow = true;
+const rowsDue = new Set<string>();
 // A tick says who each broadcast reached, so a connection that joins one in flight is sent
 // only what it missed.
 type Tick = { reached: Map<string, ReadonlySet<WebSocket>> };
@@ -83,6 +90,9 @@ export function feedEvents(next: Partial<Feed>): void {
   feed = { ...empty, ...next };
   lastSessions = lastHome = lastGithub = '';
   heldSessions = heldRows = undefined;
+  rowsByName = new Map();
+  everyRow = true;
+  rowsDue.clear();
   held.clear();
   lastSent.clear();
   reads.clear();
@@ -112,11 +122,21 @@ export function tick(): Promise<Tick> {
     const sessions = await withAxes(await feed.list());
     heldSessions = sessions;
     const signature = sessionsSignature(sessions);
+    const all = everyRow || signature !== lastSessions;
+    const due = new Set(rowsDue);
+    everyRow = false;
+    rowsDue.clear();
     if (signature !== lastSessions) {
       lastSessions = signature;
       send({ t: 'sessions', list: sessions });
     }
-    const rows = await feed.home(sessions).catch(() => undefined);
+    const build = all ? sessions : sessions.filter((s) => due.has(s.name) || !rowsByName.has(s.name));
+    const fresh = build.length ? await feed.home(build).catch(() => undefined) : [];
+    if (fresh) {
+      if (all) rowsByName = new Map();
+      fresh.forEach((row, i) => rowsByName.set(build[i]!.name, row));
+    }
+    const rows = fresh && sessions.flatMap((s) => rowsByName.has(s.name) ? [rowsByName.get(s.name)] : []);
     if (rows && homeSignature(rows) !== lastHome) {
       lastHome = homeSignature(rows);
       heldRows = rows;
@@ -143,6 +163,14 @@ export function tick(): Promise<Tick> {
 
 /** Something changed: tick now, or once more after the tick in flight, which may have read before the change. */
 export function changed(): void {
+  everyRow = true;
+  if (ticking) rerun = true;
+  else void tick();
+}
+
+/** One session's row may have moved (its pane drew, or its part wrote a line): tick, building that row. */
+export function rowMoved(name: string): void {
+  rowsDue.add(name);
   if (ticking) rerun = true;
   else void tick();
 }
@@ -329,9 +357,8 @@ export function startSessionsBroadcast(next: Feed): void {
   tmux.on('subscription', (n) => {
     if (!n.subscription?.startsWith('activity')) return;
     const moved = activityMoved(n.value ?? '', stamps);
-    for (const name of moved) emitPaneActivity(name);
-    if (moved.length) changed();
+    for (const name of moved) { emitPaneActivity(name); rowMoved(name); }
   });
-  onRowChanged(changed);
+  onRowChanged(rowMoved);
   onClock('events_beat', BEAT_MS, async () => { broadcastEvent({ t: 'beat' }); });
 }

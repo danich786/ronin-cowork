@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { WebSocket } from 'ws';
 import type { SessionInfo } from '../src/tmux.js';
-import { changed, feedEvents, handleEvents, homeSignature, publishHeld, pushJikan, pushMessages, pushTeams, pushWipeboard, sessionsSignature, tick, watchStore } from '../src/ws/events.js';
+import { changed, feedEvents, handleEvents, homeSignature, publishHeld, pushJikan, pushMessages, pushTeams, pushWipeboard, rowMoved, sessionsSignature, tick, watchStore } from '../src/ws/events.js';
 
 // A browser on /events: records what it is sent, and can close.
 function browser() {
@@ -55,10 +55,12 @@ test('a changed row broadcasts home once; an unchanged tick broadcasts nothing; 
   assert.equal(first.got('sessions').length, 1);
 
   rows = [{ ...rows[0], activity: 2, at: '2026-09-26T01:00:05Z' }];
+  changed();
   await tick();
   assert.equal(first.got('home').length, 1, 'activity and stance time are not painted, so they do not push');
 
   rows = [{ ...rows[0], stance: 'working', ctx: 42 }];
+  changed();
   await Promise.all([tick(), tick()]);
   await tick();
   assert.deepEqual(first.got('home').slice(1), [{ t: 'home', rows }], 'a changed row broadcasts home once');
@@ -81,9 +83,30 @@ test('one session listing per tick feeds the session list and the home rows', as
   await settle();
   listings = 0;
   seen.length = 0;
+  changed();
   await tick();
   assert.equal(listings, 1);
   assert.deepEqual(seen, [['a', 'b']], 'the home rows are built from the listing the tick took');
+});
+
+test('a pane that drew rebuilds only its own row; the others are kept (KAN-639)', async (t) => {
+  const seen: string[][] = [];
+  let ctx = 1;
+  feedEvents({
+    teams: async () => [],
+    list: async () => [session('a'), session('b')],
+    home: async (sessions) => { seen.push(sessions.map((s) => s.name)); return sessions.map((s) => ({ name: s.name, ctx })); },
+  });
+  const b = open(t);
+  await settle();
+  seen.length = 0;
+  ctx = 2;
+  rowMoved('b');
+  await tick();
+  assert.deepEqual(seen, [['b']], 'only the row that moved is read');
+  assert.deepEqual(b.got('home').at(-1), { t: 'home', rows: [{ name: 'a', ctx: 1 }, { name: 'b', ctx: 2 }] });
+  await tick();
+  assert.deepEqual(seen, [['b']], 'a tick with nothing due reads no row');
 });
 
 test('a failing loader leaves a fresh tab with no rows, and the next successful tick sends them', async (t) => {
