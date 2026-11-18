@@ -44,7 +44,7 @@ out; an archived Team has no members. Archive manifests preserve a restoration s
 not compete with the current live session.
 
 The browser holds no durable copy of server truth. Per tab, [store.js](../public/js/store.js)
-holds what [events.ts](../src/ws/events.ts) pushes — the home rows, the session list, the
+holds what [events.ts](../src/ws/events.ts) pushes — the Agent cards (`home`), the session list, the
 Team rosters, the message queue, the machine reading, and the wipeboard threads and Cron
 jobs its open surfaces asked for — and nothing else; it is lost on reload and filled again
 on connect. Desks are read at open, not

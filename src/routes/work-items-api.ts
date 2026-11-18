@@ -11,7 +11,7 @@ import {
 } from '../work-items.js';
 import { agentReading, epicCards, everyItemReading, teamReading, type HeldItem } from '../work-items-read.js';
 import { liveRows, rowOf } from '../work-items-index.js';
-import { changed, pushTeams } from '../ws/events.js';
+import { pushTeams } from '../ws/events.js';
 
 const text = (value: unknown): string | undefined => typeof value === 'string' ? value : value === undefined || value === null ? undefined : String(value);
 
@@ -73,11 +73,11 @@ const guarded = (handler: Handler): express.RequestHandler => (req, res) => {
 
 export function registerWorkItems(app: express.Express): void {
   // Every write here moves what the teams push carries (a Team's epic and items), so the
-  // server pushes the rosters again after it, as the roster routes do (teams-api.ts). It also
-  // moves the home rows (each holder's chip and its flag, KAN-521), so the home push runs too:
-  // a flag the owner or a lead sets repaints the holder's pill without waiting on its pane.
+  // server pushes the rosters again after it, as the roster routes do (teams-api.ts). The
+  // cards it moves (a holder's chip and its flag, KAN-521) are marked by the write itself
+  // (cardsOf, src/index.ts).
   app.use('/api/work-items', (req, res, next) => {
-    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) { void pushTeams(); changed(); } });
+    if (req.method !== 'GET') res.on('finish', () => { if (res.statusCode < 400) void pushTeams(); });
     next();
   });
 

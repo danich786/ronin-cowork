@@ -42,6 +42,11 @@ test('a comment, status change or flag on a Team-held item reaches its lead, not
   assert.equal((await items.addComment(two.id, 'anyone?', 'owner')).notified, undefined);
   await items.watchItem(two.id, { kind: 'team', name: 'crew' }, true);
   assert.deepEqual((await items.addComment(two.id, 'now?', 'owner')).notified, ['boss']);
+
+  // The cards an item write marks (KAN-641): a Team-held item's are its leads', and a line
+  // that moved it names the holder it left too.
+  assert.deepEqual(await items.cardsOf(one, { at: '', by: 'owner', op: 'flag' }), ['boss']);
+  assert.deepEqual(await items.cardsOf(two, { at: '', by: 'owner', op: 'handoff', from: 'agent:gone', to: 'team:quiet' }), ['gone', 'boss']);
 });
 
 test('an item from Jira with no holder lands on the Team holding its parent, else on nobody (KAN-308)', async () => {

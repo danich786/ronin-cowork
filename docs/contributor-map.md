@@ -130,8 +130,9 @@ completion evidence. Coordination mechanisms support this surface; they do not r
 its name or become another work-record store.
 
 - Contract: [Work record](using-ronin/work-record.md).
-- Code path: [tegami-read.ts](../src/tegami-read.ts) → the session's home row (`tegami`,
-  [launch.ts](../src/routes/launch.ts) `homeRows`) → the tile's work record
+- Code path: [tegami-read.ts](../src/tegami-read.ts) → the Agent's card (`tegami`,
+  [launch.ts](../src/routes/launch.ts) `cardOf`, marked by its writers in
+  [events.ts](../src/ws/events.ts)) → the tile's work record
   ([tile.js](../public/js/tile.js), drawn by [work-record.js](../public/js/work-record.js)). Writes enter through
   [work-record](../ronin_bin/work-record) → [work-record-write](../libexec/work-record-write),
   which updates the authored block atomically; work item writes go through `item`

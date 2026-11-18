@@ -7,6 +7,9 @@ import express from 'express';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
+// An Agent's card read whole, as a new one is (src/ws/events.ts).
+const EVERY_PART = new Set(['pane', 'fields', 'record'] as const);
+
 test('live sessions carry launch identity and a stale Tile cannot send a control', async () => {
   const name = `controls-${process.pid}`;
   const rig = await openTestServer(name, { onPath: true });
@@ -36,7 +39,7 @@ test('live sessions carry launch identity and a stale Tile cannot send a control
 
 test('a Stop Ronin sent reads interrupted until the Agent writes a line or is sent to (w414)', async () => {
   const { sockets } = await import('../src/sockets.js');
-  const { homeRows } = await import('../src/routes/launch.js');
+  const { cardOf } = await import('../src/routes/launch.js');
   const { deliverForce } = await import('../src/send.js');
   const name = `stops-${process.pid}`;
   const rig = await openTestServer(name, { onPath: true });
@@ -47,7 +50,7 @@ test('a Stop Ronin sent reads interrupted until the Agent writes a line or is se
     await rig.run('new-session', '-d', '-s', 'agent', 'cat');
     await setSessionIdentity('agent', { sessionType: 'bare_metal_agent', cli: 'claude', provider: 'p', model: 'm' });
     const found = (await listSessions()).find((s) => s.name === 'agent')!;
-    const row = async () => (await homeRows([found as never]))[0] as Record<string, unknown>;
+    const row = (): Promise<Record<string, unknown>> => cardOf(found as never, EVERY_PART);
     const app = express(); app.use(express.json()); registerTerminalControls(app);
     const server = createServer(app);
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
@@ -78,7 +81,7 @@ test('a Stop Ronin sent reads interrupted until the Agent writes a line or is se
 
 test('a question on the screen reads asking for any provider, Codex update prompt included (KAN-527)', async () => {
   const { sockets } = await import('../src/sockets.js');
-  const { homeRows } = await import('../src/routes/launch.js');
+  const { cardOf } = await import('../src/routes/launch.js');
   const name = `asking-${process.pid}`;
   const rig = await openTestServer(name, { onPath: true });
   // Codex has no log before its first turn; its reader reports no question of its own.
@@ -91,7 +94,7 @@ test('a question on the screen reads asking for any provider, Codex update promp
     await setSessionIdentity('codexer', { sessionType: 'bare_metal_agent', cli: 'codex', provider: 'p', model: 'm' });
     const row = async () => {
       const found = (await listSessions()).find((s) => s.name === 'codexer')!;
-      return (await homeRows([found as never]))[0] as Record<string, unknown>;
+      return cardOf(found as never, EVERY_PART) as Promise<Record<string, unknown>>;
     };
     let now: Record<string, unknown> = {};
     for (let i = 0; i < 50 && now.stance !== 'asking'; i++) { now = await row(); await new Promise((r) => setTimeout(r, 50)); }

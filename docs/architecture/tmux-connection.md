@@ -38,13 +38,12 @@ in `src/tmux-client.ts` is the server's single door to tmux:
 - The control client attaches to an empty holder session, `grid_ctl`, so the pipe carries
   replies and server-wide notifications only. The roster and the recorder's sweep skip
   `grid_*` names.
-- `tmux.on(kind, handler)` delivers notifications. `src/ws/events.ts` pushes the session
-  list and the home rows to browsers on `%sessions-changed`, renames, window changes and the
-  activity subscription (a pane had output, which also wakes the transcript part's terminal
-  read through `onPaneActivity`); there is no clock. Each tick takes one session listing for both, and
-  each is sent only when a field the UI paints moved (`sessionsSignature` leaves out
-  `activity`), so a notification that changed nothing painted sends nothing. A row's
-  `activity` comes from the listing. [The data path](data-path.md) states the rule and the
+- `tmux.on(kind, handler)` delivers notifications; there is no clock. `src/ws/events.ts`
+  takes one session listing on `%sessions-changed`, renames, window changes and the listing
+  subscription, and sends the session list and every Agent's card only when a field the UI
+  paints moved (`sessionsSignature` leaves out `activity`). The activity subscription (a pane
+  had output) wakes the transcript part's terminal read through `onPaneActivity` and marks
+  that Agent's card `pane`. [The data path](data-path.md) states the rule and the
   lifecycle; everything else on `/events`:
 
   | Message | Sent | On connect |
@@ -81,18 +80,19 @@ in flight if the broker dies, and remakes the broker on the next call. Measured:
 `/bin/true` from the server directly, 8 ms through the broker. The one call that ends the
 server, the restart in `src/host-guard.ts`, stays direct on purpose.
 
-## The roster, computed once and on change
+## An Agent's card, made when a part of it is marked
 
-The home rows are built by `homeRows` in `src/routes/launch.ts` from the session listing a
-tick took, only the rows that can have moved (a pane that drew, a `rowChanged`; every row
-when the listing moved or a write route calls `changed()`): while a browser is connected, `src/ws/events.ts` broadcasts `{t:'home', rows}`
-only when the painted fields moved (`homeSignature` leaves out a row's `activity` and stance
-`at`); a fresh connection receives the rows once. A session's screen is captured
-and classified only when its `#{window_activity}` stamp moved since the last
-classification (`createActivityCache` in `src/status.ts`); an unchanged session keeps its
-last status, ctx and model. The stamp counts whole seconds, so a reading taken while its
-second still runs is used but not kept: a question drawn later in that second would leave
-the stamp where it was (KAN-616).
+An Agent's card (its selector pill and tile head) is made by `cardOf` in
+`src/routes/launch.ts` from three parts with three speeds, each read only when it is marked
+(KAN-641): `pane`, the screen captured for the context gauge, model and a question drawn
+there, marked when tmux says the pane had output; `fields`, the parts' row fields (the
+transcript's stance and newest line, a secret ask), marked by `rowChanged`; and `record`, the
+work record, marked by an item write and by the Agent's own folder (`watchRecord`: its
+letter, brief and `drop/`). The parts not marked are the last ones read. While a browser is
+connected, `src/ws/events.ts` sends `{t:'card'}` when a card moved and `{t:'cards'}` whole
+on connect and when the listing moved. A question drawn late in a second still lands: the
+activity stamp flips at the second's end (below), and that report marks the pane again
+(KAN-616).
 
 Which panes had output comes from one tmux subscription on the control client,
 `ACTIVITY_SUBSCRIPTION` in `src/tmux-client.ts`: `name:stamp.over` per session,
@@ -101,7 +101,9 @@ comma-separated, where `over` is `0` while the stamp's second runs and `1` once 
 subscription each second, so the flip is one more report after a burst's last draw, and that
 push reads the pane afresh. The comma is written `#,` because a bare comma inside `#{S:…}`
 is tmux's own separator and is dropped. `activityMoved` in `src/ws/events.ts` names the sessions whose stamp moved; each
-wakes the terminal read (`onPaneActivity`) and a home push.
+wakes the terminal read (`onPaneActivity`) and marks its card `pane`. `LISTING_SUBSCRIPTION`
+reports the Ronin options the listing carries (title, Teams, lead, Campaign), whoever sets
+them, and the tick lists again.
 
 ## Parts: what is on disk, and what runs
 
