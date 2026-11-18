@@ -36,6 +36,19 @@ export async function loadProjects() {
  * is — from the journal, except `asking`, which is the one thing only the screen shows —
  * and nothing here infers anything from anything.
  */
+// AN AGENT PILL'S ONE SITUATION (owner, 2026-11-18, KAN-665), read from its card alone:
+// stopped (its pane died) > flagged (a person is needed: asking, no progress, the CLI's error,
+// a flagged item) > working > '' (your move: the plain pill is the calm state).
+export const agentSituation = (card = {}) => (card.stance === 'stopped' ? 'stopped'
+  : ['asking', 'no_progress', 'error'].includes(card.stance) || card.tegami?.flagged ? 'flagged'
+    : card.stance === 'working' ? 'working' : '');
+// The situation in words, for the tip and the accessible name (tips.js moves a title into both,
+// so it carries the Agent's name too).
+export const situationTitle = (label, situation) => `${label} · ${{
+  working: () => t('team.situation_working', 'Working'),
+  flagged: () => t('team.situation_flagged', 'Needs you'),
+  stopped: () => t('team.situation_stopped', 'Stopped'),
+}[situation]?.() || t('team.situation_your_move', 'Your move')}`;
 export function stanceLabel(stance) {
   return {
     working: t('home.stance_working', 'working…'),

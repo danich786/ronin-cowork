@@ -290,6 +290,7 @@ export function createWorkbench(options = {}) {
       action: (event) => { const one = now(); return typeof one.offer.action === 'function' ? one.offer.action(event) : place(one.definition.type, options.selectorWorkspace || selected, one.detail); } });
     card.el.dataset.workbenchOfferType = definition.type;
     if (offersNow.get(cardKey).current) card.el.setAttribute('aria-current', 'page');
+    if (offer.title) card.el.title = offer.title;
     // A readable title is display text, not identity. Consumers such as the render gate
     // address an offered resource by its fixed key even after its title is edited.
     if (detail.key) card.el.dataset.workbenchOfferResource = detail.key;
@@ -333,7 +334,7 @@ export function createWorkbench(options = {}) {
       let cardKey = base;
       for (let n = 2; offersNow.has(cardKey); n += 1) cardKey = `${base}#${n}`; // two offers of one type and resource stay two cards
       offersNow.set(cardKey, { definition, offer, detail, label, summary, current });
-      rows.push({ key: cardKey, shows: JSON.stringify([label, summary, offer.metadata, offer.mark, offer.variant || definition.variant || null, current, definition.className, offer.className,
+      rows.push({ key: cardKey, shows: JSON.stringify([label, summary, offer.metadata, offer.mark, offer.title, offer.variant || definition.variant || null, current, definition.className, offer.className,
         typeof offer.action === 'function', Boolean(offer.onPointerEnter), Boolean(offer.onPointerLeave)]), draw: () => offerCard(cardKey) });
     }
     selectorList.set(selectorCards, rows);

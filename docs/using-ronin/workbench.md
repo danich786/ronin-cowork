@@ -110,6 +110,21 @@ holder, the Task it is under, Subtasks, comments, when it last moved). A Subtask
 Task. Press a bar to open the item's reading under it (its status, details, comments and a box
 to comment); press it again to fold it.
 
+### The Agent pills
+
+On a Team's workbench the discovery column lists its Agents as pills (on a phone, the Team's
+**Agents** list). Each pill says, at a glance, which of four situations its Agent is in:
+
+| Pill | Situation |
+|---|---|
+| a small dot after the name | **Working**: mid-turn, a tool out |
+| plain | **Your move**: its turn ended, idle, interrupted, just born, or not known |
+| ⚑ and amber | **Needs you**: it is asking (a question, a permission, a plan), has made no progress for 12 minutes, its CLI hit an error (a login expired, an API error), or it holds a flagged item |
+| dimmed | **Stopped**: its pane died; open it to resume |
+
+When more than one holds, Stopped wins, then Needs you, then Working. Hover a pill, or use a
+screen reader, for the situation in words.
+
 Each Agent's tile on a Team shows the work items that Agent holds as pills in its header,
 in the **item island**: the kind's Jira symbol, the status and the flag, and the item's
 description when you press one. See [the tile](tile.md#the-item-island).

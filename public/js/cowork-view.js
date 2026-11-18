@@ -12,7 +12,7 @@ import { createTeamJikan } from './team-jikan.js';
 import { buildMessageQueue } from './message-queue.js';
 import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
 import { buildArchives } from './archives.js';
-import { onProjects, projectData, stanceLabel } from './home.js';
+import { agentSituation, onProjects, projectData, situationTitle, stanceLabel } from './home.js';
 import { request } from './request.js';
 import { paintCanvas } from './canvas-view.js';
 import { teamPageHandlers } from './events.js';
@@ -343,9 +343,12 @@ export function createCoworkView(options = {}) {
       const reading = readingsOf(member);
       const mika = team === STEERCO && member.name === 'mika_agent';
       // A FLAGGED AGENT (owner, 2026-11-15, KAN-521): any item it holds flagged puts ⚑ and the
-      // flagged amber on its pill; pressed, it opens as ever, the item ⚑ on its island.
-      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${reading.flagged ? ' flagged' : ''}`,
+      // flagged amber on its pill; pressed, it opens as ever, the item ⚑ on its island. Working
+      // adds the kit's dot after the name; stopped dims it (KAN-665). The title says it in words.
+      const label = mika ? t('mika.name', 'Mika') : agentTitle(member);
+      return { key: member.name, label, className: `team-agent-card${reading.situation ? ` ${reading.situation}` : ''}`,
         mark: `${member.team_lead ? '人' : ''}${reading.flagged ? '⚑' : ''}` || null,
+        title: situationTitle(label, reading.situation),
         summary: reading.step, metadata: reading.lines,
         ...(campaign ? { action: () => openAgentWorkbench(member.name) } : {}),
         ...(mika ? { action: () => placeMikaWorkspaceTwo() } : {}),
@@ -766,7 +769,8 @@ export function createCoworkView(options = {}) {
       model: (row.model || '').toLowerCase(),
       status: stanceLabel(row.stance),
       ctx: row.ctx != null ? `⛽ ${row.ctx}%` : '',
-      flagged: !!row.tegami?.flagged,
+      situation: agentSituation(row),
+      flagged: agentSituation(row) === 'flagged',
       lines: [current.text, stanceLabel(row.stance), row.ctx != null ? `⛽ ${row.ctx}%` : '', (row.model || '').toLowerCase()].filter(Boolean),
     };
   };

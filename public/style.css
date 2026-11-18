@@ -5000,6 +5000,23 @@ button.wk-card { cursor: pointer; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The Agent card's situation (KAN-665), as the desktop pill says it: the flagged look (⚑ and
+   amber), one Chat dot after the name while working, muted ink when stopped. */
+#phone .ph-agent.flagged {
+  border-color: color-mix(in srgb, var(--warn) 55%, transparent); /* status: a person is needed */
+  background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: a person is needed */
+}
+#phone .ph-agent.flagged :is(.ph-card-name, .ph-agent-flag, .home-job) { color: var(--warn); }
+#phone .ph-agent.working .ph-card-identity::after {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kaki); /* kaki: the Chat's working dot */
+}
+#phone .ph-agent.stopped :is(.ph-card-name, .home-job) { color: var(--muted); }
 #phone .ph-empty {
   padding: var(--space-inset) var(--space-inset);
   color: var(--muted);
