@@ -34,7 +34,7 @@ import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
 import { collectBirthLines, sockets } from '../sockets.js';
-import { answered, answerKeys, createNoProgress, forgetHooks, hookRecord, keepHookRecord, parseHookEvent, readFields, recordHook } from '../asking.js';
+import { answered, answerKeys, createNoProgress, forgetHooks, keepHookRecord, parseHookEvent, readFields, recordHook } from '../asking.js';
 import { tmux } from '../tmux-client.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams, type CardPart } from '../ws/events.js';
@@ -280,7 +280,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
   app.post('/api/sessions/:name/answer', async (req, res) => {
     const session = (await listSessions()).find((s) => s.name === req.params.name);
     if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
-    const question = (await hookRecord(session.name))?.question;
+    const question = (await readFields(session.name)).question;
     if (!question) return res.status(409).json({ error: 'The question is already answered.' });
     const keys = answerKeys(session.identity?.cli || session.agent, question, req.body?.answer ?? {});
     if (!keys) return res.status(400).json({ error: 'Answer this one in Terminal.' });

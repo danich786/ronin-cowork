@@ -1,8 +1,8 @@
 # Agent output
 
 Every Agent has one output file, `~/.ronin/sessions/<agent>/transcript.jsonl`, whatever its
-provider. Two reads write it. Everything else (Chat, status, the tool flow) reads only that
-file; nothing reads a provider log or a screen around it.
+provider. Two reads write it. Everything else (Chat, the log's input to status, the tool flow)
+reads only that file; nothing reads a provider log or a screen around it.
 
 ```
  provider log ──► log read ──────┐
@@ -66,14 +66,16 @@ else that uses the shape takes `tool.name` and `tool.target` only.
   `--font-term` at `--term-size`. The Markdown check on the tile's メ menu turns the rendering
   off, per Agent, kept in the browser. A message the person sends shows at once in `--muted` and is replaced when
   its own `user` line arrives.
-- **Status of a CLI with hooks** (Claude Code, Codex; KAN-656) is its HOOK RECORD
-  (`src/asking.ts`, kept as `hook.json` in the Agent's folder). Both run `ronin-asking` on their
+- **Status is the card's** (KAN-664), from the two inputs below, newest wins and a dead pane
+  over everything: [The Agent card](agent-card.md).
+- **The hook record** (Claude Code, Codex; KAN-656) is `hook.json` in the Agent's folder,
+  written by `src/asking.ts`. Both run `ronin-asking` on their
   hook events (each CLI's launch doc, `docs/agents/`); it posts the whole event, cut at 128 KB,
   to `/api/asking` and returns at once. A prompt submitted is *working* (thinking included), a
   tool starting is *working* with the tool's name and target, a question is *asking you*, the
   turn's Stop is *awaiting you*, Claude's StopFailure is *error*, Codex's Interrupt or a tool
-  cut off is *interrupted*, SessionStart is *awaiting you*. Their logs give only the chat text.
-- **Status of a CLI without hooks** (`rireki/stance.ts`) is the newest line of a log that
+  cut off is *interrupted*, SessionStart is *awaiting you*.
+- **The log's status line** (`rireki/stance.ts`) is the newest line of a log that
   reports it (`STANCE_REPORTS`): `tool` is *working* (with the tool's name and target), `turn`
   is *awaiting you*, anything else is *working*, and an empty file is *unknown*. Each write
   calls `rowChanged`, which marks that Agent's card, and Core pushes it then; there is no clock.

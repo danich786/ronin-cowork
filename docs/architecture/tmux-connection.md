@@ -80,21 +80,12 @@ in flight if the broker dies, and remakes the broker on the next call. Measured:
 `/bin/true` from the server directly, 8 ms through the broker. The one call that ends the
 server, the restart in `src/host-guard.ts`, stays direct on purpose.
 
-## An Agent's card, made when a part of it is marked
+## An Agent's card
 
-An Agent's card (its selector pill and tile head) is made by `cardOf` in
-`src/routes/launch.ts` from three parts with three speeds, each read only when it is marked
-(KAN-641): `pane`, the screen captured for the context gauge, model and, for a CLI without
-hooks, a question drawn there, marked when tmux says the pane had output; `fields`, the
-Agent's hook record (`src/asking.ts`, KAN-656: the status of a CLI with hooks, its question,
-a dead pane's Stopped) over the parts' row fields (the transcript's stance for a CLI without
-hooks, a secret ask), marked by `rowChanged`; and `record`, the
-work record, marked by an item write and by the Agent's own folder (`watchRecord`: its
-letter, brief and `drop/`). The parts not marked are the last ones read. While a browser is
-connected, `src/ws/events.ts` sends `{t:'card'}` when a card moved and `{t:'cards'}` whole
-on connect and when the listing moved. A question drawn late in a second still lands: the
-activity stamp flips at the second's end (below), and that report marks the pane again
-(KAN-616).
+[The Agent card](agent-card.md) says what the card is, its parts' owners and how it travels.
+What tmux gives it: a pane's output marks the card `pane`, and a question drawn late in a
+second still lands, since the activity stamp flips at the second's end (below) and that report
+marks the pane again (KAN-616).
 
 Which panes had output comes from one tmux subscription on the control client,
 `ACTIVITY_SUBSCRIPTION` in `src/tmux-client.ts`: `name:stamp.over` per session,

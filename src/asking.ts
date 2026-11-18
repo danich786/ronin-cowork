@@ -4,10 +4,9 @@
  * Claude Code and Codex run `ronin-asking` on their hook events (src/launch-ahead.ts wires them,
  * docs/agents/claude.md, codex.md); it posts the whole event here, capped. Each event sets the
  * Agent's HOOK RECORD: its stance (working, asking, awaiting_you, interrupted, error), when, the
- * tool it is in, and the question it is stopped at. The record is the one owner of status for a
- * CLI with hooks: it is read into the card's fields part (src/routes/launch.ts cardOf), and the
- * conversation file gives only the chat text. It is kept beside the Agent's folder, so a server
- * restart keeps it.
+ * tool it is in, and the question it is stopped at. The record is one input to the card's status,
+ * the log's newest line the other (`cardFields` decides, KAN-664); the card is what everything
+ * reads. It is kept beside the Agent's folder, so a server restart keeps it.
  *
  * A question rides the card as `question` and goes when the CLI moves on. Chat answers it by
  * typing the option the way the CLI's own prompt takes it (`answerKeys`); Ronin then records the
@@ -179,10 +178,28 @@ export async function clearHookRecord(session: string): Promise<void> {
   await rm(await fileOf(session), { force: true });
 }
 
-/** THE CARD'S FIELDS: the parts' row fields and, for a CLI with hooks, its record over them. */
-export async function readFields(session: string): Promise<RowFields & { stance?: unknown; at?: unknown; hooked: boolean }> {
+/**
+ * THE CARD'S STATUS (KAN-664): the one place an Agent's status is decided; everything else reads
+ * the card. Its inputs are the hook record and the log's newest status line (the parts' `stance`
+ * and `at`, rireki/stance.ts). A dead pane is over everything. Otherwise the newer input says the
+ * turn state, so a hook lost in a restart, or a turn no hook closed (Esc), is put right by the
+ * log. The question is the hook's alone: it stays while the hook is newer or the log still asks.
+ * An Agent with one input has that one.
+ */
+export function cardFields(row: RowFields, held: HookRecord | null): RowFields & { hooked: boolean } {
+  if (!held) return { ...row, hooked: false };
+  const hooked: RowFields & { hooked: boolean } = { ...row, stance_reports: HOOK_STANCES, hooked: true };
+  const logAt = typeof row.at === 'string' ? Date.parse(row.at) : NaN;
+  if (held.stance === 'stopped' || !(logAt > Date.parse(held.at))) {
+    const { tool: _logTool, ...rest } = hooked;
+    return { ...rest, hooked: true, ...held };
+  }
+  return { ...hooked, ...(row.stance === 'asking' && held.question ? { question: held.question } : {}) };
+}
+
+export async function readFields(session: string): Promise<RowFields & { stance?: unknown; at?: unknown; question?: Question; hooked: boolean }> {
   const [row, held] = await Promise.all([collectRowFields(session), hookRecord(session)]);
-  return held ? { ...row, ...held, stance_reports: HOOK_STANCES, hooked: true } : { ...row, hooked: false };
+  return cardFields(row, held);
 }
 
 /**
