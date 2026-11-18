@@ -1,9 +1,10 @@
-import type express from 'express';
+import express from 'express';
 import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import {
   capturePane,
   createSession,
+  exactPane,
   isValidName,
   listSessions,
   sessionDir,
@@ -32,8 +33,9 @@ import { listTeamRosters } from '../team-rosters.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { checkoutAt, deriveTeams, parkBrief, seedTegami, teamChanged, withAxes, writeBriefRecord, writeConfiguration, type SessionWithAxes } from '../tegami.js';
 import { callerOf } from './work-items-api.js';
-import { collectBirthLines, collectRowFields, sockets } from '../sockets.js';
-import { askingByHook, createNoProgress, forgetAsking, recordHook } from '../asking.js';
+import { collectBirthLines, sockets } from '../sockets.js';
+import { answered, answerKeys, createNoProgress, forgetHooks, hookRecord, keepHookRecord, parseHookEvent, readFields, recordHook } from '../asking.js';
+import { tmux } from '../tmux-client.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams, type CardPart } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
@@ -182,10 +184,10 @@ export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'act
   return state === 'awaiting-input' ? 'action_required' : state === null ? 'starting' : 'ready';
 }
 
-// The pane is read for the CLI's own context gauge and model line, and for a question it draws
-// where no CLI hook tells (KAN-527, KAN-616: a login lapsing mid-run, Codex's request_user_input).
-// A question the CLI's hook reports is src/asking.ts. What the Agent is otherwise DOING is its
-// output's newest line, through the transcript part's row field.
+// The pane is read for the CLI's own context gauge and model line, and, for a CLI without hooks,
+// for a question it draws (KAN-527). What a CLI with hooks is doing is its hook record
+// (src/asking.ts); a CLI without them, its output's newest line, through the transcript part's
+// row field. Both are the card's fields part.
 const readPane = async (name: string) => {
   const text = await capturePane(name, 0).catch(() => '');
   return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
@@ -200,7 +202,7 @@ const noProgress = createNoProgress((name) => sockets.rowChanged(name));
 
 // Each card's parts as last read, so a rebuild reads only the part that was marked.
 const panes = new Map<string, Awaited<ReturnType<typeof readPane>>>();
-const fields = new Map<string, Awaited<ReturnType<typeof collectRowFields>>>();
+const fields = new Map<string, Awaited<ReturnType<typeof readFields>>>();
 const records = new Map<string, Awaited<ReturnType<typeof readTegami>>>();
 sockets.onSessionEnd((name) => { panes.delete(name); fields.delete(name); records.delete(name); });
 const part = async <T>(held: Map<string, T>, name: string, again: boolean, read: (name: string) => Promise<T>): Promise<T> => {
@@ -211,14 +213,15 @@ const part = async <T>(held: Map<string, T>, name: string, again: boolean, read:
 /** ONE AGENT'S CARD: what /events pushes as {t:'card'} (src/ws/events.ts), from its listing
  * entry, its pane, its parts' row fields and its work record, re-reading only `parts`. */
 export async function cardOf(s: SessionWithAxes, parts: ReadonlySet<CardPart>) {
-  const [pane, contributed, tegami] = await Promise.all([
+  const [pane, row, tegami] = await Promise.all([
     part(panes, s.name, parts.has('pane'), readPane),
-    part(fields, s.name, parts.has('fields'), collectRowFields),
+    part(fields, s.name, parts.has('fields'), readFields),
     part(records, s.name, parts.has('record'), readTegami),
   ]);
-  // The CLI's hook says so (src/asking.ts), or, where no hook tells, the screen does.
+  // The CLI's hook record says so (src/asking.ts), or, for a CLI without hooks, the screen does.
   const { asking: onScreen, ...gauges } = pane;
-  const asking = askingByHook(s.name) || onScreen;
+  const { hooked, ...contributed } = row;
+  const asking = contributed.stance === 'asking' || (!hooked && onScreen);
   const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
   // Working with nothing new in its conversation for 12 minutes: flagged too (KAN-618).
   const stuck = !asking && !stopped_at && noProgress.check(s.name, contributed.stance, contributed.at);
@@ -261,13 +264,36 @@ export function registerLaunch(app: express.Express): LaunchControl {
   type MikaReady = Awaited<ReturnType<LaunchControl['ensureMika']>>;
   let mikaStarting: Promise<MikaReady> | null = null;
 
-  // A CLI hook's event (ronin_bin/ronin-asking): answered at once; a moved flag pushes the row.
-  app.post('/api/asking', async (req, res) => {
-    const name = typeof req.body?.pane === 'string' ? await sessionOfPane(req.body.pane) : null;
-    if (name && recordHook(name, req.body)) sockets.rowChanged(name);
+  // A CLI hook's event (ronin_bin/ronin-asking), whole or cut short, as text: kept as the
+  // Agent's hook record, which pushes its card; answered once kept, so events land in order.
+  app.post('/api/asking', express.text({ type: '*/*', limit: '256kb' }), async (req, res) => {
+    const name = typeof req.query.pane === 'string' ? await sessionOfPane(req.query.pane) : null;
+    if (name && await recordHook(name, parseHookEvent(String(req.body ?? ''))).catch(() => false)) sockets.rowChanged(name);
     res.json({ ok: true });
   });
-  sockets.onSessionEnd((name) => { forgetAsking(name); noProgress.forget(name); });
+  sockets.onSessionEnd((name) => { forgetHooks(name); noProgress.forget(name); });
+
+  // AN ANSWER FROM CHAT (KAN-658): the question on the Agent's hook record, answered by typing
+  // its keys into the terminal; the record then says so, since a declined prompt fires no hook.
+  app.post('/api/sessions/:name/answer', async (req, res) => {
+    const session = (await listSessions()).find((s) => s.name === req.params.name);
+    if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
+    const question = (await hookRecord(session.name))?.question;
+    if (!question) return res.status(409).json({ error: 'The question is already answered.' });
+    const keys = answerKeys(session.identity?.cli || session.agent, question, req.body?.answer ?? {});
+    if (!keys) return res.status(400).json({ error: 'Answer this one in Terminal.' });
+    try {
+      await tmux.run(['send-keys', '-t', exactPane(session.name), '-X', 'cancel']).catch(() => {});
+      // One key at a time: a CLI's menu redraws between them.
+      for (const key of keys) {
+        await tmux.run(['send-keys', '-t', exactPane(session.name), key]);
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+    } catch (e) { return res.status(409).json({ error: (e as Error).message }); }
+    await keepHookRecord(session.name, answered(req.body.answer));
+    sockets.rowChanged(session.name);
+    res.json({ ok: true });
+  });
 
   app.get('/api/launch-seed', async (req, res) => {
     try {

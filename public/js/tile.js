@@ -83,6 +83,7 @@ export class Tile {
       cache: options.transcriptCache,
       onState: (state) => this.onTranscriptState(state),
       onAnswer: () => this.answerInTerminal(),
+      onChoose: (answer) => this.answerQuestion(answer),
       onDoc: (path) => this.openDoc(path),
     });
     this.body.append(this.transcriptView.el);
@@ -324,7 +325,7 @@ export class Tile {
    */
   refreshStance() {
     const row = this.homeRow();
-    this.transcriptView.setStance(row?.stance || '', row?.tool);
+    this.transcriptView.setStance(row?.stance || '', row?.tool, row?.question);
     if (this.transcriptOn) this.transcriptView.rewatch(); // a new Agent's Chat: see tile-transcript.js
     // Answered: back to Chat, but only a tile that went to Terminal by Answer in Terminal.
     if (this.answerReturns && row && row.stance !== 'asking' && row.stance !== 'no_progress') this.backToChat();
@@ -342,6 +343,12 @@ export class Tile {
     this.toggleTranscript();
     this.answerReturns = !this.transcriptOn;
     this.syncSurface(); // Continue in Chat comes up at the terminal's foot
+  }
+
+  /** ANSWERED IN CHAT (KAN-658): Ronin types the choice into the terminal; the tile stays here. */
+  answerQuestion(answer) {
+    const key = this.sessionKey || S.sessions.find((row) => row.name === this.session)?.key;
+    return request(`/api/sessions/${encodeURIComponent(this.session)}/answer`, { method: 'POST', json: { key, answer } });
   }
 
   /** The answer's way back: the stance left asking, or Continue in Chat was pressed. */

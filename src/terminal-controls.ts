@@ -4,7 +4,7 @@ import { readMachineSettingsSection, updateDocument } from './machine-settings.j
 import { agentSpec } from './agents.js';
 import { exactPane, listSessions } from './tmux.js';
 import { tmux } from './tmux-client.js';
-import { collectRowFields } from './sockets.js';
+import { readFields } from './asking.js';
 import { noteStop } from './stopped.js';
 
 export const CONTROL_DEFAULTS = Object.freeze({ clear: 'Ctrl+Shift+Backspace', close: 'Ctrl+Shift+X', stop: 'Escape' });
@@ -64,7 +64,7 @@ export function registerTerminalControls(app: Express): void {
       await tmux.run(['send-keys', '-t', exactPane(session.name), '-X', 'cancel']).catch(() => {});
       await tmux.run(['send-keys', '-t', exactPane(session.name), ...keys]);
       // The log may never say it stopped (a Stop before the first reply): Ronin says so (stopped.ts).
-      if (intent === 'stop') noteStop(session.name, await collectRowFields(session.name));
+      if (intent === 'stop') noteStop(session.name, await readFields(session.name));
       res.json({ ok: true });
     } catch (e) { res.status(409).json({ error: (e as Error).message }); }
   });

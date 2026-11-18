@@ -3580,6 +3580,25 @@ body {
 }
 .tile-transcript-stance[data-stance='asking'] .tile-transcript-answer,
 .tile-transcript-stance[data-stance='no_progress'] .tile-transcript-answer { font-weight: normal; }
+/* The question itself (chat-question.js, KAN-657): a card at the end of the conversation, as the
+   secret ask is at the tile's foot, with ERABI's stones for the answers. */
+.chat-question {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-row);
+  padding: var(--space-row) var(--space-inline);
+  border: var(--edge) solid var(--line);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: normal;
+}
+.chat-question-title { margin: 0; color: var(--fg-strong); font-weight: var(--weight-strong); }
+.chat-question-reason, .chat-question-notice { margin: 0; color: var(--muted); }
+.chat-question-notice:empty { display: none; }
+.chat-question:is([data-state='sending'], [data-state='sent']) .ask { pointer-events: none; }
 /* Continue in Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
    Terminal, above the box when there is one; the right corner leaves the question's options
    and keys hint readable. */

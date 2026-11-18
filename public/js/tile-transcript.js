@@ -6,6 +6,7 @@ import { renderMarkdownDocument } from './markdown-reader.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 import { openDocOver } from './tile-doc-view.js';
 import { fileLinkPath } from './document-links.js';
+import { answerable, buildQuestion } from './chat-question.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -39,7 +40,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  *               left out is still held by seq, so paging and catch-up run as if it were drawn
  *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onDoc = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onDoc = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -76,6 +77,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   let unwritten = false; // open on a journal the CLI has not written yet
   let stance = ''; // what the Agent is doing, as the roster row last said
   let doing = ''; // the tool it is working on, as the row names it: name and target
+  let question = null; // what the CLI is stopped at, as the row carries it (src/asking.ts)
   /*
    * A READER AT THE END STAYS AT THE END. Where they are is read when they scroll, not at each
    * change: by the time a record or the dots arrive, a longer draft or a smaller tile may
@@ -170,7 +172,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       stanceNode.className = 'tile-transcript-stance';
       stanceNode.setAttribute('aria-live', 'polite');
     }
-    const key = `${now}\u0000${doing}`;
+    const asked = now === 'asking' && onChoose && answerable(question) ? question : null;
+    const key = `${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}`;
     if (stanceNode.getAttribute?.('data-key') !== key) {
       stanceNode.setAttribute('data-key', key);
       stanceNode.setAttribute('data-stance', now);
@@ -180,9 +183,12 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         : now === 'no_progress'
           ? t('transcript.stance_no_progress', 'No progress for 12 min')
           : t('transcript.stance_working', 'Working');
-      if (flagged) {
-        // The options are answered in Terminal only (owner, 2026-11-12): one press takes
-        // the tile there, and nothing switches without it. The tile owns the switch.
+      if (asked) {
+        // The question itself, answered here (chat-question.js): the tile stays on Chat.
+        stanceNode.append(buildQuestion(asked, { send: onChoose, terminal: onAnswer && (() => onAnswer()) }));
+      } else if (flagged) {
+        // A question Chat cannot answer (free text, one no hook names): one press takes the
+        // tile to Terminal, and nothing switches without it. The tile owns the switch.
         const said = document.createElement('span');
         said.textContent = words;
         stanceNode.append(said);
@@ -202,7 +208,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
           stanceNode.append(step);
         }
       }
-      stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
+      if (asked) stanceNode.removeAttribute('aria-label');
+      else stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
     }
     // Always last: records append above it, so the end of the conversation stays the end.
     el.append(stanceNode);
@@ -611,13 +618,14 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     if (active && unwritten && session) watch(session, reading);
   }
 
-  /** The home row's word on what this Agent is doing, and the tool it is in. */
-  function setStance(next, tool) {
+  /** The home row's word on what this Agent is doing, the tool it is in, and what it asks. */
+  function setStance(next, tool, asks = null) {
     const value = typeof next === 'string' ? next : '';
     const step = tool?.name ? [tool.name, tool.target].filter(Boolean).join(' · ') : '';
-    if (value === stance && step === doing) return;
+    if (value === stance && step === doing && JSON.stringify(asks) === JSON.stringify(question)) return;
     stance = value;
     doing = step;
+    question = asks || null;
     paintStance();
   }
 

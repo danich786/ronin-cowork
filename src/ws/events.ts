@@ -387,7 +387,7 @@ export function activityMoved(value: string, last: Map<string, string>): string[
 /*
  * NO CLOCK. The push runs when something changed: tmux says the session set or a listed
  * option changed (the tick), a pane had output (which is also what wakes the terminal read:
- * that card's pane), a part's row moved (rowChanged: its fields), or a writer wrote a work
+ * that card's pane), a CLI hook or a part's row moved (rowChanged: its fields), or a writer wrote a work
  * record (its record). An Agent doing nothing costs nothing; the beat stays, carrying no data.
  */
 export function startSessionsBroadcast(next: Feed): void {
@@ -400,9 +400,9 @@ export function startSessionsBroadcast(next: Feed): void {
     if (n.subscription?.startsWith('listing')) { changed(); return; }
     if (!n.subscription?.startsWith('activity')) return;
     const moved = activityMoved(n.value ?? '', stamps);
-    // A pane that drew: its screen and its CLI's own log both may have moved (a thinking CLI
-    // writes no line the transcript part tells); never its work record.
-    for (const name of moved) { emitPaneActivity(name); mark(name, 'pane', 'fields'); }
+    // A pane that drew: its screen. What the Agent is doing is its fields, marked by its hooks
+    // or its log (rowChanged), never by a draw.
+    for (const name of moved) { emitPaneActivity(name); mark(name, 'pane'); }
     if (moved.length && lastGithub) void github();
   });
   onRowChanged((name) => mark(name, 'fields'));
