@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# lounge — the person's Business Lounge record from HQ, now. The Ronin Services part `account`
-# (GET /api/account/record) asks HQ once with the office's credential; this tool only prints.
-# Nothing runs on its own and nothing is kept (KAN-677).
+# lounge — the person's Business Lounge record. The park writes it into the office as
+# office_unit/lounge.json; the Ronin Services part `account` (GET /api/account/record) reads it;
+# this tool only prints (KAN-677).
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" lounge "$@"
 set -u -o pipefail
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
 usage() { cat <<'EOF_USAGE'
 Usage:
-  lounge          the person's lounge record as HQ holds it now: subscription, balance, this
-                  office's rental and limit, default models, people, other offices, About you
-  lounge --json   HQ's answer as it came
-Each run asks HQ once; nothing is kept. Read-only: the person makes account changes in the
-Business Lounge (https://hq.roninhosted.com/). Hosted offices only.
+  lounge          the person's lounge record, as of the time it carries: subscription, balance,
+                  this office's rental and limit, default models, people, other offices, About you
+  lounge --json   the record as the park wrote it
+The park keeps it current within 30 seconds of a change at HQ. Read-only: the person makes
+account changes in the Business Lounge (https://hq.roninhosted.com/). Hosted offices only.
 EOF_USAGE
 }
 json=''
