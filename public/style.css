@@ -4546,9 +4546,7 @@ body {
 .setup-provider-models { width: 100%; min-width: 340px; table-layout: fixed; border-collapse: collapse; font-size: var(--text-body); }
 .setup-provider-models th { text-align: left; padding: var(--space-row) var(--space-inline); color: var(--muted); font-weight: var(--weight-strong); border-bottom: var(--edge) solid var(--line-2); }
 .setup-provider-models td { padding: var(--space-inline); vertical-align: top; border-bottom: var(--edge) solid var(--line); overflow-wrap: anywhere; }
-.setup-provider-models th:nth-child(1) { width: 22%; }
-.setup-provider-models th:nth-child(2) { width: 10%; }
-.setup-provider-models th:nth-child(3) { width: 20%; }
+.setup-provider-models th:nth-child(2) { width: 8rem; }
 .setup-provider-models td b { color: var(--fg-strong); font-weight: var(--weight-strong); }
 /* Two names per model: the CLI's own name in bold, the id every launch uses beneath it. */
 .setup-provider-model-id { display: block; margin-top: var(--space-row); color: var(--muted); font-family: var(--mono, monospace); font-size: var(--text-small); overflow-wrap: anywhere; }
@@ -4587,13 +4585,6 @@ body {
 .models-refresh-facts { display: grid; gap: var(--space-row); }
 .models-refresh-line { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-paragraph) var(--space-inline); }
 .models-refresh-key { color: var(--muted); }
-.models-review th:nth-child(1) { width: 24%; }
-.models-review th:nth-child(2) { width: 22%; }
-.models-review th:nth-child(3) { width: 11%; }
-.models-review th:nth-child(4) { width: 15%; }
-.models-review td:nth-child(3) { white-space: nowrap; }
-.models-review tr[data-change='removed'] td { color: var(--muted); }
-.models-review tr[data-change='removed'] :is(b, .setup-provider-model-id), .models-review tr[data-change='removed'] td:not(:first-child) { text-decoration: line-through; }
 .setup-provider-note { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); overflow-wrap: anywhere; }
 .setup-provider-command { color: var(--muted); font: var(--text-body) var(--font-mono); overflow-wrap: anywhere; }
 .setup-provider-control { display: flex; flex-wrap: wrap; gap: var(--space-inline); min-width: 0; grid-column: 2; }

@@ -51,7 +51,7 @@ import { registerServicesActivation, resumeInstallWatch, servicesSetupWrites } f
 import { registerMachineSettings } from './routes/machine-settings-api.js';
 import { registerCampaigns } from './routes/campaigns-api.js';
 import { ensureInitialCampaign } from './campaigns.js';
-import { measureAndRecordProviders } from './provider-summary.js';
+import { refreshProviders } from './provider-summary.js';
 import { migrateCampaignScope, moveDeskModelDefault } from './campaign-scope.js';
 import { registerUpdate } from './routes/update-api.js';
 import { registerMachineRestart } from './routes/machine-restart-api.js';
@@ -309,11 +309,13 @@ if (isEntryPoint) void ensureInstalledRoots().catch((error) => console.error(`[s
 
 // The Campaign's dated provider facts are measured once at start, after the record exists
 // and has migrated: the summary and the migration both read-modify-write the campaigns
-// section, and side by side one of them would lose its write on a fresh install.
+// section, and side by side one of them would lose its write on a fresh install. A refresh, not
+// a bare measure (KAN-651): every start, so after every Update too, reads the CLIs' model lists
+// again; nobody has to press Refresh all model providers.
 const campaignStart = ensureInitialCampaign()
   .then(() => migrateCampaignScope())
   .then(() => moveDeskModelDefault())
-  .then(() => (isEntryPoint ? measureAndRecordProviders() : undefined))
+  .then(() => (isEntryPoint ? refreshProviders() : undefined))
   .catch((error) => console.error(`[setup] campaign start: ${(error as Error).message}`));
 
 const services: ServiceRegistration[] = [];

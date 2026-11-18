@@ -1,6 +1,8 @@
 import { readLaunchIdentity } from '../launch-binding.js';
 import { resolveLaunchJournal } from '../launch-journal.js';
 import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import type express from 'express';
 import {
   getLeads,
@@ -66,6 +68,7 @@ import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
 import { clearHookRecord, hookRecord } from '../asking.js';
+import { providerPart } from '../provider-parts.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
@@ -319,7 +322,14 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
     if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
     const wrap = resumeWraps.get(archived.name);
+    const part = providerPart(archived.identity?.provider ?? '');
     if (wrap) argv = wrap([...argv]);
+    // An Agent born on a part's provider (src/provider-parts.ts) is restored on it.
+    else if (part?.wrapResume) {
+      // The person it was born for, from its birth receipt, so its house calls stay theirs (KAN-659).
+      const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { user_email?: unknown };
+      argv = part.wrapResume([...argv], archived.identity?.model ?? '', typeof receipt.user_email === 'string' ? receipt.user_email : '');
+    }
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
     try {
       await setSessionKey(archived.name, archived.key);

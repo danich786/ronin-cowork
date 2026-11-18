@@ -2,7 +2,7 @@
 import { t } from './lexicon.js';
 import { ask } from './ask.js';
 import { mandateRows } from './mandates.js';
-import { createStep, el, mandateWord, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
+import { createStep, el, mandateWord, modelLabel, providerCatalog, rowTierWord } from './form-steps.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
 let rowId = 0;
@@ -57,7 +57,7 @@ export function createAgentRows({ n, key, rows, changed, onToggle, createAction,
         off: item.operational ? undefined : item.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
       }));
     const modelRows = (provider) => providerCatalog().rows.filter((item) => item.provider === provider).map((item) => ({
-      v: item.model, l: modelLabel(item), word: tierWord(item.tier), sub: priceText(item.info),
+      v: item.model, l: modelLabel(item), word: rowTierWord(item),
       off: item.selectable ? undefined : item.off ? t('forms.reason_turned_off', 'turned off') : t('forms.reason_not_on_machine', 'not on this machine'),
     }));
     const questions = ask([

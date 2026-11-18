@@ -4,7 +4,7 @@
  *
  * The catalog joins the vendor id a launch names to the CLI that serves it, in data, with
  * the family words that give a model its tier; the owner's copy in the catalogs store wins
- * whole. Model facts are the accepted model info (models.dev), joined by id. The summary is what the machine measured, dated, hung on the Campaign record;
+ * whole. It carries no model facts (the models.dev pull went, KAN-653). The summary is what the machine measured, dated, hung on the Campaign record;
  * its model lists come from each CLI's own inventory, read on Refresh all through the
  * reader the registry names, never guessed. The join gives every row two names: the id a
  * launch uses and the CLI's own display name, version included.
@@ -36,7 +36,7 @@ const measured = (over: Partial<import('../src/model-providers.js').ProviderSumm
   paths: {}, versions: {}, models: {}, latest: {}, ...over,
 });
 
-test('the stock catalog names every provider with its CLI, its family words and its models.dev key — no model facts, nothing that launches', async () => {
+test('the stock catalog names every provider with its CLI and its family words — no model facts, nothing that launches', async () => {
   const read = await catalog.readProviderCatalog();
   assert.equal(read.origin, 'stock');
   const providers = read.providers;
@@ -45,10 +45,9 @@ test('the stock catalog names every provider with its CLI, its family words and 
   for (const entry of launchable) {
     assert.ok(AGENTS.some((agent) => agent.id === entry.cli), `${entry.label}: cli ${entry.cli} is in src/agents.ts`);
     if (entry.cli !== 'hermes') assert.ok(entry.families?.length, `${entry.label}: family words give its models their tiers`);
-    assert.ok(!('models' in entry), `${entry.label}: model facts are model info's, not the catalog's`);
+    assert.ok(!('models' in entry), `${entry.label}: the catalog carries no model facts`);
+    assert.ok(!('models_dev' in entry), `${entry.label}: no models.dev key (KAN-653)`);
   }
-  assert.deepEqual(providers.filter((entry) => entry.models_dev).map((entry) => [entry.provider, entry.models_dev]),
-    [['anthropic', 'anthropic'], ['openai', 'openai'], ['google', 'google'], ['xai', 'xai']], 'Nous is not on models.dev');
   assert.equal(providers.find((entry) => entry.provider === 'openrouter'), undefined, 'OpenRouter is an account a harness launches on, not a harness section');
 });
 
@@ -75,11 +74,8 @@ test('the join: Native first, then every model the CLI listed in its order with 
     ['claude-sonnet-6', 'Sonnet 6', 'claude --model claude-sonnet-6', 'standard', false, true],
     ['claude-mystery-1', 'Mystery 1', 'claude --model claude-mystery-1', '', false, true],
   ], 'the CLI\'s order and names; the family word gives the tier; an unsafe id is not made into a command');
-  assert.deepEqual(anthropic.models[1].info?.cost, { input: 4, output: 20, cache_read: 0.2, cache_write: 5 }, 'the shipped model info of the same id');
-  assert.ok(anthropic.models[1].info?.description, 'and its description');
+  assert.ok(anthropic.models.every((row) => !('info' in row)), 'no model info on any row (KAN-653)');
   assert.equal(anthropic.models[1].dangerousCmd, 'claude --model claude-opus-5-5 --dangerously-skip-permissions');
-  assert.equal(anthropic.models[3].info, null, 'no model info for the id: no price, no prose, still launchable');
-  assert.equal(anthropic.models[0].info, null, 'Native is no model');
   assert.ok(!('families' in anthropic), 'the family table is the join\'s input, not a client field');
   assert.equal(anthropic.models[0].provider_label, 'Anthropic');
   assert.deepEqual(rows[1].models.map((row) => row.name), ['Native', 'GPT-5.6-Sol']);
@@ -105,9 +101,7 @@ test('a family word gives a listed id the catalog has no row for its band: the l
 
 test('the client answer is the catalog\'s own facts, the record\'s dates, and the joined rows', async () => {
   const answer = await catalog.providerCatalogAnswer(measured({ refreshed_at: '2026-09-25T10:00:00Z', operational: ['claude'], models: { claude: listed([['claude-opus-5-5', 'Opus 5.5']]) } }));
-  assert.deepEqual(Object.keys(answer).sort(), ['measured_at', 'model_info', 'origin', 'path', 'providers', 'refreshed_at', 'withdrawn']);
-  assert.equal(answer.model_info.origin, 'stock', 'nothing accepted: the shipped snapshot');
-  assert.match(answer.model_info.fetched_at, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(Object.keys(answer).sort(), ['measured_at', 'origin', 'path', 'providers', 'refreshed_at', 'withdrawn']);
   assert.equal(answer.refreshed_at, '2026-09-25T10:00:00Z');
   assert.equal(answer.providers[0].models[1].name, 'Opus 5.5');
   const never = await catalog.providerCatalogAnswer(null);
@@ -118,14 +112,14 @@ test('the client answer is the catalog\'s own facts, the record\'s dates, and th
 test('a provider section parses Ronin\'s own fields; a model table of an earlier catalog is ignored, never read', () => {
   const parsed = catalog.parseProviderCatalog([
     '# a catalog', '', '### Example Vendor', '',
-    '- **provider:** `example`', '- **cli:** `claude`', '- **models_dev:** `ex`', '- **families:** `big=frontier small=light`', '',
+    '- **provider:** `example`', '- **cli:** `claude`', '- **families:** `big=frontier small=light`', '',
     '| model | tier | cost | good at | not good at |', '|---|---|---|---|---|',
     '| `b` | light | $1 (2026-09) | speed | depth |', '',
     '### Soon', '', '- **provider:** `soon`', '- **cli:** `codex`', '- **maturity:** `comingSoon`', '',
     '### No Cli', '', '- **provider:** `orphan`', '',
   ].join('\n'));
   assert.deepEqual(parsed, [
-    { provider: 'example', cli: 'claude', label: 'Example Vendor', origin: 'stock', shadowed: false, launchable: true, models_dev: 'ex', families: [{ family: 'big', tier: 'frontier' }, { family: 'small', tier: 'light' }] },
+    { provider: 'example', cli: 'claude', label: 'Example Vendor', origin: 'stock', shadowed: false, launchable: true, families: [{ family: 'big', tier: 'frontier' }, { family: 'small', tier: 'light' }] },
     { provider: 'soon', cli: 'codex', label: 'Soon', origin: 'stock', shadowed: false, launchable: false, maturity: 'comingSoon' },
   ], 'a section without a cli is no provider');
 });
@@ -149,7 +143,6 @@ test("the owner's copy is an overlay: a section of a shipped id replaces it in p
     ], 'anthropic and google replace in place; xai is hidden; example appends');
     assert.equal(read.providers[0].label, 'Anthropic (mine)', 'the heading is the copy\'s, the key was the id');
     assert.deepEqual(read.providers[0].families, [{ family: 'fable', tier: 'frontier' }], 'the section replaced whole — the shipped family words do not merge in');
-    assert.equal(read.providers[0].models_dev, undefined, 'nor its models.dev key');
     assert.deepEqual(read.withdrawn, [{ provider: 'xai', label: 'xAI' }], 'the explicit hidden marker withdraws a provider');
     const specs = await catalog.listSessionLaunchSpecs(measured({ operational: ['claude', 'codex', 'grok'], models: {
       claude: listed(['claude-fable-5-1', 'claude-opus-5-5']),
@@ -159,7 +152,6 @@ test("the owner's copy is an overlay: a section of a shipped id replaces it in p
     const cmds = specs.map((row) => row.cmd);
     assert.ok(cmds.includes('codex --model gpt-5.6-sol') && cmds.includes('claude --model claude-fable-5-1') && cmds.includes('codex --model ex-1'));
     assert.equal(specs.find((row) => row.model === 'claude-opus-5-5')?.tier, '', 'the copy has no family word for it: listed by the CLI, launchable, no tier');
-    assert.equal(specs.find((row) => row.model === 'claude-opus-5-5')?.info, null, 'and no models.dev key, so no model info');
     assert.ok(!cmds.some((cmd) => cmd.startsWith('grok')), 'withdrawn providers launch nothing, whatever the CLI lists');
   } finally {
     await rm(mine, { force: true });
@@ -313,17 +305,34 @@ test('latest is asked only of a CLI whose install line names an npm package, and
   assert.equal(catalog.newerVersion('', '1.0.0'), false, 'unreadable on either side is never "newer"');
 });
 
-test('the start-up measure follows the Campaign record and its migration, never beside them, and reads no list', async () => {
+test('the start-up refresh follows the Campaign record and its migration, never beside them', async () => {
   // Both the summary write and the scope migration read-modify-write the campaigns section
   // of machine settings; run concurrently on a fresh install, one write is lost. The chain
   // in src/index.ts is the seam, so it is pinned here. The Desk model move also rewrites
-  // machine settings, so it sits in the same chain, before the measure.
+  // machine settings, so it sits in the same chain, before the refresh. Every start refreshes,
+  // so nobody presses Refresh all after an Update (KAN-651).
   const source = await readFile(new URL('../src/index.ts', import.meta.url), 'utf8');
-  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => moveDeskModelDefault\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? measureAndRecordProviders\(\) : undefined\)\)/);
-  assert.equal(source.match(/measureAndRecordProviders\(\)/g)?.length, 1, 'measured at start in one place only');
-  assert.doesNotMatch(source, /refreshProviders/, 'Refresh all is the owner\'s press, never start-up');
+  assert.match(source, /ensureInitialCampaign\(\)\s*\.then\(\(\) => migrateCampaignScope\(\)\)\s*\.then\(\(\) => moveDeskModelDefault\(\)\)\s*\.then\(\(\) => \(isEntryPoint \? refreshProviders\(\) : undefined\)\)/);
+  assert.equal(source.match(/refreshProviders\(\)/g)?.length, 1, 'refreshed at start in one place only');
   const progress = await readFile(new URL('../src/setup-progress.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(progress, /refreshProviders|Inventory/, 'the Setup scan measures; it reads no list');
+});
+
+// Last: the part registered here stays registered for the rest of the file.
+test('a provider part (Ronin models) leads, apart from its CLI\'s list, counts as a provider, and refreshes with Refresh all', async () => {
+  const parts = await import('../src/provider-parts.js');
+  let refreshed = 0;
+  const row = { provider: 'house', cli: 'codex', provider_label: 'House', cli_label: 'House', operational: true, off: false, selectable: true,
+    origin: 'stock' as const, shadowed: false, model: 'standard', name: 'Standard', cmd: 'codex --model standard', tier: 'standard' as const, default: true };
+  parts.addProviderPart({ provider: 'house', refresh: async () => { refreshed++; },
+    rows: async () => ({ provider: 'house', cli: 'codex', label: 'House', cli_label: 'House', origin: 'stock', shadowed: false, launchable: true, operational: true, off: false, part: 'house', models: [row] }) });
+  const rows = await catalog.providerRows(measured({ operational: ['codex'], models: { codex: listed(['gpt-5.6-sol']) } }));
+  assert.equal(rows[0].provider, 'house', 'the part leads');
+  assert.deepEqual(rows.find((entry) => entry.provider === 'openai')?.models.map((r) => r.model), ['native', 'gpt-5.6-sol'], 'never inside Codex\'s list');
+  assert.equal(catalog.providerDefault(await catalog.listSessionLaunchSpecs(measured()), 'house')?.cmd, 'codex --model standard', 'a launch naming it resolves to its default row');
+  assert.equal((await summary.measureProviders({}, { availability: [], signedIn: async () => false, catalog: [] })).activated_count, 1, 'counted: no "No provider found"');
+  await summary.refreshProviders({}, { availability: [], signedIn: async () => false, catalog: [] }, { npmView: async () => '', egress: async () => {} });
+  assert.equal(refreshed, 1);
 });
 
 test.after(async () => { await rm(box, { recursive: true, force: true }); });

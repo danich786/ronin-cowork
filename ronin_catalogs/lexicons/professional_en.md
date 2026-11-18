@@ -293,7 +293,7 @@ nothing paints exactly this.
 - **harness.stones:** Harness
 - **harness.stones_summary:** The CLIs: install, sign in, ready
 - **harness.refresh:** Refresh
-- **harness.refresh_summary:** One press: harnesses, accounts, model info
+- **harness.refresh_summary:** One press: harnesses, accounts
 - **harness.step_harnesses:** Harnesses
 - **harness.step_harnesses_detail:** Each activated CLI: its version, the newest release, and its own model list. Only these models can launch on a subscription.
 
@@ -359,14 +359,11 @@ nothing paints exactly this.
 ## models — models-records-surface.js, models-surface.js (the Models tilespace; KAN-236)
 
 - **models.records:** Models
-- **models.records_summary:** Model info · offered · presets · defaults
-- **models.model_info:** Model info
+- **models.records_summary:** Offered · presets · defaults
 - **models.offered:** Offered per account
 - **models.offered_none:** No accounts yet. Add one on Accounts or on a harness page.
 - **models.presets:** Presets
 - **models.presets_lede:** A preset names harness, account, model and knobs; it appears under Model in New Agent. Today every preset is a Hermes named setup.
-- **models.review_on_refresh:** The row-by-row comparison is on Refresh.
-- **models.review_after_info:** After step 3
 
 ## launch — launch-view.js (the Workbench where Teams and Agents begin)
 
@@ -1546,8 +1543,6 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.authenticate_guided_irasshai:** Use the CLI with Irasshai
 - **setup_surface.providers_summary_unread:** Every provider and model Ronin offers, and what this machine has.
 - **setup_surface.providers_summary:** {providers} providers · {models} models · {activated} activated here
-- **setup_surface.providers_summary_dated:** {counts} · model info from {date}
-- **setup_surface.catalog_date_unstated:** date not stated
 - **setup_surface.section_yours:** Yours
 - **setup_surface.no_cli:** No CLI in Ronin’s registry serves this provider, so it cannot be installed or signed in here.
 - **setup_surface.no_cli_state:** No CLI
@@ -1559,6 +1554,7 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.models_read:** Model list read {date} by {cli} {version}
 - **setup_surface.models_not_read:** Model list not read yet — press Refresh all model providers.
 - **setup_surface.provider_models_n:** {vendor} · {n} models
+- **setup_surface.part_models_n:** {n} models
 - **setup_surface.fact_installed:** Installed
 - **setup_surface.fact_signed_in:** Signed in
 - **setup_surface.fact_activated:** Activated
@@ -1566,10 +1562,6 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.no:** no
 - **setup_surface.col_model:** Model
 - **setup_surface.col_tier:** Tier
-- **setup_surface.col_cost:** Price
-- **setup_surface.col_context:** Context
-- **setup_surface.col_released:** Released
-- **setup_surface.col_description:** Description
 - **setup_surface.model_default_mark:** the default
 
 ## Provider sign-in record

@@ -18,9 +18,8 @@ import { mountHermesSurface } from './hermes-surface.js';
  *      on either seat. An installed CLI's step says its version and, once Refresh has
  *      asked, the newest release its package source lists; an **Update** control runs the
  *      registry's update line in a tile as Install does — the owner's press, never Ronin's.
- *   2. THE CATALOG — the three measured facts, dated, then every model the catalog lists
- *      for this provider: tier, price, context, release date and description from the
- *      accepted model info (models.dev), the default marked.
+ *   2. THE CATALOG — the three measured facts, dated, then every model the CLI listed for
+ *      this provider with its tier, the default marked.
  *
  * The Setup progress resource owns measurement. This surface paints the Campaign's dated
  * provider summary, which every reader takes from the record; the catalog rows come from the one
@@ -38,7 +37,7 @@ import { createSetupZone, setupStep } from './setup-zone.js';
 import { request } from './request.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
-import { dayTime, loadProviderCatalog, modelLabel, priceText, providerCatalog, tierWord } from './form-steps.js';
+import { dayTime, loadProviderCatalog, modelLabel, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
 import { createStatusMarker } from './status-marker.js';
 
@@ -58,7 +57,7 @@ export function providerSurfaceDefinition() {
   };
 }
 
-/** The card's line on both seats: the catalog's counts, this machine's, and when its model info was fetched. */
+/** The card's line on both seats: the catalog's counts and this machine's. */
 export function providersSummary(catalog) {
   if (!catalog?.loaded) return t('setup_surface.providers_summary_unread', 'Every provider and model Ronin offers, and what this machine has.');
   const rows = catalog.rows;
@@ -66,9 +65,7 @@ export function providersSummary(catalog) {
   const activated = new Set(rows.filter((row) => row.operational).map((row) => row.provider)).size;
   const counts = t('setup_surface.providers_summary', '{providers} providers · {models} models · {activated} activated here', { providers, models: rows.length, activated });
   const yours = new Set(rows.filter((row) => row.origin === 'user').map((row) => row.provider)).size;
-  const fetched = String(catalog.model_info?.fetched_at || '').slice(0, 10);
-  const dated = fetched ? t('setup_surface.providers_summary_dated', '{counts} · model info from {date}', { counts, date: fetched }) : counts;
-  return yours ? t('setup_surface.providers_summary_yours', '{dated} · {n} yours', { dated, n: yours }) : dated;
+  return yours ? t('setup_surface.providers_summary_yours', '{dated} · {n} yours', { dated: counts, n: yours }) : counts;
 }
 
 /** The recorded summary as a runtime: the record every reader takes, before any measure lands. */
@@ -93,10 +90,15 @@ const catalogOnly = (runtime) => {
  * state, then every catalog provider no CLI serves. The Settings surface, the Models workbench
  * and its selector cards all read this. */
 export function providerStones(runtime) {
-  const rows = providerCatalog().rows;
+  // A part's provider (Ronin models, in a hosted office) runs on a CLI but is never in that CLI's list.
+  const parts = (providerCatalog().providers || []).filter((entry) => entry.part);
+  const parted = new Set(parts.map((entry) => entry.provider));
+  const rows = providerCatalog().rows.filter((row) => !parted.has(row.provider));
   const providers = (Array.isArray(runtime.providers) ? runtime.providers : []).filter((provider) => provider?.id);
   const stoneOf = (id, label, secondary, state, activated, marker = null) => ({ id, label, secondary, state, marker, className: 'setup-provider-stone', attrs: { 'data-provider': id, 'data-activated': String(activated) } });
   const items = [
+    ...parts.map((entry) => stoneOf(entry.provider, entry.label, t('setup_surface.part_models_n', '{n} models', { n: entry.models.length }),
+      entry.operational ? t('setup_surface.ready_launch', 'Activated for Launch') : '', entry.operational === true)),
     ...providers.map((provider) => {
       const own = rows.filter((row) => row.cli === provider.id);
       const vendor = own[0]?.provider_label || provider.from || '';
@@ -206,12 +208,11 @@ export function stepItem({ key, n, label, state = '', detail = '', status = '', 
 }
 
 /**
- * REFRESH ALL — one door, two steps run in order and said as they run (owner, 2026-10-20):
- * the CLIs' own model lists (and npm for their newest releases), then model info from
- * models.dev on its own route. `onStep(key, state, answer)` hears each step start and end
- * (`lists` | `info`, `running` | `done` | `failed`); a host that draws the steps listens.
+ * REFRESH ALL — one door, said as it runs: the CLIs' own model lists (and npm for their newest
+ * releases). `onStep(key, state)` hears each step start and end (`lists` | `accounts`,
+ * `running` | `done` | `failed`); a host that draws the steps listens.
  */
-/** `between` (KAN-236): a step the Agent Harness workbench's Refresh runs after the harnesses and before model info — each
+/** `between` (KAN-236): a step the Agent Harness workbench's Refresh runs after the harnesses — each
  * account's Discover; it resolves true when every account answered. Settings' surface passes none. */
 export function createRefreshAll(drawing, { onStep = () => {}, between = null } = {}) {
   const bar = el('div', 'setup-provider-refresh');
@@ -227,13 +228,6 @@ export function createRefreshAll(drawing, { onStep = () => {}, between = null } 
       onStep('accounts', 'running');
       const answered = await between().catch(() => false);
       onStep('accounts', answered ? 'done' : 'failed');
-    }
-    if (ok) {
-      button.textContent = t('setup_surface.refreshing_info', 'Fetching model info…');
-      onStep('info', 'running');
-      const checked = await request('/api/model-info/check', { method: 'POST', json: {} });
-      if (checked.ok) await loadProviderCatalog();
-      onStep('info', checked.ok ? 'done' : 'failed', checked.ok ? checked.data : checked.message);
     }
     button.disabled = false;
     button.textContent = t('setup_surface.refresh_all', 'Refresh all model providers');
@@ -273,22 +267,12 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     if (destroy) mounted.destroy?.(); else mounted.park?.();
     mounted = null;
   };
-  /**
-   * WHERE the table's words come from, said in words: the provider's section (shipped, or
-   * the owner's copy laid over it), and the model info — models.dev, fetched when, and
-   * whether it is the shipped snapshot or the update the owner accepted.
-   */
+  /** Said only when the provider's section is the owner's copy, laid over the shipped one or new. */
   const provenance = (rows) => {
     const first = rows[0];
-    if (!first) return '';
-    const info = providerCatalog().model_info ?? {};
-    const date = String(info.fetched_at || '').slice(0, 10) || t('setup_surface.catalog_date_unstated', 'date not stated');
-    const source = info.origin === 'user'
-      ? t('setup_surface.info_accepted', 'Model info from models.dev, fetched {date}, accepted by you', { date })
-      : t('setup_surface.info_shipped', 'Model info from models.dev, fetched {date}, shipped with Ronin', { date });
-    if (first.origin !== 'user') return source;
-    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section replaces the shipped one. {source}', { source });
-    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog. {source}', { source });
+    if (!first || first.origin !== 'user') return '';
+    if (first.shadowed) return t('setup_surface.section_yours_shadowed', 'Your copy of this section replaces the shipped one.');
+    return t('setup_surface.section_yours_new', 'Yours · not in the shipped catalog.');
   };
   /** A path with the home directory folded to ~, for a line meant to be read. */
   const homely = (path) => String(path || '').replace(/^\/home\/[^/]+|^\/Users\/[^/]+/, '~');
@@ -524,9 +508,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     if (list.unavailable) return list.unavailable;
     return t('setup_surface.models_read', 'Model list read {date} by {cli} {version}', { date: list.read_at, cli: entry.label || entry.id, version: list.by || '' }).trim();
   };
-  const paintCatalog = (rows, entry, host, label = '') => {
+  const paintCatalog = (rows, entry, host, label = '', { facts: withFacts = true } = {}) => {
     const section = el('section', 'setup-provider-catalog');
     section.append(el('h3', 'setup-provider-eyebrow', label || t('setup_surface.section_models', 'Models')));
+    if (!withFacts) return paintModels(rows, section, host);
     const facts = el('dl', 'setup-provider-facts');
     for (const [label, on] of [
       [t('setup_surface.fact_installed', 'Installed'), entry?.installed === true],
@@ -536,13 +521,20 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     section.append(facts);
     const state = listState(entry);
     if (state) section.append(el('p', 'setup-fine setup-provider-list-state', state));
+    paintModels(rows, section, host);
+  };
+  /** The model table under a provider's page; the section is the caller's, appended to host here. */
+  const paintModels = (rows, section, host) => {
     if (!rows.length) { section.append(el('p', 'setup-fine', t('setup_surface.no_models', 'The catalog lists no models for this provider.'))); host.append(section); return; }
-    const from = el('p', 'setup-fine setup-provider-provenance', provenance(rows));
-    from.dataset.origin = rows[0].origin || 'stock'; from.dataset.shadowed = String(rows[0].shadowed === true);
-    section.append(from);
+    const said = provenance(rows);
+    if (said) {
+      const from = el('p', 'setup-fine setup-provider-provenance', said);
+      from.dataset.origin = rows[0].origin; from.dataset.shadowed = String(rows[0].shadowed === true);
+      section.append(from);
+    }
     const table = el('table', 'setup-provider-models');
     const headRow = el('tr');
-    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier'), t('setup_surface.col_cost', 'Price'), t('setup_surface.col_context', 'Context'), t('setup_surface.col_released', 'Released'), t('setup_surface.col_description', 'Description')]) headRow.append(el('th', null, text));
+    for (const text of [t('setup_surface.col_model', 'Model'), t('setup_surface.col_tier', 'Tier')]) headRow.append(el('th', null, text));
     const thead = el('thead'); thead.append(headRow);
     const body = el('tbody');
     for (const row of rows) {
@@ -552,11 +544,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       // every launch uses beneath — the owner can tell Opus 5.5 from Opus 5 at a glance.
       const name = el('td'); name.append(el('b', null, modelLabel(row)));
       if (row.default) name.append(el('span', 'setup-provider-default', t('setup_surface.model_default_mark', 'the default')));
-      if (row.model !== 'native') name.append(el('span', 'setup-provider-model-id', row.model));
-      const info = row.info;
-      const context = info?.limit?.context ? t('setup_surface.context_tokens', '{n}K tokens', { n: Math.round(info.limit.context / 1000) }) : '';
-      const description = row.model === 'native' ? t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.') : info?.description || '';
-      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)), el('td', null, priceText(info)), el('td', null, context), el('td', null, info?.release_date || ''), el('td', null, description));
+      // A Ronin models tier row (model `light`, tier light) is its name already; so is an id equal to it.
+      if (row.model !== 'native' && row.model !== row.tier && row.model !== modelLabel(row)) name.append(el('span', 'setup-provider-model-id', row.model));
+      if (row.model === 'native') name.append(el('span', 'setup-provider-default', t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.')));
+      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)));
       body.append(line);
     }
     table.append(thead, body);
@@ -570,6 +561,15 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     const rows = providerCatalog().rows.filter((row) => (provider ? row.cli === provider.id : row.provider === id));
     if (!provider && !rows.length) { host.append(el('p', 'setup-notice bad', t('setup_surface.provider_missing', 'This provider is no longer in the model-provider catalog.'))); return null; }
     if (id === 'hermes') return mountHermesSurface(host, provider, paint);
+    const part = (providerCatalog().providers || []).find((entry) => entry.provider === id && entry.part);
+    if (part) {
+      // Nothing to install or sign in: the office's house connection, on the Ronin balance.
+      const yours = el('section', 'setup-provider-yours');
+      yours.append(el('h2', '', part.label), el('p', 'setup-fine', part.note || ''));
+      host.append(yours);
+      paintCatalog(part.models, null, host, '', { facts: false });
+      return null;
+    }
     const yours = el('section', 'setup-provider-yours');
     yours.append(el('h3', 'setup-provider-eyebrow', t('setup_surface.section_yours', 'Yours')));
     if (provider) paintYours(provider, yours);

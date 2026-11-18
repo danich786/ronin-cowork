@@ -30,7 +30,15 @@ export interface OfficeRecord {
   /** The office kind's Agents, written by Cloud's kohai at provisioning: `most` is the
    * header gauge popup's Agents max. Absent: max is RAM total ÷ 0.6 GB. */
   agents?: { fewest: number; most: number };
+  /** The office's model tier, the member's choice in the lounge, written by Cloud's park
+   * (samurai_lab/ronin_cloud/MODEL_MANAGEMENT.md §2, §5). Absent: Ronin asks for `default`. The
+   * member's provider behind each tier is the gateway's to apply; the record does not carry it. */
+  tier?: OfficeTier;
 }
+
+export const OFFICE_TIERS = ['light', 'standard', 'frontier'] as const;
+export type OfficeTier = typeof OFFICE_TIERS[number];
+const isOfficeTier = (v: unknown): v is OfficeTier => (OFFICE_TIERS as readonly unknown[]).includes(v);
 
 export type OfficeView =
   | { hosting: 'self_hosted'; host: string }
@@ -67,6 +75,10 @@ export function parseOfficeRecord(raw: unknown): OfficeRecord {
       throw new Error('agents must be { fewest, most }, whole numbers, fewest no more than most');
     }
     record.agents = { fewest: a.fewest, most: a.most };
+  }
+  if (r.tier !== undefined) {
+    if (!isOfficeTier(r.tier)) throw new Error('tier must be light, standard or frontier');
+    record.tier = r.tier;
   }
   return record;
 }
