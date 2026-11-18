@@ -86,7 +86,7 @@ test('ronin-url refuses with "not running" when the socket file has nobody behin
 test('every agent-facing API caller connects through the one library and carries no address guess', () => {
   const bin = path.join(root, 'ronin_bin');
   const callers = readdirSync(bin).filter((name) => {
-    if (name === 'ronin-url' || name === 'ronin-http.sh') return false;
+    if (name === 'ronin-url' || name === 'ronin-http.sh' || name === 'ronin-all.sh') return false;
     const body = readFileSync(path.join(bin, name), 'utf8');
     return /\bcurl\b/.test(body);
   });
@@ -121,6 +121,13 @@ test('every agent-facing API caller connects through the one library and carries
     assert.doesNotMatch(body, /ronin-url/, name);
     assert.doesNotMatch(body, /@ronin-(?:operator|url|cli-token)/, name);
   }
+  // ronin-all.sh, the helper session_archive and session_restore source for --all, connects
+  // through the library too; a failed connect is written to its state file, not an exit.
+  const all = readFileSync(path.join(bin, 'ronin-all.sh'), 'utf8');
+  assert.match(all, /^ {2}\. "\$TOOL_DIR\/ronin-http\.sh"$/m);
+  assert.match(all, /\bronin_connect\b/);
+  assert.match(all, /"\$\{RONIN_CURL\[@\]\+"\$\{RONIN_CURL\[@\]\}"\}"/);
+  assert.doesNotMatch(all, /https?:\/\/|ronin-url|@ronin-(?:operator|url|cli-token)/);
   // And the library itself resolves through ronin-url, never on its own.
   const lib = readFileSync(path.join(bin, 'ronin-http.sh'), 'utf8');
   assert.match(lib, /\$\("\$TOOL_DIR\/ronin-url"\)/);
