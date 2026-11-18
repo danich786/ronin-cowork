@@ -299,13 +299,17 @@ export async function newProviderSession(agent: string, argv: readonly string[])
   return { argv: [argv[0]!, ...renderLaunch(grammar.newSessionId, { session_id: assigned }), ...argv.slice(1)], id: assigned, strategy: 'minted', grammar };
 }
 
-export async function resumeAgentArgv(agent: string, id: string): Promise<string[]> {
+/** The resume argv: the Agent's birth command (its birth receipt's `cmd`: model, permissions
+ * mode, as it was born; KAN-661), then the CLI's resume grammar after the executable
+ * (`claude … --resume <id>`, `codex … resume <id>`). No birth command: the CLI's plain one. */
+export async function resumeAgentArgv(agent: string, id: string, birthCmd = ''): Promise<string[]> {
   const spec = AGENTS.find((a) => a.id === agent);
   if (!spec) return [];
   const grammar = await readAgentLaunches(spec.id);
   if (!grammar.resume.length) return [];
-  const launch = await launchArgv(spec.cmd, '');
-  return launch.argv.length ? renderLaunch(grammar.resume, { session_id: id }).map((part, index) => index === 0 ? launch.argv[0]! : part) : [];
+  const born = birthCmd.trim().split(/\s+/)[0]?.split('/').pop() === spec.cmd ? birthCmd : spec.cmd;
+  const launch = await launchArgv(born, '');
+  return launch.argv.length ? [...launch.argv, ...renderLaunch(grammar.resume, { session_id: id }).slice(1)] : [];
 }
 
 export function agentSpec(id: string): (typeof AGENTS)[number] | undefined {

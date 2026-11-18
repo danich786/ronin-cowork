@@ -319,15 +319,16 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     if (await sessionExists(archived.name)) {
       return { status: 409, body: { error: `Session "${archived.name}" already exists.` } };
     }
-    let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
+    // Its birth receipt: the command it was born with (KAN-661) and the person it was born for.
+    const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { cmd?: unknown; user_email?: unknown };
+    let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id, typeof receipt.cmd === 'string' ? receipt.cmd : '');
     if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
     const wrap = resumeWraps.get(archived.name);
     const part = providerPart(archived.identity?.provider ?? '');
     if (wrap) argv = wrap([...argv]);
-    // An Agent born on a part's provider (src/provider-parts.ts) is restored on it.
+    // An Agent born on a part's provider (src/provider-parts.ts) is restored on it, for the
+    // person it was born for, so its house calls stay theirs (KAN-659).
     else if (part?.wrapResume) {
-      // The person it was born for, from its birth receipt, so its house calls stay theirs (KAN-659).
-      const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { user_email?: unknown };
       argv = part.wrapResume([...argv], archived.identity?.model ?? '', typeof receipt.user_email === 'string' ? receipt.user_email : '');
     }
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });

@@ -17,8 +17,12 @@ The provider and tmux do different halves of the job:
    are gone. The CLI processes are therefore gone from RAM and the session is absent from
    the live census.
 4. On rehydrate, Ronin asks the central agent registry for the installed provider CLI and
-   its resume argv, then creates a new tmux session with that process. Today the verified
-   forms are `codex resume <uuid>` and `claude --resume <uuid>`. A part that launched a
+   its resume argv, then creates a new tmux session with that process. The argv is the
+   Agent's birth command (its birth receipt's `cmd`, so its model and permissions mode come
+   back with it, KAN-661) with the CLI's resume grammar after the executable:
+   `claude --model <m> --dangerously-skip-permissions --resume <uuid>`, `codex --model <m>
+   --dangerously-bypass-approvals-and-sandbox resume <uuid>`. A birth command that is not the
+   CLI itself (a part's wrapped launch) falls back to the CLI's plain command. A part that launched a
    session with its own argv (`launchSession`'s `wrapArgv`) gives Core the same for its restore
    with `wrapResumeArgv(name, wrap)`; every restore of that name runs the resume argv through
    it. `rehydrateSession(id)` is the route called from inside the server (Ronin Services'

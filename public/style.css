@@ -3497,17 +3497,18 @@ body {
 .tile-transcript-entry[data-md='true'] { white-space: normal; }
 /* The Docs reader caps its column at 72ch and centres it, on the window's width. A Chat line
    is as wide as the tile, the person's and the Agent's alike (owner, 2026-11-01). */
-.tile-transcript-entry .markdown-reader { max-width: none; margin: 0; }
-.tile-transcript-entry .markdown-reader > :first-child { margin-top: 0; }
-.tile-transcript-entry .markdown-reader > :last-child { margin-bottom: 0; }
-.tile-transcript-entry .markdown-reader :is(p, ul, ol, pre) { margin: 0 0 var(--space-paragraph); }
-.tile-transcript-entry .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: var(--space-subsection) 0 var(--space-row); color: var(--fg-strong); font-size: 1em; font-weight: var(--weight-strong); line-height: var(--leading-tight); }
-.tile-transcript-entry .markdown-reader :is(ul, ol) { padding-left: var(--space-subsection); }
-.tile-transcript-entry .markdown-reader li + li { margin-top: var(--space-row); }
-.tile-transcript-entry .markdown-reader :is(code, pre) { font: var(--term-size)/var(--leading-body) var(--font-term); }
-.tile-transcript-entry .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
-.tile-transcript-entry .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
-.tile-transcript-entry .markdown-reader a { color: var(--accent); }
+/* The question card's plan and command (chat-question.js) read as a Chat line does (KAN-661). */
+:is(.tile-transcript-entry, .chat-question) .markdown-reader { max-width: none; margin: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader > :first-child { margin-top: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader > :last-child { margin-bottom: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(p, ul, ol, pre) { margin: 0 0 var(--space-paragraph); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: var(--space-subsection) 0 var(--space-row); color: var(--fg-strong); font-size: 1em; font-weight: var(--weight-strong); line-height: var(--leading-tight); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(ul, ol) { padding-left: var(--space-subsection); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader li + li { margin-top: var(--space-row); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(code, pre) { font: var(--term-size)/var(--leading-body) var(--font-term); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader a { color: var(--accent); }
 /* Sent, and not yet written down by the CLI: the person's words in a lighter shade until they land. */
 .tile-transcript-entry[data-role='user'][data-pending='true'] { color: var(--muted); }
 /* A pipe table, wherever markdown is read (Chat, Docs, Help): a heavier rule under the header

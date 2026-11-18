@@ -163,6 +163,14 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     // terminal in place of the dots.
     const flagged = now === 'asking' || now === 'no_progress';
     const shows = active && (now === 'working' || flagged || now === 'stopped');
+    const asked = now === 'asking' && onChoose && answerable(question) ? question : null;
+    // ONE SHOWING OF A QUESTION (KAN-661): while the card holds it, the log's own line of it (the
+    // newest ask, nothing of the person's after it) waits; answered, it reads as the record.
+    const asks = [...el.querySelectorAll('.tile-transcript-entry[data-kind="ask"]')];
+    for (const entry of asks) entry.hidden = false;
+    let pending = asks.at(-1);
+    for (let next = pending?.nextElementSibling; next && pending; next = next.nextElementSibling) if (next.dataset.role === 'user') pending = null;
+    if (asked && pending) pending.hidden = true;
     if (!shows) {
       stanceNode?.remove();
       stanceNode = null;
@@ -173,8 +181,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       stanceNode.className = 'tile-transcript-stance';
       stanceNode.setAttribute('aria-live', 'polite');
     }
-    const asked = now === 'asking' && onChoose && answerable(question) ? question : null;
-    const key = `${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}\u0000${died}`;
+    const key =`${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}\u0000${died}`;
     if (stanceNode.getAttribute?.('data-key') !== key) {
       stanceNode.setAttribute('data-key', key);
       stanceNode.setAttribute('data-stance', now);
