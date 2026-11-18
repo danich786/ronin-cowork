@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http';
 import express from 'express';
 import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -163,14 +164,16 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
   };
 }
 
-let inProcessLaunch: ((body: Record<string, unknown>) => Promise<{ status: number; body: Record<string, unknown> }>) | null = null;
+type InProcessLaunch = (body: Record<string, unknown>, from?: Pick<IncomingMessage, 'headers'>) => Promise<{ status: number; body: Record<string, unknown> }>;
+let inProcessLaunch: InProcessLaunch | null = null;
 /**
  * POST /api/launch from inside the server: the same session creation, the same body New Agent
- * sends, its answer returned. Throws before registerLaunch has run.
+ * sends, its answer returned. `from` is the browser request a part answers, when there is one:
+ * its person is the Agent's user, as on New Agent. Throws before registerLaunch has run.
  */
-export function launchSession(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }> {
+export function launchSession(body: Record<string, unknown>, from?: Pick<IncomingMessage, 'headers'>): Promise<{ status: number; body: Record<string, unknown> }> {
   if (!inProcessLaunch) throw new Error('launchSession: the launch route is not registered yet.');
-  return inProcessLaunch(body);
+  return inProcessLaunch(body, from);
 }
 
 export interface LaunchControl {
@@ -558,15 +561,15 @@ export function registerLaunch(app: express.Express): LaunchControl {
     })().catch((e) => console.error(`[ronin] spawn ${resolved.name}:`, e));
   };
   const launchJob: express.RequestHandler = (req, res) => launch(req, res);
-  // The same launch, called from inside the server (a part): no browser, so nobody behind it.
-  inProcessLaunch = async (body) => {
+  // The same launch, called from inside the server (a part): the browser request it answers, if any.
+  inProcessLaunch = async (body, from) => {
     let status = 200;
     let answer: Record<string, unknown> = {};
     const response = {
       status(code: number) { status = code; return this; },
       json(value: unknown) { answer = value && typeof value === 'object' ? value as Record<string, unknown> : {}; return value; },
     } as unknown as express.Response;
-    await launch({ body } as express.Request, response);
+    await launch({ body, headers: from?.headers ?? {} } as express.Request, response);
     return { status, body: answer };
   };
   app.post('/api/launch', launchJob);
