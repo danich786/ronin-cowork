@@ -121,7 +121,7 @@ same way. See [Share a file with an Agent](share-a-file.md).
 
 The separate **Transcript** button appears when Ronin Services has loaded Terminal
 transcript. It switches **Term → Chat → Term**; the button always names where you are
-now. A tile always opens on Chat, on a desk as on a phone, a new Agent's too: a new Agent's
+now. A Bare Metal Agent's or Terminal session's tile opens on Term. Every other tile opens on Chat, on a desk as on a phone, a new Agent's too: a new Agent's
 Chat is an empty conversation with *Working* at its end, and its first words start there as
 it writes them, with no reload. Chat is the conversation alone, as the CLI itself wrote it. The button is opaque when this Agent has nothing to show — born before Ronin
 recorded launch identity, started outside Ronin, or

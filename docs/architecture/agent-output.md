@@ -124,7 +124,8 @@ them to Core's `deliverToWatchers`, which sends each watching connection the lin
 reading admits (`src/ws/watchers.ts`). A tab that reconnects says its list again and asks for
 what it missed by `seq`.
 
-A tile opens on Chat as soon as its Agent is born, usually before the CLI has written a
+A tile opens on Chat (Term for a Bare Metal Agent or a Terminal session, by the session's
+`identity.sessionType`; `Tile.firstView`, which waits for a newborn's identity to reach its row) as soon as its Agent is born, usually before the CLI has written a
 journal (`journal_pending`). That Chat is an empty conversation with *Working* at its end.
 Each push of the Agent's home row sends the tile's watch again while it is so; the row moves
 when the CLI starts writing, and the server's answer to a watch is to follow that journal,
