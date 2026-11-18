@@ -56,6 +56,7 @@ import {
   removeArchive,
   providerSessionInfo,
   writeArchive,
+  warmRestorable,
   type ArchivedSession,
 } from '../session-archive.js';
 import { ignoreEndingRequest, inspectSessionEnding, promptEnding } from '../desks/ending-runtime.js';
@@ -182,11 +183,12 @@ async function archiveProvider(name: string): Promise<{ agent: string; id: strin
 }
 
 /** The archive step itself, for a known provider conversation: manifest first, then stop. */
-async function archiveWith(name: string, provider: { agent: string; id: string }, desksLeftOpen: string[] = []): Promise<ArchivedSession> {
+async function archiveWith(name: string, provider: { agent: string; id: string }, desksLeftOpen: string[] = [], warm = false): Promise<ArchivedSession> {
   const key = await sessionKey(name);
   const runtime = await sessionRuntime(name);
   const archived: ArchivedSession = {
     ...(desksLeftOpen.length ? { desks_left_open: desksLeftOpen } : {}),
+    ...(warm ? { warm_restart: true as const } : {}),
     version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
     identity: (await listSessions()).find((s) => s.name === name)?.identity,
     agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
@@ -442,6 +444,50 @@ export function registerSessions(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
+  });
+
+  // WARM RESTART (KAN-672): archive all saves every live Agent through the one archive, for a
+  // planned stop of the office; restore all brings each back by the one restore. Like the park,
+  // the whole office stays: no desk or item refusal, holds and desks stay with their Agent, no
+  // Team is told. Unlike the park, one Agent that cannot be saved does not hold the rest: each
+  // is named in the answer. The calling Agent (`pane`) is saved last, so the others are saved
+  // before its own call is stopped. Both are idempotent: archive all saves only live Agents, and
+  // restore all brings back only what archive all saved and is not already running.
+  app.post('/api/machine/archive-all', async (req, res) => {
+    try {
+      const pane = String(req.body?.pane ?? '').trim();
+      const caller = /^%\d+$/.test(pane) ? await sessionOfPane(pane) : null;
+      const names = (await listSessions()).filter((s) => s.agent).map((s) => s.name)
+        .sort((a, b) => Number(a === caller) - Number(b === caller));
+      const saved: Array<{ name: string; id: string; agent: string }> = [];
+      const not_saved: Array<{ name: string; error: string }> = [];
+      for (const name of names) {
+        try {
+          const provider = await archiveProvider(name);
+          if ('error' in provider) { not_saved.push({ name, error: provider.error }); continue; }
+          const archived = await archiveWith(name, provider, [], true);
+          await clearHookRecord(name);
+          saved.push({ name, id: archived.id, agent: archived.agent });
+          count('ended', { name, end: 'warm_restart' });
+        } catch (e) { not_saved.push({ name, error: String((e as Error)?.message ?? e) }); }
+      }
+      res.json({ ok: true, saved, not_saved });
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
+  });
+
+  app.post('/api/machine/restore-all', async (req, res) => {
+    try {
+      const live = new Set((await listSessions()).map((s) => s.name));
+      const { restore, running } = warmRestorable(await listArchives(), live);
+      const restored: Array<{ name: string; id: string }> = [];
+      const not_restored = running.map(({ name, id }) => ({ name, id, error: `Session "${name}" already exists.` }));
+      for (const { name, id } of restore.reverse()) { // oldest first: the order archive all saved them
+        const { status, body } = await rehydrate(id, callerOf(req));
+        if (status === 200) restored.push({ name, id });
+        else not_restored.push({ name, id, error: String(body.error ?? `HTTP ${status}`) });
+      }
+      res.json({ ok: true, restored, not_restored });
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
   // RESUME A STOPPED AGENT (KAN-660): its dead pane is archived and restored at once, so the CLI

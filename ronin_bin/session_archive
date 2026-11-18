@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_archive "$@"
 # session_archive — stop a live session while keeping it resumable.
-# Usage: session_archive <session> [--ignore-items] [--ignore-desks]
+# Usage: session_archive <session> [--ignore-items] [--ignore-desks] | session_archive --all
 set -u
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { echo "session_archive: --help takes no other arguments. Run session_archive --help." >&2; exit 2; }
@@ -24,12 +24,29 @@ leaves every desk exactly as it is: worktree, uncommitted files, branch and owne
 archive records them; session_restore brings the Agent back to the same desks. Expiry
 after 7 days removes the archive, never a worktree; the lead is told the desks are kept.
 A dead pane archives too: the conversation id is read from the saved launch identity.
+
+  session_archive --all [--status <file>]
+
+Archive all, for a planned stop of the office (a resize, Restart, Update): every live Agent
+is archived as above, with no desk or item check: its desks, items and Teams stay as they
+are, and nobody is told. Each Agent is named, saved or not and why; one that cannot be saved
+does not hold the rest. Run from an Agent, that Agent is saved last. session_restore --all
+brings them back. Run it again and it saves only what is still live.
+--status <file> starts it detached and returns at once: <file> reads {"state":"running"},
+then {"state":"done","saved":[{name,id,agent}],"not_saved":[{name,error}]} or
+{"state":"failed","error"}. It is done or failed within 600 s.
 Related: session_restore --help
 EOF
     exit 0 ;;
 esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
+if [ "${1-}" = --all ]; then
+  shift
+  . "$TOOL_DIR/ronin-all.sh"
+  ronin_all archive-all "$@"
+  exit $?
+fi
 ignore_items=false ignore_desks=false NAME=
 for arg in "$@"; do
   case "$arg" in

@@ -87,6 +87,38 @@ reclaim. The lead's end notice (the members-list ack, `memberEnded`, and the "en
 handover" notice when it applies) carries `<name> ended, archived as <id>: session_restore <id>`.
 Delete, Hard Delete and the tile's shutdown are unchanged: they end outright.
 
+## Warm restart: archive all, restore all
+
+A planned stop of an office (a resize, Restart, Update; KAN-671) saves its Agents first and
+brings each back afterwards. Two calls, both on the operator socket like every route:
+
+- `POST /api/machine/archive-all` (`session_archive --all`) runs `archiveWith` for every live
+  Agent, the same manifest and stop as any archive, with `warm_restart: true` on the manifest.
+  As for the park there is no desk or item check, holds and desks stay with the Agent, and no
+  Team is told. Unlike the park, an Agent with no resumable conversation does not refuse the
+  rest: it is left running and named in `not_saved`. Its hook record is cleared, so the card
+  starts fresh. Body `{ "pane": "%7" }` (optional, the tool sends `$TMUX_PANE`) saves that
+  Agent last, so a call from an Agent saves the others before its own pane is stopped.
+  Answer: `{ ok, saved: [{ name, id, agent }], not_saved: [{ name, error }] }`.
+- `POST /api/machine/restore-all` (`session_restore --all`) runs `rehydrate` on every
+  `warm_restart` manifest, oldest first: the same restore as `session_restore <id>`, so the
+  name, cwd, key, Teams, leads, wipeboards, project root and the birth command (KAN-661) come
+  back and the provider continues its conversation. An archive whose name is running is not
+  touched. Answer: `{ ok, restored: [{ name, id }], not_restored: [{ name, id, error }] }`;
+  a manifest that did not come back stays in the Archived tab.
+
+The tools take `--status <file>` (`ronin_bin/ronin-all.sh`): the call runs detached
+(`setsid`) and the tool returns at once, for a caller that cannot hold a command open (the
+park, over qemu-guest-agent). `<file>` reads `{"state":"running"}`, then the answer above
+with `"state":"done"` in place of `ok`, or `{"state":"failed","error"}`; it is written whole
+(rename), and is done or failed within 600 s (the curl limit). The park's order: archive all
+done (or failed), stop, start, Ronin's port answers, restore all.
+
+Both are idempotent: archive all saves only what is live, and a restored manifest is removed,
+so a second restore all does nothing. Ronin and tmux may be stopped and started between the
+two; the manifests and session folders are on disk. A warm manifest that is never restored
+expires as any other.
+
 ## Expiry
 
 An archive undoes an accidental close; it is not storage (owner, 2026-11-15). An archive whose
@@ -129,6 +161,8 @@ Leads list the archives with `session_restore` and no argument: it reads
 | `POST /api/sessions/:name/shutdown` | Immediately start observable safe Delete, or exact-confirmed Hard Delete; returns an operation id |
 | `{t:'shutdown', ...operation}` on `/events` | Each phase, desk count, terminal success, or actionable blockers, pushed as they happen; `{t:'want', resource:'shutdown', id}` answers a reopened socket with the operation as it stands |
 | `POST /api/machine/park` | Archive every Agent for `bin/ronin-archive` ([park](../operating/park.md)): the same manifest and stop, no desk or item refusal, holds kept; answers what to carry beside the stores |
+| `POST /api/machine/archive-all` | Archive all for a warm restart ([above](#warm-restart-archive-all-restore-all)): every live Agent saved, each named `saved` or `not_saved` |
+| `POST /api/machine/restore-all` | Restore all that archive all saved and is not running, each named `restored` or `not_restored` |
 | `GET /api/archived-sessions` | Roster-safe rows, newest first: `id`, `name`, `archived_at`, `agent`, `tags`, and `desks_left_open` when set; archives older than 7 days have already gone ([Expiry](#expiry)) |
 | `POST /api/archived-sessions/:id/rehydrate` | Resume provider conversation and restore metadata |
 | `DELETE /api/archived-sessions/:id` | Irreversibly end and remove the archived record |
