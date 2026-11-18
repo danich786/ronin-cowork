@@ -40,7 +40,8 @@ Self-hosted has no record and holds nothing HQ-related. `readOfficeRecord()` is 
 a present file that does not read is `unreadable`, a provisioning fault, never self-hosted.
 
 What asks it: the Services account part (no record, no HQ call; `GET /api/account` answers
-`not_hosted`), the Tomodachi sender in the account part (`account/tomodachi-send.ts`: sends from
+`not_hosted`; `GET /api/account/record`, the `lounge` tool's door, asks HQ's
+`GET /v1/account/record` once per `lounge` run and keeps nothing), the Tomodachi sender in the account part (`account/tomodachi-send.ts`: sends from
 an office_unit only, to HQ's `POST /v1/account/tool-counts`, setting aside packets from before
 `provisioned_at`), the Hermes house-gateway seed (the record's `gateway_office`, else the
 developer's local door), the Setup posture (an office_unit hides Register and Install; a missing

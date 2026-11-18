@@ -19,6 +19,7 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `machine-settings`: read or change Campaign defaults, providers and Workspace folders
 - `team`: create or read a Team's roster and what it holds
 - `ronin-host`: measure the machine: what it is, its space, its account, which secrets exist
+- `lounge`: the person's Business Lounge record from HQ, now: subscription, balance, this office's rental, office limit, default models
 - `mika`: ask Mika, Ronin's help assistant
 - `lookup`: print a Ronin document by its `mika-source:` id
 - `show`: open a Ronin page in another visible workspace of the owner's tab, never the one they are on
