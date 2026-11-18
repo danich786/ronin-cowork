@@ -84,7 +84,8 @@ server, the restart in `src/host-guard.ts`, stays direct on purpose.
 ## The roster, computed once and on change
 
 The home rows are built by `homeRows` in `src/routes/launch.ts` from the session listing a
-tick took: while a browser is connected, `src/ws/events.ts` broadcasts `{t:'home', rows}`
+tick took, only the rows that can have moved (a pane that drew, a `rowChanged`; every row
+when the listing moved or a write route calls `changed()`): while a browser is connected, `src/ws/events.ts` broadcasts `{t:'home', rows}`
 only when the painted fields moved (`homeSignature` leaves out a row's `activity` and stance
 `at`); a fresh connection receives the rows once. A session's screen is captured
 and classified only when its `#{window_activity}` stamp moved since the last
