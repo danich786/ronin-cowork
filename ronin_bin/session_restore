@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" session_restore "$@"
 # session_restore — list the archives, or restore one through Ronin's existing resume path.
-# Usage: session_restore [<archive-id>]
+# Usage: session_restore [<archive-id> | --all]
 set -u
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { echo "session_restore: --help takes no other arguments. Run session_restore --help." >&2; exit 2; }
@@ -11,6 +11,7 @@ session_restore — list the archives, or resume one archived session
 Usage:
   session_restore               list the archives there are, newest first
   session_restore <archive-id>  restore one
+  session_restore --all         restore all that session_archive --all saved
 
 With no argument it lists each archive: name, team, when it was archived, its id and the
 line that restores it. An archive is there to undo an accidental close: it lasts 7 days,
@@ -23,12 +24,28 @@ Restore does not give back work items: the restored Agent takes back its items (
 A worktree closed at the end it reopens (worktree-desk open). One archived with
 session_archive --ignore-desks was left open: the restored Agent is back at that same desk,
 its uncommitted work as it was.
+
+  session_restore --all [--status <file>]
+
+Restore all: brings back every Agent session_archive --all saved and is not already running,
+under the same name and in the same place, each continuing its conversation, with its Teams,
+leads, items and desks as they were. Each is named, back or not and why. Run it again and
+it does nothing more; with nothing saved it does nothing.
+--status <file> starts it detached and returns at once: <file> reads {"state":"running"},
+then {"state":"done","restored":[{name,id}],"not_restored":[{name,id,error}]} or
+{"state":"failed","error"}. It is done or failed within 600 s.
 Related: session_archive --help, session_end --help
 EOF
     exit 0 ;;
 esac
 . "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
 TOOL_DIR=$(dirname "$SELF")
+if [ "${1-}" = --all ]; then
+  shift
+  . "$TOOL_DIR/ronin-all.sh"
+  ronin_all restore-all "$@"
+  exit $?
+fi
 [ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ -n "$1" ] && [ "${1#-}" = "$1" ]; } || {
   echo "usage: session_restore [<archive-id>]. Run session_restore --help." >&2
   exit 2

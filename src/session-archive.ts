@@ -26,6 +26,14 @@ export interface ArchivedSession {
   project_root: string;
   /** Open desks the archive left as they were (--ignore-desks); restore returns to them. */
   desks_left_open?: string[];
+  /** Saved by archive all (POST /api/machine/archive-all); restore all brings back only these. */
+  warm_restart?: true;
+}
+
+/** What restore all brings back: the archives archive all saved whose name is not running. */
+export function warmRestorable(archives: readonly ArchivedSession[], live: ReadonlySet<string>): { restore: ArchivedSession[]; running: ArchivedSession[] } {
+  const warm = archives.filter((a) => a.warm_restart);
+  return { restore: warm.filter((a) => !live.has(a.name)), running: warm.filter((a) => live.has(a.name)) };
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
