@@ -155,11 +155,11 @@ export function changed(): void {
   else void tick();
 }
 
-/** A part of this Agent's card moved (none named: its listing entry did). */
-export function mark(name: string, part?: CardPart): void {
+/** Parts of this Agent's card moved (none named: its listing entry did). */
+export function mark(name: string, ...moved: CardPart[]): void {
   if (eventClients.size === 0) return;
   const parts = marks.get(name) ?? new Set<CardPart>();
-  if (part) parts.add(part);
+  for (const part of moved) parts.add(part);
   marks.set(name, parts);
   void rebuild();
 }
@@ -183,7 +183,11 @@ function rebuild(): Promise<void> {
         broadcastEvent({ t: 'card', rev, card });
       }));
     }
-  })().catch(() => {}).finally(() => { rebuilding = undefined; });
+  })().catch(() => {}).finally(() => {
+    rebuilding = undefined;
+    // A mark that landed after the last round, while this one was finishing, is read now.
+    if (marks.size) void rebuild();
+  });
   return rebuilding;
 }
 
@@ -396,7 +400,9 @@ export function startSessionsBroadcast(next: Feed): void {
     if (n.subscription?.startsWith('listing')) { changed(); return; }
     if (!n.subscription?.startsWith('activity')) return;
     const moved = activityMoved(n.value ?? '', stamps);
-    for (const name of moved) { emitPaneActivity(name); mark(name, 'pane'); }
+    // A pane that drew: its screen and its CLI's own log both may have moved (a thinking CLI
+    // writes no line the transcript part tells); never its work record.
+    for (const name of moved) { emitPaneActivity(name); mark(name, 'pane', 'fields'); }
     if (moved.length && lastGithub) void github();
   });
   onRowChanged((name) => mark(name, 'fields'));
