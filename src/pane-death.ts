@@ -18,7 +18,7 @@ const hhmm = (at: Date) => at.toTimeString().slice(0, 5);
 
 export async function paneDied(name: string): Promise<void> {
   const [status, time] = (await tmux.run(['display-message', '-p', '-t', exactPane(name), '#{pane_dead_status}\t#{pane_dead_time}']).catch(() => ''))
-    .trim().split('\t');
+    .replace(/\s+$/, '').split('\t'); // not trim(): a signal leaves the status empty, and its tab must stay
   const at = time && Number(time) ? new Date(Number(time) * 1000) : new Date();
   const exit = status === '' || Number.isNaN(Number(status)) ? null : Number(status);
   await keepHookRecord(name, { stance: 'stopped', at: at.toISOString(), ...(exit === null ? {} : { exit }) });

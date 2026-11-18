@@ -60,8 +60,9 @@ const HEADER = () => {
     read: (tile, el) => {
       el.hidden = !tile.transcriptAvailable();
       el.setAttribute('aria-pressed', String(!!tile.transcriptOn));
-      el.textContent = typeof tile.transcriptLabel === 'function' ? tile.transcriptLabel()
+      const label = typeof tile.transcriptLabel === 'function' ? tile.transcriptLabel()
         : (tile.transcriptOn ? t('transcript.terminal', 'Term') : t('transcript.toggle', 'Transcript'));
+      if (el.textContent !== label) el.textContent = label; // a push repaints only what changed (KAN-664)
     },
     on: (tile) => tile.toggleTranscript() },
 

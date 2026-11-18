@@ -74,7 +74,9 @@ A status change marks `fields` only: never `pane` or `record`, never every card,
 that card in by name (`public/js/store.js`); the keyed lists (KAN-412) redraw only that
 Agent's row, and the tile's Chat redraws only its status node (`setStance` →
 `paintStance`, `public/js/tile-transcript.js`), leaving the transcript and the rest of the
-card as they are.
+card as they are. Every tile hears every card push (`subscribe('home')`, `public/js/tile.js`),
+so whatever a tile paints from it writes only what changed: another Agent's push changes
+nothing in this tile.
 
 ## In the code
 
