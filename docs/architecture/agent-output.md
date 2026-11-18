@@ -70,8 +70,8 @@ else that uses the shape takes `tool.name` and `tool.target` only.
   name and target), `ask` is *asking you*, `turn` is *awaiting you*, anything else is
   *working*, and an empty file is *unknown*. The CLI's injected text and a log's notes are
   passed over, so a compaction (its summary, then *session started*) leaves an idle Agent
-  *awaiting you*. Each write calls `rowChanged`, and Core pushes the
-  home rows then; there is no clock.
+  *awaiting you*. Each write calls `rowChanged`, which marks that Agent's card, and Core
+  pushes it then; there is no clock.
 - **A question** (KAN-527, KAN-616) comes from the CLI's own hooks, and from the screen where no
   hook tells. Claude Code and Codex run `ronin-asking` on their hook events (each CLI's launch
   doc, `docs/agents/`); it posts the event to `/api/asking` and returns at once. A question

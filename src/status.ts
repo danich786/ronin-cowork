@@ -57,34 +57,3 @@ export function asksForInput(text: string): boolean {
   const tail = text.replace(/\n+$/, '').split('\n').slice(-SCAN_LINES).join('\n');
   return STATUS_PATTERNS.some((p) => p.status === 'awaiting-input' && p.re.test(tail));
 }
-
-/**
- * One reading per activity stamp. The stamp counts whole seconds, so a reading taken while its
- * second still runs can miss a draw later in that second: it is returned but not kept, and the
- * next push (tmux reports again when the second is over, ACTIVITY_SUBSCRIPTION) reads afresh.
- */
-export function createActivityCache<T>(load: (session: string) => Promise<T>, now: () => number = Date.now) {
-  const settled = new Map<string, { activity: number; value: T }>();
-  const pending = new Map<string, { activity: number; closed: boolean; value: Promise<T> }>();
-
-  return async (session: string, activity: number): Promise<T> => {
-    const previous = settled.get(session);
-    if (previous?.activity === activity) return previous.value;
-
-    const closed = Math.floor(now() / 1000) > activity;
-    const underway = pending.get(session);
-    if (underway?.activity === activity && underway.closed === closed) return underway.value;
-
-    const value = load(session).then((result) => {
-      if (closed) settled.set(session, { activity, value: result });
-      return result;
-    }).catch((error) => {
-      if (previous) return previous.value;
-      throw error;
-    }).finally(() => {
-      if (pending.get(session)?.value === value) pending.delete(session);
-    });
-    pending.set(session, { activity, closed, value });
-    return value;
-  };
-}

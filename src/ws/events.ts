@@ -1,20 +1,23 @@
 import { mkdirSync, watch } from 'node:fs';
+import path from 'node:path';
 import { onClock } from '../jikan.js';
 import { type WebSocket } from 'ws';
 import { listSessions, type SessionInfo } from '../tmux.js';
 import { tmux, type TmuxClient } from '../tmux-client.js';
 import { withAxes, type SessionWithAxes } from '../tegami.js';
+import { sessionDir } from '../session-dir.js';
+import { AGENT_BRIEF } from '../birth-brief.js';
 import { unwatch, watchFor } from './watchers.js';
 import { emitPaneActivity, emitTranscriptWatch, onRowChanged } from '../sockets.js';
 
 const eventClients = new Set<WebSocket>();
 
 /*
- * THE PUSH — the browser store holds what arrives here. Each tick (a tmux notification, a
- * pane's output, or a read writing a line) takes ONE session listing and builds both
- * messages from it: {t:'sessions', list} and {t:'home', rows}, each sent only when a field
- * the UI paints moved. While a GitHub or git setup session is attached, the tick also sends
- * {t:'github-setup', github} when that answer moved.
+ * THE PUSH — the browser store holds what arrives here (docs/architecture/data-path.md).
+ * The tick takes ONE session listing; when it moved it sends {t:'sessions', list} and every
+ * card whole, {t:'cards', rev, cards}. An Agent's card is marked by what changes a part of it
+ * (KAN-641) and made in one place, rebuild(), which sends {t:'card', rev, card} when it moved.
+ * While a GitHub or git setup session is attached, {t:'github-setup', github} when it moved.
  *
  * HELD messages ({t:'teams'}, {t:'epics'}, {t:'messages'}, {t:'memory'}) are published when their
  * resource changes, sent only when they differ from the last, and sent whole to every fresh
@@ -29,7 +32,8 @@ const eventClients = new Set<WebSocket>();
 export const BEAT_MS = 15_000;
 export interface Feed {
   list: () => Promise<SessionInfo[]>;
-  home: (sessions: SessionWithAxes[]) => Promise<unknown[]>;
+  /** One Agent's card from its listing entry, re-reading only `parts` (src/routes/launch.ts cardOf). */
+  card: (session: SessionWithAxes, parts: ReadonlySet<CardPart>) => Promise<Record<string, unknown>>;
   teams: () => Promise<unknown[]>;
   /** Every Epic (a level-1 work item) whole, with its holder, and every live item, slim, with its Epic ('' under none, KAN-414):
    * the Epics workbench's stones (KAN-190, KAN-206). */
@@ -40,14 +44,15 @@ export interface Feed {
   github: { attached: () => Promise<boolean>; answer: () => Promise<unknown> };
   shutdown: (id: string) => object | null;
 }
+export type CardPart = 'pane' | 'fields' | 'record';
+const ALL_PARTS: ReadonlySet<CardPart> = new Set(['pane', 'fields', 'record']);
 const empty: Feed = {
-  list: listSessions, home: async () => [], teams: async () => [], epics: async () => ({ epics: [], items: [] }), messages: async () => [],
+  list: listSessions, card: async (s) => ({ ...s }), teams: async () => [], epics: async () => ({ epics: [], items: [] }), messages: async () => [],
   wipeboard: async () => null, jikan: async () => null, github: { attached: async () => false, answer: async () => null },
   shutdown: () => null,
 };
 let feed: Feed = empty;
 let lastSessions = '';
-let lastHome = '';
 let lastGithub = '';
 // The last text of each held message, by `t`.
 const held = new Map<string, string>();
@@ -57,42 +62,31 @@ const held = new Map<string, string>();
 const lastSent = new Map<string, string>();
 const reads = new Map<string, Promise<void>>();
 const waiting = new Set<string>();
-// What every connected tab holds: a fresh connection is sent these when its own tick could
-// not read them (a failed listing, or nothing that moved).
-let heldSessions: SessionWithAxes[] | undefined;
-let heldRows: unknown[] | undefined;
-// A home row costs a read of the items, rosters and plans, so a tick builds only the rows that
-// can have moved: the sessions whose pane drew or whose part wrote a line (KAN-639: one working
-// Agent's pane drawing every second rebuilt every row, most of a core). Everything else
-// (changed(), a listing that moved) builds every row.
-let rowsByName = new Map<string, unknown>();
-let everyRow = true;
-const rowsDue = new Set<string>();
-// A tick says who each broadcast reached, so a connection that joins one in flight is sent
-// only what it missed.
-type Tick = { reached: Map<string, ReadonlySet<WebSocket>> };
-let ticking: Promise<Tick> | undefined;
+// What every connected tab holds, sent whole to a fresh connection: the listing, and each
+// listed Agent's last card (its text, and the watch on its folder), in listing order.
+let heldSessions: SessionWithAxes[] = [];
+const cards = new Map<string, { card: Record<string, unknown>; text: string; unwatch: () => void }>();
+let rev = 0;
+// The parts marked since the last rebuild read them, and the rebuild running now.
+const marks = new Map<string, Set<CardPart>>();
+let rebuilding: Promise<void> | undefined;
+let ticking: Promise<void> | undefined;
 // Something changed while a tick was in flight: that tick may have read before it, so one more runs.
 let rerun = false;
 // Roster reads run in write order, so an older read never lands after a newer one.
 let teamsRead: Promise<void> = Promise.resolve();
 
 // The fields the UI paints: `activity` moves on every keystroke and nothing under public/
-// shows it, and a row's stance `at` is the same; neither makes a push on its own.
+// shows it; it makes no push on its own.
 export function sessionsSignature(list: unknown): string {
   return JSON.stringify((list as Array<Record<string, unknown>>).map(({ activity: _activity, ...painted }) => painted));
-}
-export function homeSignature(rows: unknown): string {
-  return JSON.stringify((rows as Array<Record<string, unknown>>).map(({ activity: _activity, at: _at, ...painted }) => painted));
 }
 
 export function feedEvents(next: Partial<Feed>): void {
   feed = { ...empty, ...next };
-  lastSessions = lastHome = lastGithub = '';
-  heldSessions = heldRows = undefined;
-  rowsByName = new Map();
-  everyRow = true;
-  rowsDue.clear();
+  lastSessions = lastGithub = '';
+  heldSessions = [];
+  forgetCards();
   held.clear();
   lastSent.clear();
   reads.clear();
@@ -110,50 +104,33 @@ export function publishHeld(msg: { t: string } & Record<string, unknown>): boole
   return true;
 }
 
-export function tick(): Promise<Tick> {
-  if (eventClients.size === 0) return Promise.resolve({ reached: new Map() });
+const cardsMessage = () => ({ t: 'cards', rev, cards: heldSessions.flatMap((s) => cards.has(s.name) ? [cards.get(s.name)!.card] : []) });
+
+/** THE TICK: one session listing. When it moved, the list is sent, every listed card is made
+ * again from its entry (a new Agent's read whole, the rest from what was read), and the tabs
+ * are sent every card whole. */
+export function tick(): Promise<void> {
+  if (eventClients.size === 0) return Promise.resolve();
   if (ticking) return ticking;
-  const reached: Tick['reached'] = new Map();
-  const send = (msg: { t: string } & Record<string, unknown>) => {
-    broadcastEvent(msg);
-    reached.set(msg.t, new Set(eventClients));
-  };
-  ticking = (async (): Promise<Tick> => {
+  ticking = (async (): Promise<void> => {
     const sessions = await withAxes(await feed.list());
-    heldSessions = sessions;
     const signature = sessionsSignature(sessions);
-    const all = everyRow || signature !== lastSessions;
-    const due = new Set(rowsDue);
-    everyRow = false;
-    rowsDue.clear();
+    // The last tab left while this listing was read: the next one's tick makes the cards.
+    if (eventClients.size === 0) return;
     if (signature !== lastSessions) {
       lastSessions = signature;
-      send({ t: 'sessions', list: sessions });
+      heldSessions = sessions;
+      broadcastEvent({ t: 'sessions', list: sessions });
+      const listed = new Set(sessions.map((s) => s.name));
+      for (const [name, held] of cards) if (!listed.has(name)) { held.unwatch(); cards.delete(name); }
+      for (const s of sessions) mark(s.name);
+      await rebuild();
+      rev += 1;
+      broadcastEvent(cardsMessage());
     }
-    const build = all ? sessions : sessions.filter((s) => due.has(s.name) || !rowsByName.has(s.name));
-    const fresh = build.length ? await feed.home(build).catch(() => undefined) : [];
-    if (fresh) {
-      if (all) rowsByName = new Map();
-      fresh.forEach((row, i) => rowsByName.set(build[i]!.name, row));
-    }
-    const rows = fresh && sessions.flatMap((s) => rowsByName.has(s.name) ? [rowsByName.get(s.name)] : []);
-    if (rows && homeSignature(rows) !== lastHome) {
-      lastHome = homeSignature(rows);
-      heldRows = rows;
-      send({ t: 'home', rows });
-    }
-    // Watched only while a setup session is attached, and once more after the last one
-    // closes, so a login that finishes and closes lands.
-    const attached = await feed.github.attached().catch(() => false);
-    if (attached || lastGithub) {
-      const github = await feed.github.answer().catch(() => undefined);
-      const signature = github === undefined ? lastGithub : JSON.stringify(github);
-      if (github !== undefined && signature !== lastGithub) send({ t: 'github-setup', github });
-      lastGithub = attached ? signature : '';
-    }
-    return { reached };
+    await github();
   })()
-    .catch(() => ({ reached }))
+    .catch(() => {})
     .finally(() => {
       ticking = undefined;
       if (rerun) { rerun = false; void tick(); }
@@ -161,18 +138,72 @@ export function tick(): Promise<Tick> {
   return ticking;
 }
 
-/** Something changed: tick now, or once more after the tick in flight, which may have read before the change. */
+// Watched only while a setup session is attached (the tick, and its pane's draws), and once
+// more after the last one closes, so a login that finishes and closes lands.
+async function github(): Promise<void> {
+  const attached = await feed.github.attached().catch(() => false);
+  if (!attached && !lastGithub) return;
+  const answer = await feed.github.answer().catch(() => undefined);
+  const signature = answer === undefined ? lastGithub : JSON.stringify(answer);
+  if (answer !== undefined && signature !== lastGithub) broadcastEvent({ t: 'github-setup', github: answer });
+  lastGithub = attached ? signature : '';
+}
+
+/** The session set changed: tick now, or once more after the tick in flight, which may have read before the change. */
 export function changed(): void {
-  everyRow = true;
   if (ticking) rerun = true;
   else void tick();
 }
 
-/** One session's row may have moved (its pane drew, or its part wrote a line): tick, building that row. */
-export function rowMoved(name: string): void {
-  rowsDue.add(name);
-  if (ticking) rerun = true;
-  else void tick();
+/** A part of this Agent's card moved (none named: its listing entry did). */
+export function mark(name: string, part?: CardPart): void {
+  if (eventClients.size === 0) return;
+  const parts = marks.get(name) ?? new Set<CardPart>();
+  if (part) parts.add(part);
+  marks.set(name, parts);
+  void rebuild();
+}
+
+/** THE ONE PLACE A CARD IS MADE: each marked card, reading only its marked parts (all, the
+ * first time), sent when it moved. A mark that lands meanwhile is read on the next round. */
+function rebuild(): Promise<void> {
+  rebuilding ??= (async () => {
+    while (marks.size) {
+      const due = [...marks];
+      marks.clear();
+      await Promise.all(due.map(async ([name, parts]) => {
+        const s = heldSessions.find((one) => one.name === name);
+        const card = s && await feed.card(s, cards.has(name) ? parts : ALL_PARTS).catch(() => null);
+        if (!card) return;
+        const text = JSON.stringify(card);
+        const was = cards.get(name);
+        if (was?.text === text) return;
+        cards.set(name, { card, text, unwatch: was?.unwatch ?? watchRecord(s!) });
+        rev += 1;
+        broadcastEvent({ t: 'card', rev, card });
+      }));
+    }
+  })().catch(() => {}).finally(() => { rebuilding = undefined; });
+  return rebuilding;
+}
+
+// THE STORE FILE WATCHER: any writer of an Agent's letter, brief or documents marks its
+// record. Its folder's top level and drop/, not the whole store (Agents' tmp/ is huge).
+const RECORD_FILES = new Set(['tegami.md', AGENT_BRIEF]);
+function watchRecord(s: SessionWithAxes): () => void {
+  const dir = sessionDir(s.key);
+  const drop = path.join(dir, 'drop');
+  mkdirSync(drop, { recursive: true });
+  const watchers = [watch(dir, (_e, file) => { if (RECORD_FILES.has(String(file))) mark(s.name, 'record'); }), watch(drop, () => mark(s.name, 'record'))];
+  for (const w of watchers) w.on('error', () => {});
+  return () => watchers.forEach((w) => w.close());
+}
+
+function forgetCards(): void {
+  for (const held of cards.values()) held.unwatch();
+  cards.clear();
+  marks.clear();
+  lastSessions = '';
 }
 
 // Called after every roster or work-item write: one read of the rosters, and one of the
@@ -255,7 +286,13 @@ const SESSION_NOTIFICATIONS = [
 
 export function handleEvents(ws: WebSocket): void {
   eventClients.add(ws);
-  const drop = () => { eventClients.delete(ws); unwatch(ws); };
+  // With nobody listening no card is marked, so the held ones go stale: the next connection's
+  // tick makes every card again.
+  const drop = () => {
+    eventClients.delete(ws);
+    unwatch(ws);
+    if (eventClients.size === 0) forgetCards();
+  };
   ws.on('close', drop);
   ws.on('error', drop);
   // The one thing a browser says on this socket. Everything else it sends is ignored: this
@@ -289,15 +326,15 @@ export function handleEvents(ws: WebSocket): void {
     // means installing a watcher, which catches up what was missed.
     for (const session of new Set(watches.map((w) => w.session))) if (session) emitTranscriptWatch(session);
   });
-  // A fresh connection gets each message exactly once. The held ones it is sent now, as every
-  // other tab holds them; a later publish is a newer change. The session list and the rows
-  // come from the tick's broadcast if it reached this socket, or else what the others hold.
+  // A fresh connection, a reconnect included, is sent what every other tab holds, now: the
+  // held messages, the listing and every card, whole, at the current rev. The first tab's tick
+  // makes the cards and sends them to it.
   for (const text of held.values()) ws.send(text);
-  void tick().then(({ reached }) => {
-    if (ws.readyState !== ws.OPEN) return;
-    if (heldSessions && !reached.get('sessions')?.has(ws)) ws.send(JSON.stringify({ t: 'sessions', list: heldSessions }));
-    if (heldRows && !reached.get('home')?.has(ws)) ws.send(JSON.stringify({ t: 'home', rows: heldRows }));
-  });
+  if (lastSessions) {
+    ws.send(JSON.stringify({ t: 'sessions', list: heldSessions }));
+    ws.send(JSON.stringify(cardsMessage()));
+  }
+  void tick();
 }
 
 // Whether any browser is on /events: a server-side check that exists only to be pushed can
@@ -344,9 +381,10 @@ export function activityMoved(value: string, last: Map<string, string>): string[
 }
 
 /*
- * NO CLOCK. The push runs when something changed: tmux says the session set changed, tmux says a
- * pane had output (which is also what wakes the terminal read), or a read wrote a line (the
- * part calls rowChanged). An Agent doing nothing costs nothing; the beat stays, carrying no data.
+ * NO CLOCK. The push runs when something changed: tmux says the session set or a listed
+ * option changed (the tick), a pane had output (which is also what wakes the terminal read:
+ * that card's pane), a part's row moved (rowChanged: its fields), or a writer wrote a work
+ * record (its record). An Agent doing nothing costs nothing; the beat stays, carrying no data.
  */
 export function startSessionsBroadcast(next: Feed): void {
   feedEvents(next);
@@ -355,10 +393,12 @@ export function startSessionsBroadcast(next: Feed): void {
   wireTmuxNotifications(tmux, changed);
   const stamps = new Map<string, string>();
   tmux.on('subscription', (n) => {
+    if (n.subscription?.startsWith('listing')) { changed(); return; }
     if (!n.subscription?.startsWith('activity')) return;
     const moved = activityMoved(n.value ?? '', stamps);
-    for (const name of moved) { emitPaneActivity(name); rowMoved(name); }
+    for (const name of moved) { emitPaneActivity(name); mark(name, 'pane'); }
+    if (moved.length && lastGithub) void github();
   });
-  onRowChanged(rowMoved);
+  onRowChanged((name) => mark(name, 'fields'));
   onClock('events_beat', BEAT_MS, async () => { broadcastEvent({ t: 'beat' }); });
 }

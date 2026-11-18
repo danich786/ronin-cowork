@@ -38,7 +38,7 @@ test('a tile paints its gauge and work record from the pushed home row, and asks
   tile.subscribeHome();
   const letter = { docs: ['PLAN.md'], items: [{ id: 'w1', title: 'Plan it', status: 'PLAN' }] };
 
-  store.receive({ t: 'home', rows: [
+  store.receive({ t: 'cards', rev: 1, cards:[
     { name: 'beta', ctx: 12, model: 'other' },
     { name: 'alpha', ctx: 41, model: 'opus', stance: 'working', tegami: letter },
   ] });
@@ -48,14 +48,14 @@ test('a tile paints its gauge and work record from the pushed home row, and asks
   assert.equal(painted.stance, 'working', 'the reading\'s stance is the row\'s');
 
   // The next push moves the reading; the letter going away goes from the tile too.
-  store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 57, model: 'opus', stance: 'replying' }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'alpha', ctx: 57, model: 'opus', stance: 'replying' }] });
   assert.equal(painted.gauge.at(-1), 57);
   assert.equal(tile.tegami, null);
 
   // CLOSE: an unsubscribed tile hears nothing more.
   const heard = painted.gauge.length;
   tile.unsubscribeHome();
-  store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 90, model: 'opus' }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'alpha', ctx: 90, model: 'opus' }] });
   assert.equal(painted.gauge.length, heard);
 
   assert.deepEqual(asked, [], 'no request: not /ctx, not /tegami, nothing');
@@ -65,8 +65,8 @@ test('a pushed row costs the tile no request at all', () => {
   const { tile } = fakeTile('alpha');
   tile.subscribeHome();
   asked.length = 0;
-  store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 12, model: 'opus', tegami: { docs: [] } }] });
-  store.receive({ t: 'home', rows: [{ name: 'alpha', ctx: 13, model: 'opus', tegami: { docs: [] } }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'alpha', ctx: 12, model: 'opus', tegami: { docs: [] } }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'alpha', ctx: 13, model: 'opus', tegami: { docs: [] } }] });
   assert.deepEqual(asked, []);
   tile.unsubscribeHome();
 });
@@ -74,16 +74,16 @@ test('a pushed row costs the tile no request at all', () => {
 test('the docs list hears the rows from enter to close, and nothing after', () => {
   const heard = [];
   const docs = buildDocs(inert(), (name) => { heard.push(name); return false; });
-  store.receive({ t: 'home', rows: [{ name: 'gamma', tegami: { docs: ['A.md'] } }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'gamma', tegami: { docs: ['A.md'] } }] });
   assert.deepEqual(heard, [], 'built but not entered: not listening');
 
   docs.enter();
   assert.ok(heard.includes('gamma'), 'enter draws the snapshot');
-  store.receive({ t: 'home', rows: [{ name: 'delta', tegami: { docs: ['B.md'] } }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'delta', tegami: { docs: ['B.md'] } }] });
   assert.ok(heard.includes('delta'), 'a push while open redraws');
 
   docs.close();
-  store.receive({ t: 'home', rows: [{ name: 'epsilon', tegami: { docs: ['C.md'] } }] });
+  store.receive({ t: 'cards', rev: 1, cards:[{ name: 'epsilon', tegami: { docs: ['C.md'] } }] });
   assert.ok(!heard.includes('epsilon'), 'closed: the push is not heard');
   assert.deepEqual(asked.filter((url) => !url.startsWith('/api/desks')), [], 'the tracked shelf asks no route');
 });

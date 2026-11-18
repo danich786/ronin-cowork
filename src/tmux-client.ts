@@ -73,9 +73,12 @@ export const NOW_OPTION = '@ronin-now';
 export const ACTIVITY_SUBSCRIPTION = `activity::#{S:#{session_name}:#{window_activity}.#{e|<|:#{window_activity},#{T:${NOW_OPTION}}}#,}`;
 /** Each session's panes' pane_dead flags; a pane dying stops what it left (src/tmux.ts). */
 export const PANE_DEAD_SUBSCRIPTION = 'pane-dead::#{S:#{session_name}=#{P:#{pane_dead}}#,}';
+/** Each session's Ronin options the listing carries (src/tmux.ts listSessions): a title,
+ * Team, lead or Campaign set by anyone is tmux's own report, and the tick lists again. */
+export const LISTING_SUBSCRIPTION = 'listing::#{S:#{session_name}=#{@ronin-title}|#{@ronin-tags}|#{@ronin-lead}|#{@ronin-key}|#{@ronin-agent}|#{@ronin-campaign}|#{@ronin-rireki}|#{@ronin-identity}#,}';
 const SUBSCRIBE: string[][] = [
   ['set-option', '-g', NOW_OPTION, '%s'],
-  ...[ACTIVITY_SUBSCRIPTION, PANE_DEAD_SUBSCRIPTION].map((sub) => ['refresh-client', '-B', sub]),
+  ...[ACTIVITY_SUBSCRIPTION, PANE_DEAD_SUBSCRIPTION, LISTING_SUBSCRIPTION].map((sub) => ['refresh-client', '-B', sub]),
 ];
 const tmuxEnvironment = (): string => `${process.env.TMUX ?? ''}\0${process.env.TMUX_TMPDIR ?? ''}`;
 

@@ -23,7 +23,7 @@ import { briefTold } from '../brief-settings.js';
 import { HELP_LINE } from '../brief.js';
 import { appendLaunchLedger, persistBirthReceipt } from '../launch-ledger.js';
 import { mandate } from '../agent-defaults.js';
-import { asksForInput, classifyStatus, createActivityCache } from '../status.js';
+import { asksForInput, classifyStatus } from '../status.js';
 import { enqueueMessage } from '../message-queue.js';
 import { scanContext, scanModel } from '../ctx.js';
 
@@ -35,7 +35,7 @@ import { callerOf } from './work-items-api.js';
 import { collectBirthLines, collectRowFields, sockets } from '../sockets.js';
 import { askingByHook, createNoProgress, forgetAsking, recordHook } from '../asking.js';
 import { stoppedAt } from '../stopped.js';
-import { broadcastEvent, listening, pushTeams } from '../ws/events.js';
+import { broadcastEvent, listening, pushTeams, type CardPart } from '../ws/events.js';
 import { listProjectRoots } from '../project-roots.js';
 import { readWorkspace } from '../workspaces.js';
 import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
@@ -187,10 +187,9 @@ export function mikaReadinessFromPane(text: string): 'ready' | 'starting' | 'act
 // A question the CLI's hook reports is src/asking.ts. What the Agent is otherwise DOING is its
 // output's newest line, through the transcript part's row field.
 const readPane = async (name: string) => {
-  const text = await capturePane(name, 0);
+  const text = await capturePane(name, 0).catch(() => '');
   return { ctx: scanContext(text), model: scanModel(text), asking: asksForInput(text) };
 };
-const loadPaneStatus = createActivityCache(readPane);
 
 /** AN AGENT FLAG (owner, 2026-11-15, KAN-527): the Agent itself waits on the owner, not an
  * item. Derived from the CLI's hooks and the pane, never stored: it goes when the CLI moves on. Its
@@ -199,37 +198,43 @@ export const ASKING_FLAG = 'asking';
 export const NO_PROGRESS_FLAG = 'no_progress';
 const noProgress = createNoProgress((name) => sockets.rowChanged(name));
 
-// The home rows for one session listing: what /events pushes as {t:'home', rows}, from the
-// listing its tick already took.
-export function homeRows(list: SessionWithAxes[]) {
-  return Promise.all(
-    list.map(async (s) => {
-      const [pane, contributed, tegami] = await Promise.all([
-        loadPaneStatus(s.name, s.activity).catch(() => ({ ctx: null, model: null, asking: false })),
-        collectRowFields(s.name),
-        readTegami(s.name),
-      ]);
-      // The CLI's hook says so (src/asking.ts), or, where no hook tells, the screen does.
-      const { asking: onScreen, ...gauges } = pane;
-      const asking = askingByHook(s.name) || onScreen;
-      const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
-      // Working with nothing new in its conversation for 12 minutes: flagged too (KAN-618).
-      const stuck = !asking && !stopped_at && noProgress.check(s.name, contributed.stance, contributed.at);
-      const flag = asking ? ASKING_FLAG : stuck ? NO_PROGRESS_FLAG : null;
-      const reports = contributed.stance_reports;
-      return {
-        ...s,
-        ...gauges,
-        ...contributed,
-        // A question on the screen is asking, whatever the log's newest line says; a Stop Ronin
-        // sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
-        stance: flag ?? (stopped_at ? 'interrupted' : contributed.stance ?? 'unknown'),
-        ...(Array.isArray(reports) && !reports.includes('asking') ? { stance_reports: ['asking', ...reports] } : {}),
-        ...(stopped_at ? { stopped_at } : {}),
-        ...(tegami ? { tegami: flag ? { ...tegami, flagged: true, agent_flag: flag } : tegami } : {}),
-      };
-    }),
-  );
+// Each card's parts as last read, so a rebuild reads only the part that was marked.
+const panes = new Map<string, Awaited<ReturnType<typeof readPane>>>();
+const fields = new Map<string, Awaited<ReturnType<typeof collectRowFields>>>();
+const records = new Map<string, Awaited<ReturnType<typeof readTegami>>>();
+sockets.onSessionEnd((name) => { panes.delete(name); fields.delete(name); records.delete(name); });
+const part = async <T>(held: Map<string, T>, name: string, again: boolean, read: (name: string) => Promise<T>): Promise<T> => {
+  if (again || !held.has(name)) held.set(name, await read(name));
+  return held.get(name)!;
+};
+
+/** ONE AGENT'S CARD: what /events pushes as {t:'card'} (src/ws/events.ts), from its listing
+ * entry, its pane, its parts' row fields and its work record, re-reading only `parts`. */
+export async function cardOf(s: SessionWithAxes, parts: ReadonlySet<CardPart>) {
+  const [pane, contributed, tegami] = await Promise.all([
+    part(panes, s.name, parts.has('pane'), readPane),
+    part(fields, s.name, parts.has('fields'), collectRowFields),
+    part(records, s.name, parts.has('record'), readTegami),
+  ]);
+  // The CLI's hook says so (src/asking.ts), or, where no hook tells, the screen does.
+  const { asking: onScreen, ...gauges } = pane;
+  const asking = askingByHook(s.name) || onScreen;
+  const stopped_at = asking ? undefined : stoppedAt(s.name, contributed.at);
+  // Working with nothing new in its conversation for 12 minutes: flagged too (KAN-618).
+  const stuck = !asking && !stopped_at && noProgress.check(s.name, contributed.stance, contributed.at);
+  const flag = asking ? ASKING_FLAG : stuck ? NO_PROGRESS_FLAG : null;
+  const reports = contributed.stance_reports;
+  return {
+    ...s,
+    ...gauges,
+    ...contributed,
+    // A question on the screen is asking, whatever the log's newest line says; a Stop Ronin
+    // sent reads interrupted until the Agent writes a line or is sent to (stopped.ts).
+    stance: flag ?? (stopped_at ? 'interrupted' : contributed.stance ?? 'unknown'),
+    ...(Array.isArray(reports) && !reports.includes('asking') ? { stance_reports: ['asking', ...reports] } : {}),
+    ...(stopped_at ? { stopped_at } : {}),
+    ...(tegami ? { tegami: flag ? { ...tegami, flagged: true, agent_flag: flag } : tegami } : {}),
+  };
 }
 
 // Mika is ready when her pane says so, and nothing announces that. While she is starting

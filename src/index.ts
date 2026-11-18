@@ -28,7 +28,7 @@ import { addressRefusal, EXIT_ADDRESS_UNUSABLE } from './bind-refusal.js';
 import { publishMax, publishOwner } from './machine-state.js';
 import { registerCatalogs } from './routes/catalogs.js';
 import { registerBrief } from './routes/brief-api.js';
-import { homeRows, registerLaunch } from './routes/launch.js';
+import { cardOf, registerLaunch } from './routes/launch.js';
 import { registerPasskeyLogin, registerPasskeyManage } from './routes/passkey-api.js';
 import { registerPasswordSettings } from './routes/password-api.js';
 import { expireArchives, registerSessions, shutdownOperation } from './routes/sessions-api.js';
@@ -69,7 +69,7 @@ import { isValidBoardName, seedHouseBoard, WIPEBOARD_DIR } from './wipeboards.js
 import { agentCounts, joinPresence, machine, presence, stampInput } from './presence.js';
 import { person, startOfficePeople } from './office-people.js';
 import { readOfficeRecord } from './office-record.js';
-import { handleEvents, pushJikan, pushMessages, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
+import { handleEvents, mark, pushJikan, pushMessages, pushWipeboard, startSessionsBroadcast, watchStore } from './ws/events.js';
 import { tmux as tmuxClient } from './tmux-client.js';
 import { handlePty } from './ws/pty.js';
 import { originAllowed, allowedOrigins } from './ws/origin.js';
@@ -91,7 +91,7 @@ import { ensureInstalledRoots, githubSetupAnswer, githubSetupAttached } from './
 import { registerSetupRuntime } from './routes/setup-runtime-api.js';
 import { registerSetupProgress } from './routes/setup-progress-api.js';
 import { registerMikaContext } from './mika-context.js';
-import { archiveDone, ensureEveryIcebox, migrateItems, releaseEndedHolders } from './work-items.js';
+import { archiveDone, cardsOf, ensureEveryIcebox, migrateItems, releaseEndedHolders } from './work-items.js';
 import { rebuildIndex } from './work-items-index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -490,14 +490,16 @@ void (async () => {
 })().catch((e) => console.error('[scope] start sweep failed:', e));
 // A TEAM'S FOUR LAYERS (KAN-331): remember every lead's, and tell a lead when its own move.
 void startTeamLayers((cb) => sockets.onItemChanged(cb));
+// An item write marks the work record on the cards it touches (KAN-641).
+sockets.onItemChanged(async ({ item, line }) => { for (const name of await cardsOf(item, line)) mark(name, 'record'); });
 startFiles(ROOT); // copyparty at /files where python3 is found — src/files.ts
 const stopSessionRetention = startSessionRetention(); // closed session folders outlive the retention period by nothing
 void expireArchives(); // archives older than ARCHIVE_DAYS go at start, and on each new archive — src/session-archive.ts
-// /events: pushes the session list, the home rows, the Team rosters, the message queue, boards,
-// cron jobs and GitHub setup when they change — src/ws/events.ts
+// /events: pushes the session list, each Agent's card, the Team rosters, the message queue,
+// boards, cron jobs and GitHub setup when they change — src/ws/events.ts
 startSessionsBroadcast({
   list: listSessions,
-  home: homeRows,
+  card: cardOf,
   teams: () => teamRosters(),
   epics: async () => epicsPush(await everyItemReading()),
   messages: listQueuedMessages,
