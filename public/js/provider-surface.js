@@ -544,7 +544,7 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       // every launch uses beneath — the owner can tell Opus 5.5 from Opus 5 at a glance.
       const name = el('td'); name.append(el('b', null, modelLabel(row)));
       if (row.default) name.append(el('span', 'setup-provider-default', t('setup_surface.model_default_mark', 'the default')));
-      if (row.model !== 'native' && row.model !== modelLabel(row)) name.append(el('span', 'setup-provider-model-id', row.model));
+      if (row.model !== 'native' && row.model.toLowerCase() !== modelLabel(row).toLowerCase()) name.append(el('span', 'setup-provider-model-id', row.model));
       if (row.model === 'native') name.append(el('span', 'setup-provider-default', t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.')));
       line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)));
       body.append(line);

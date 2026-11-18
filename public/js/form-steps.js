@@ -192,9 +192,14 @@ export const modelLabel = (row) => {
   const known = row?.name ? null : catalog.rows.find((item) => item.provider === row?.provider && item.model === row?.model);
   return String(row?.name || known?.name || row?.model || '');
 };
-export const modelWord = (row) => row?.model === NATIVE_MODEL || !row?.tier
-  ? modelLabel(row)
-  : t('forms.model_word', '{model} · {tier}', { model: modelLabel(row), tier: tierWord(row.tier) });
+/** A row's tier in words, or '' when the name already says it (a Ronin models tier row is named for its tier). */
+export const rowTierWord = (row) => {
+  const word = row?.model === NATIVE_MODEL ? '' : tierWord(row?.tier);
+  return word && word.toLowerCase() !== modelLabel(row).toLowerCase() ? word : '';
+};
+export const modelWord = (row) => rowTierWord(row)
+  ? t('forms.model_word', '{model} · {tier}', { model: modelLabel(row), tier: rowTierWord(row) })
+  : modelLabel(row);
 
 /**
  * THE ONE PROVIDER → MODEL PICKER. Two selects, and either pick may stand alone: naming
