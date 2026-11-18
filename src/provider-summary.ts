@@ -310,7 +310,6 @@ export async function measureAndRecordProviders(section?: SetupSection, ops: Mea
  * REFRESH ALL — start-up, the park's call, the member's press. The same machine facts, then every activated CLI's own
  * model list read again through the reader its registry entry names, then npm asked for
  * each activated CLI's newest release (one outbound request each, on the egress record).
- * The same door's second step is models.dev, on its own route (`src/model-info.ts`).
  * A CLI not activated gets nothing spent on it; its old list, if any, is dropped with it.
  */
 export async function refreshProviders(section?: SetupSection, ops: MeasureOps = {}, latest: LatestOps = {}): Promise<ProviderSummary> {

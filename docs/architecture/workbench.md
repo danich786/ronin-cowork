@@ -159,14 +159,14 @@ the provider there whole (`models.provider`), the page with no rail. The cards f
 the selector as a solid card (Models, Workspaces) as the Teams card heads the Cowork selector. The Models stones carry
 no refresh door; the selector's second card, **Model refresh** (`models.refresh`, solid utility, after Models), does:
 its surface is the Refresh all control Settings' provider surface carries — the one `createRefreshAll` export, its
-last-ran line and notice — with an empty slot under it for the models.dev update (owner, 2026-10-20). The third card,
+last-ran line and notice — with its steps under it (owner, 2026-10-20). The third card,
 **Defaults** (`models.defaults`, solid utility, after Model refresh; owner, 2026-10-21), sets the model a new Agent,
 a new Team lead and Mika start on: ⚙ Configuration's own `models` section drawn alone (`buildMachineSettings(…, { only:
 'models' })`), each row saving itself — one record, two views. **The Agent Harness workbench** (KAN-236; owner,
 2026-11-04) is this door under its new word on Home, opened in the four-tilespace shape: the stones (now the **Harness**
 card) in tilespace 1, **Accounts** (`accounts.records`, `accounts-surface.js`) in 2, **Models** (`models.records`,
 `models-records-surface.js`, with the Defaults surface embedded) in 3 and **Refresh** (`models.refresh` under its new
-word) in 4; Model refresh's steps read Harnesses · Accounts · Model info · Review, the Accounts step each account's
+word) in 4; Model refresh's steps read Harnesses · Accounts (the models.dev steps went, KAN-653), the Accounts step each account's
 Discover. Accounts and presets are one reading of the Hermes record (`src/accounts.ts`, `/api/accounts`, `/api/presets`):
 a key added on Accounts is the connection the Hermes page shows. The existing types, surfaces and stones are
 unchanged but for their words; the route id stays `models` so saved arrangements survive. Settings' Model
@@ -339,7 +339,7 @@ The door's own destination over the provider drawing Settings and Setup share.
 | Surface | Required data and owner |
 |---|---|
 | Model stones (`models.stones`) | the recorded provider summary and catalog through `recordRuntime()`; a measure only on a press, as on Settings |
-| Model refresh (`models.refresh`) | the same record; the Refresh all press (`/api/setup/providers/refresh`) through the shared drawing's measure; the slot under it is the models.dev update's |
+| Model refresh (`models.refresh`) | the same record; the Refresh all press (`/api/setup/providers/refresh`) through the shared drawing's measure, then each account's Discover |
 | Defaults (`models.defaults`) | `GET /api/machine-settings`, the schema's `models` section; each row PATCHes `agents` (`sessions.default`, `sessions.lead`, `jobs.mikaassist.level`) |
 | Model provider (`models.provider`) | the same record for the one provider named in its detail; its selector cards come from `providerOffers()` over the same record |
 

@@ -139,7 +139,7 @@ export function templateTray(rows, current, onPick, { includeOwn = true } = {}) 
  * `loadProviderCatalog()` when it is shown and paints from `providerCatalog()`; a picker
  * built before the first read paints again when it lands.
  */
-let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', model_info: { origin: '', fetched_at: '' }, withdrawn: [], loaded: false };
+let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', withdrawn: [], loaded: false };
 let inflight = null;
 const NATIVE_MODEL = 'native';
 
@@ -153,7 +153,6 @@ export function loadProviderCatalog() {
       measured_at: read.ok ? String(read.data?.measured_at || '') : '',
       refreshed_at: read.ok ? String(read.data?.refreshed_at || '') : '',
       origin: read.ok ? String(read.data?.origin || '') : '',
-      model_info: { origin: String(read.data?.model_info?.origin || ''), fetched_at: String(read.data?.model_info?.fetched_at || '') },
       withdrawn: read.ok && Array.isArray(read.data?.withdrawn) ? read.data.withdrawn : [],
       loaded: true,
     };
@@ -163,7 +162,7 @@ export function loadProviderCatalog() {
   return inflight;
 }
 
-/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, model_info, withdrawn, loaded }`. */
+/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, withdrawn, loaded }`. */
 export const providerCatalog = () => catalog;
 
 /** light · standard · frontier, in the person's words. */
@@ -180,13 +179,6 @@ export function dayTime(iso) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return `${at.getUTCDate()} ${month[at.getUTCMonth()]} ${at.getUTCFullYear()}`;
   const two = (n) => String(n).padStart(2, '0');
   return `${at.getDate()} ${month[at.getMonth()]} ${at.getFullYear()}, ${two(at.getHours())}:${two(at.getMinutes())}`;
-}
-
-/** A model's list price from its model info, `$4 in · $20 out per M tokens`; '' when it has none. */
-export function priceText(info) {
-  const cost = info?.cost ?? {};
-  if (typeof cost.input !== 'number' || typeof cost.output !== 'number') return '';
-  return t('forms.model_price', '${input} in · ${output} out per M tokens', { input: cost.input, output: cost.output });
 }
 
 /**

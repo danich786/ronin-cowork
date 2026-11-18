@@ -8,12 +8,6 @@ it.** Two deliberate acts stand between an edit and the grid — the tag, and th
 
 ## Cutting a release (the producing half)
 
-Before any of this, the shipped model info is renewed: on a dev box press **Refresh all**,
-review the update waiting in the Model refresh surface, accept it, and copy the accepted
-`MODEL_INFO.json` from the catalogs store over `ronin_catalogs/MODEL_INFO.json`. That
-snapshot is only what a fresh install starts from; every install renews its own on the
-owner's press ([Model providers](../architecture/model-providers.md#model-info)).
-
 1. Work reaches `dev` by **team promotion**, which constructs the candidate, advances the
    working reference by compare-and-swap, restarts the app, and checks deployment health.
    The lead/release maintainer owns full `npm run verify` on the combined candidate before
