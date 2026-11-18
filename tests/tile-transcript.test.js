@@ -22,8 +22,27 @@ class Node {
   }
   addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
   dispatchEvent(event) { (this.listeners[event.type] || []).forEach((fn) => fn(event)); return true; }
-  setAttribute(key, value) { this.attributes[key] = value; }
+  setAttribute(key, value) {
+    this.attributes[key] = value;
+    // As the DOM does: a data-* attribute reads back through dataset.
+    if (key.startsWith('data-')) this.dataset[key.slice(5).replace(/-(\w)/g, (_, c) => c.toUpperCase())] = String(value);
+  }
   getAttribute(key) { return this.attributes[key]; }
+  // The two selector shapes the transcript asks: '.class' and '.class[attr="value"]'.
+  querySelectorAll(selector) {
+    const [, cls, attr, value] = selector.match(/^\.([\w-]+)(?:\[([\w-]+)="([^"]*)"\])?$/) || [];
+    const found = [];
+    const walk = (node) => node.children.forEach((child) => {
+      if (child.className?.split?.(/\s+/).includes(cls) && (!attr || child.attributes?.[attr] === value)) found.push(child);
+      if (child.children) walk(child);
+    });
+    walk(this);
+    return found;
+  }
+  get nextElementSibling() {
+    const siblings = this.parent?.children || [];
+    return siblings[siblings.indexOf(this) + 1] || null;
+  }
   remove() { this.parent?.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; }
   append(...nodes) {
     for (const n of nodes) {
@@ -394,12 +413,12 @@ test('a record the server sends is appended; one it already holds is ignored', a
   view.dispose();
 });
 
-test('a view told what to admit draws only those records; the rest are held, not drawn (KAN-617)', async () => {
+test('a view told what to admit draws what admit answers; a left-out record is held, not drawn (KAN-617)', async () => {
   const view = makeTileTranscript({
     read: async () => ({ ok: true, data: { available: true, view: 'chat', readings: READINGS, more: false,
       records: [{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 2, role: 'agent', kind: 'say', text: 'hello' }] } }),
     watch() {},
-    admit: (rec) => rec.text !== 'left out',
+    admit: (rec) => (rec.text === 'left out' ? null : rec.text.startsWith('HEAD:') ? { ...rec, text: rec.text.slice(5) } : rec),
   });
   view.show('agent', 'chat');
   await tick();
@@ -407,6 +426,9 @@ test('a view told what to admit draws only those records; the rest are held, not
   const deliver = (records) => [...transcriptHandlers].forEach((fn) => fn({ t: 'transcript', session: 'agent', reading: 'chat', records }));
   deliver([{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 3, role: 'user', kind: 'say', text: 'hi' }]);
   assert.deepEqual(contents(view.el), ['hello', 'hi'], 'a left-out record stays out when it comes again');
+  view.pending('sent');
+  deliver([{ seq: 4, role: 'user', kind: 'say', text: 'HEAD:sent' }]);
+  assert.deepEqual(contents(view.el), ['hello', 'hi', 'sent'], 'drawn as admit shaped it, and its light copy goes');
   view.dispose();
 });
 
@@ -871,6 +893,25 @@ test('a sent message shows at once, light, and goes when the CLI writes it down'
   view.dispose();
 });
 
+test('a light message goes when it lands with who sent it, and sits where the log puts it (KAN-623)', async () => {
+  const view = makeTileTranscript({
+    read: async () => ({ ok: true, data: { available: true, records: [record('earlier')].map((r) => ({ ...r, seq: 4 })), since: 1, seq: 5, view: 'chat', readings: READINGS } }),
+    watch: () => {},
+  });
+  view.show('agent', 'chat');
+  await tick();
+  view.pending('time zone is better');
+  const light = () => view.el.children.filter((n) => n.getAttribute('data-pending') === 'true');
+  const push = (rec) => { for (const handler of transcriptHandlers) handler({ t: 'transcript', session: 'agent', reading: 'chat', records: [rec] }); };
+  push({ seq: 5, role: 'agent', kind: 'say', text: 'still on the deploy' });
+  assert.equal(view.el.children.at(-1), light()[0], 'still on its way: after what has landed');
+  // A hosted office: the record names the person ahead of the words.
+  push({ seq: 6, role: 'user', kind: 'say', text: 'From Ann Lee <a@x.com>, owner [Message box]:\ntime zone is better' });
+  assert.equal(light().length, 0, 'never left light beside its own record');
+  assert.deepEqual(contents(view.el), ['earlier', 'still on the deploy', 'From Ann Lee <a@x.com>, owner [Message box]:\ntime zone is better']);
+  view.dispose();
+});
+
 test('a tile leaving its Chat never stops another tile\'s Chat hearing its Agent', async () => {
   // Owner, 2026-11-01: "the balls stopped bouncing and then nothing". The tab had one watch
   // slot; any tile that stopped showing a Chat cleared it for every tile on the page.
@@ -1039,5 +1080,36 @@ test('a new Agent\'s Chat is a conversation at once, and a row push re-sends its
   assert.deepEqual(contents(view.el), ['hello'], 'the Agent\'s words start in it');
   view.rewatch();
   assert.equal(watched.length, 2, 'once records arrive, a row push asks nothing');
+  view.dispose();
+});
+
+test('a file link in Chat opens in Docs in every form a path is written; a web link keeps the browser (KAN-619)', async () => {
+  const { fileLinkPath } = await import('../public/js/document-links.js');
+  assert.equal(fileLinkPath('/home/me/a.md'), '/home/me/a.md');
+  assert.equal(fileLinkPath('~/notes/a.md'), '~/notes/a.md');
+  assert.equal(fileLinkPath('file:///home/me/my%20notes.md'), '/home/me/my notes.md');
+  assert.equal(fileLinkPath('src/index.ts'), 'src/index.ts');
+  assert.equal(fileLinkPath('src/index.ts:42'), 'src/index.ts', 'the file opens; the line is dropped');
+  assert.equal(fileLinkPath('README.md:12:3'), 'README.md');
+  assert.equal(fileLinkPath('docs/a.md#L12'), 'docs/a.md');
+  for (const web of ['https://example.com/a.md', 'http://x:8080', 'mailto:me@x', '#heading', '//cdn.x/a.js']) assert.equal(fileLinkPath(web), null, web);
+
+  const opened = [];
+  const view = makeTileTranscript({
+    read: async () => ({ ok: true, data: { available: true, records: [{ seq: 1, role: 'agent', kind: 'say', text: '[a](/home/me/a.md) [b](file:///home/me/b.md) [c](README.md:12) [w](https://example.com)' }], since: 1, seq: 1, view: 'chat', readings: READINGS } }),
+    watch: () => {},
+    onDoc: (path) => opened.push(path),
+  });
+  view.show('agent', 'chat');
+  await tick();
+  const links = [];
+  const walk = (n) => { if (n.href !== undefined && n.listeners) links.push(n); (n.children || []).forEach(walk); };
+  walk(view.el);
+  assert.deepEqual(links.map((a) => a.href), ['/home/me/a.md', 'file:///home/me/b.md', 'README.md:12', 'https://example.com'], 'every form stays a link');
+  const click = (a) => { let kept = true; a.dispatchEvent({ type: 'click', preventDefault: () => { kept = false; } }); return kept; };
+  assert.equal(click(links[0]), false);
+  assert.equal(click(links[1]), false);
+  assert.equal(click(links[3]), true, 'the web link goes to the browser');
+  assert.deepEqual(opened, ['/home/me/a.md', '/home/me/b.md']);
   view.dispose();
 });

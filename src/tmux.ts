@@ -239,15 +239,20 @@ export function panesDied(value: string, last: Map<string, string>): string[] {
   return died;
 }
 
-/** Ride tmux's pane-dead push: each newly dead pane's leftovers are stopped. */
-export function stopLeftoversOnPaneDeath(): void {
+/** Ride tmux's pane-dead push: each newly dead pane's leftovers are stopped, and `died` is told
+ * (src/pane-death.ts: the Agent reads Stopped and its leads hear). */
+export function stopLeftoversOnPaneDeath(died: (name: string) => Promise<void> = async () => {}): void {
   const last = new Map<string, string>();
   let first = true;
   tmux.on('subscription', (n) => {
     if (!n.subscription?.startsWith(PANE_DEAD_PREFIX)) return;
-    const died = panesDied(n.value ?? '', last);
+    const dead = panesDied(n.value ?? '', last);
     if (first) { first = false; return; } // the start sweep owns what was dead before we looked
-    for (const name of died) if (!name.startsWith(config.viewerPrefix)) void stopLeftovers(name);
+    for (const name of dead) {
+      if (name.startsWith(config.viewerPrefix)) continue;
+      void stopLeftovers(name);
+      void died(name).catch((e) => console.error(`[pane-death] ${name}:`, e));
+    }
   });
 }
 

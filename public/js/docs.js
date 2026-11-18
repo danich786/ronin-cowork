@@ -6,6 +6,7 @@ import { t } from './lexicon.js';
 import { nextTabIndex } from './workspace-tabs.js';
 import { DOC_MIME } from './team-drag.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
+import { openCanvas } from './canvas-view.js';
 
 /** The brief files read by what they are (owner, 2026-11-15): the brief an Agent started with, and the one it is told now. */
 function docName(name) {
@@ -43,7 +44,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
   list.id = `dc-list-${++docsSequence}`;
   list.setAttribute('role', 'tabpanel');
   const pill = {};
-  for (const [id, label] of [['tracked', t('docs.pill_tracked', 'Tracked')], ['plans', t('docs.pill_plans', 'Plans')], ['docs', t('docs.pill_docs', 'Docs')]]) {
+  for (const [id, label] of [['tracked', t('docs.pill_tracked', 'Tracked')], ['plans', t('docs.pill_plans', 'Plans')], ['canvases', t('docs.pill_canvases', 'Canvases')], ['docs', t('docs.pill_docs', 'Docs')]]) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'dc-pill';
@@ -245,8 +246,9 @@ export function buildDocs(root, only = null, { team = null } = {}) {
     else if (scope?.workspace) {
       text = shelf === 'plans'
         ? t('docs.scope_plans', 'Plans of Workspace {workspace}', { workspace: scope.workspace })
+        : shelf === 'canvases' ? t('docs.scope_canvases', 'Canvases of Workspace {workspace}: press one to read it now', { workspace: scope.workspace })
         : t('docs.scope_docs', 'Docs of {folders} — Workspace {workspace}', { folders: (scope.folders || []).join(', ') || '—', workspace: scope.workspace });
-    } else if (shelves[shelfKey()]) text = shelf === 'plans' ? t('docs.scope_plans_all', 'Plans of every Workspace') : t('docs.scope_docs_all', 'Docs of every Workspace Folder');
+    } else if (shelves[shelfKey()]) text = shelf === 'plans' ? t('docs.scope_plans_all', 'Plans of every Workspace') : shelf === 'canvases' ? t('docs.scope_canvases_all', 'Canvases of every Workspace') : t('docs.scope_docs_all', 'Docs of every Workspace Folder');
     return text ? [{ key: '!scope', tag: 'p', cls: 'dc-scope', text }] : [];
   };
   const noteRow = () => (only && shelf === 'tracked'
@@ -255,6 +257,16 @@ export function buildDocs(root, only = null, { team = null } = {}) {
 
   /** One doc's row: its name over the last two directories (a plan, its status). */
   const docRow = (p, hint) => {
+    // A CANVAS (KAN-329) is no file: its row opens it, read now, over this pane (canvas-view.js).
+    const canvas = /^canvas:([^/]+)\/(.+)$/.exec(p);
+    if (canvas) {
+      const c = document.createElement('button');
+      c.className = 'dc-row';
+      c.title = t('docs.canvas_open', 'Open the canvas {name}, read now', { name: canvas[2] });
+      c.append(Object.assign(document.createElement('b'), { textContent: canvas[2] }), Object.assign(document.createElement('span'), { textContent: hint || canvas[1] }));
+      c.addEventListener('click', () => { void openCanvas(c, canvas[1], canvas[2], root); });
+      return c;
+    }
     const link = isLinkDoc(p);
     // A link reads as its last segment over its host and path, with ↗: it leaves for a tab.
     const parts = link ? p.replace(/^https?:\/\//i, '').replace(/\/+$/, '').split('/') : p.split('/');
@@ -317,6 +329,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
   const render = (rows) => {
     if (!rows.length) {
       if (shelf === 'plans') empty(t('docs.plans_empty', 'No plans yet. A lead writes one with the user: plan write <name>.'));
+      else if (shelf === 'canvases') empty(t('docs.canvases_empty', 'No canvases yet. An Agent makes one: canvas create <name> --template <t>.'));
       else if (shelf !== 'tracked') empty(t('docs.shelf_empty', 'Nothing on this shelf — a workspace folder names its docs on its record (Workspace folders → docs).'));
       else empty(only ? t('docs.empty_team', 'No tracked documents.') : t('docs.empty', 'No session has listed a doc yet. An agent adds one with: work-record add_doc <path>'));
       return;

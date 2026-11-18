@@ -476,6 +476,16 @@ async function namesOf(holders: Holder[]): Promise<string[]> {
   return [...new Set([...holders.filter((holder) => holder.kind === 'agent').map((holder) => holder.name), ...leads])];
 }
 
+/** WHOSE CARDS AN ITEM WRITE TOUCHES (KAN-641): its holders and watchers, and the holder the
+ * line moved it from or to, each Agent itself and each Team its leads. */
+export async function cardsOf(item: WorkItem, line: TrailLine): Promise<string[]> {
+  const moved = [line.from, line.to].flatMap((label): Holder[] => {
+    const [kind, name] = (label ?? '').split(/:(.*)/);
+    return (kind === 'agent' || kind === 'team') && name ? [{ kind, name }] : [];
+  });
+  return namesOf([...(await holdersOf(item.id)), ...(await watchersOf(item.id)), ...moved]);
+}
+
 /** Who watches an item: each Agent whose letter lists it, each Team whose roster does. */
 async function watchersOf(id: string): Promise<Holder[]> {
   const agents = (await listLetterHolds()).filter((letter) => letter.watches.includes(id)).map((letter): Holder => ({ kind: 'agent', name: letter.name }));

@@ -26,7 +26,16 @@ Workspace's own, with only provenance left.
 | `source` | `integration <id>` (read live from that integration; no such integration on the Workspace, no block), `integration` (any linked one of that kind, typed), `live repos`, `live items` or `live documents` (read where it lives: the Workspace's repos, its work items, its plans and the items' documents), or `typed` (entered by an Agent or a person, shown with who and when) |
 | `holds` | one line: what the block is for |
 | `entries` | the entries it holds, each `name (its one line)`; `only if` / `only while` marks one that shows only when it exists |
-| `read` | an integration block's commands, `;`-separated: the bridge or `api`/`mcp` calls `canvas read` runs as its caller each time (`netlify sites --workspace {workspace}`). `{workspace}` and the integration's facts (`{site}`) are filled in. They live only here: a canvas file holds none (one written into it by hand is ignored), and `canvas read` takes them from the canvas's template, by block name; no template, or no such block, runs nothing |
+| `read` | an integration block's commands, semicolon-separated: the bridge or `api`/`mcp` calls that Ronin runs whenever the canvas is read—from `canvas read` or the Workspace page—for example `netlify sites --workspace {workspace}`. `{workspace}` and integration facts such as `{site}` are filled in. The commands live only here: a canvas file holds none (one written into it by hand is ignored), and Ronin takes them from the canvas's template by block name; no template, or no such block, runs nothing |
+
+A read command that prints one line like
+`{"cards":[{"title":"Live site","rows":[{"text":"up","links":[{"text":"open","url":"https://example.com"}]}]}]}`
+is painted as cards: a title, rows of plain words and short link labels. A row may also carry
+`detail` (a quieter line) and `warn` (what is wrong with it); a link may carry `"button": true`
+(painted as a button, the act the row is for); a card may carry `section` (the heading it sits
+under, such as Drafts or Live). `netlify <tool> --card`
+prints this form. Anything else it prints is shown as lines. The work items block is cards too:
+one per epic, with its open items under it.
 
 A typed entry is stored as `- **entry:** <name> · <line> · <by> · <date>`; `canvas edit` writes
 it. A block with nothing in it now is left off the reading. Every entry is a link and one line.

@@ -20,7 +20,8 @@
  *
  * Each resource is pushed on connect and on change, and the push is the only way in.
  *
- *   home      {t:'home', rows}
+ *   home      every Agent's card in listing order: {t:'cards', rev, cards} whole, then
+ *             {t:'card', rev, card} swapped in by name; one that is not the next rev renews.
  *   sessions  {t:'sessions', list}   — reduced into S.sessions (js/events.js) before anyone hears it
  *   teams     {t:'teams', rosters}   — the shape of GET /api/team-rosters
  *   epics     {t:'epics', epics, items} — every Epic (level-1 work item) whole, with its holder;
@@ -46,11 +47,10 @@ const RECONNECT_MS = 3000;
 // Quiet past two beats is a dead link, and it is replaced without a word.
 export const SILENT_MS = 35_000;
 
-// What a surface paints. A row's or session's `activity` stamp and a row's stance `at` move
-// on every turn and nothing shows them, so they never make a change on their own — the
-// same rule the server's `homeSignature` (src/ws/events.ts) applies before it pushes.
-export const painted = (list) => JSON.stringify(list.map(({ activity: _activity, at: _at, ...rest }) => rest));
-const SIGNATURES = { home: painted, sessions: painted };
+// What a surface paints. A session's `activity` stamp moves on every keystroke and nothing
+// shows it, so it never makes a change on its own.
+export const painted = (list) => JSON.stringify(list.map(({ activity: _activity, ...rest }) => rest));
+const SIGNATURES = { sessions: painted };
 
 // `wipeboard:ops` wants { resource: 'wipeboard', board: 'ops' }; a plain key wants nothing.
 const WANTED = { wipeboard: 'board', jikan: 'team' };
@@ -76,6 +76,7 @@ export function createStore({
   let socket = null;
   let retry = null;
   let silence = null;
+  let rev = null; // the last card message held; null until this socket's whole copy
 
   /** Hold a value; tell the subscribers only when it differs from what was held. */
   function set(key, value) {
@@ -109,8 +110,11 @@ export function createStore({
   function reduce(key, fn) { reducers.set(key, fn); }
 
   function receive(message) {
-    if (message.t === 'home' && Array.isArray(message.rows)) set('home', message.rows);
-    else if (message.t === 'sessions' && Array.isArray(message.list)) set('sessions', message.list);
+    if (message.t === 'cards' && Array.isArray(message.cards)) { rev = message.rev; set('home', message.cards); }
+    else if (message.t === 'card' && message.card && rev !== null) {
+      if (message.rev !== rev + 1) renew({ force: true });
+      else { rev = message.rev; set('home', (values.get('home') || []).map((card) => (card.name === message.card.name ? message.card : card))); }
+    } else if (message.t === 'sessions' && Array.isArray(message.list)) set('sessions', message.list);
     else if (message.t === 'teams' && Array.isArray(message.rosters)) set('teams', message.rosters);
     else if (message.t === 'epics' && Array.isArray(message.epics)) { set('epicItems', Array.isArray(message.items) ? message.items : []); set('epics', message.epics); }
     else if (message.t === 'messages' && Array.isArray(message.list)) set('messages', message.list);
@@ -126,6 +130,7 @@ export function createStore({
     retry = null;
     const ws = open();
     socket = ws;
+    rev = null; // a new connection is sent every card whole before any one card counts
     // Each message puts off the check; only silence lets it run.
     const heard = () => {
       cancel(silence);

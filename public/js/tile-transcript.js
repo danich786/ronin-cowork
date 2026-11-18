@@ -4,6 +4,9 @@ import { transcriptHandlers, transcriptWatch } from './events.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
+import { openDocOver } from './tile-doc-view.js';
+import { fileLinkPath } from './document-links.js';
+import { answerable, buildQuestion } from './chat-question.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -20,6 +23,7 @@ export function setChatMarkdown(session, on) {
   for (const view of views) if (view.shows() === session) view.redraw();
 }
 const views = new Set();
+
 /** What the person has sent and the CLI has not yet written down, shown light until it lands. */
 const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
 
@@ -31,11 +35,12 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
 /**
  * @param watch  this view's own slot in what the tab tells the server it shows; the server sends only that
  *               Agent's records, already cut to that reading. Injected for testing.
- * @param admit  which records this view draws; every one by default. A record it leaves out is
- *               still held by seq, so paging and catch-up run as if it were drawn (Irasshai's
- *               chat leaves out Ronin's birth packet, KAN-617).
+ * @param admit  which records this view draws, and how: given a record it answers the record to draw
+ *               (itself, or reshaped) or null to leave it out; every one as sent by default. A record
+ *               left out is still held by seq, so paging and catch-up run as if it were drawn
+ *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onDoc = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -43,6 +48,17 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   // Focusable, so a click here keeps the keys on this tile: Esc stops the Agent (owner, 2026-11-03).
   el.tabIndex = -1;
   let session = null;
+  // Every chat opens a file link in Docs: the caller's own Docs (a tile's), else one painted over
+  // this chat. ~/… and relative paths are the Agent's; the server says which file they name.
+  const openDoc = onDoc || ((path) => openDocOver(el.parentElement, path));
+  const openFileLink = (href) => {
+    const path = fileLinkPath(href);
+    if (!path) return false;
+    if (path.startsWith('/')) openDoc(path);
+    else void request('/api/sessions/' + encodeURIComponent(session || '') + '/file-link?path=' + encodeURIComponent(path), { cache: 'no-store' })
+      .then((r) => { if (r.ok && r.data?.path) openDoc(r.data.path); });
+    return true;
+  };
   let active = false;
   let generation = 0;
   /*
@@ -61,6 +77,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   let unwritten = false; // open on a journal the CLI has not written yet
   let stance = ''; // what the Agent is doing, as the roster row last said
   let doing = ''; // the tool it is working on, as the row names it: name and target
+  let question = null; // what the CLI is stopped at, as the row carries it (src/asking.ts)
+  let died = ''; // a dead pane's words: exit status and time (src/pane-death.ts)
   /*
    * A READER AT THE END STAYS AT THE END. Where they are is read when they scroll, not at each
    * change: by the time a record or the dots arrive, a longer draft or a smaller tile may
@@ -144,7 +162,15 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     // Flagged (asking, or no progress for 12 minutes, KAN-618): a sentence and the way to the
     // terminal in place of the dots.
     const flagged = now === 'asking' || now === 'no_progress';
-    const shows = active && (now === 'working' || flagged);
+    const shows = active && (now === 'working' || flagged || now === 'stopped');
+    const asked = now === 'asking' && onChoose && answerable(question) ? question : null;
+    // ONE SHOWING OF A QUESTION (KAN-661): while the card holds it, the log's own line of it (the
+    // newest ask, nothing of the person's after it) waits; answered, it reads as the record.
+    const asks = [...el.querySelectorAll('.tile-transcript-entry[data-kind="ask"]')];
+    for (const entry of asks) entry.hidden = false;
+    let pending = asks.at(-1);
+    for (let next = pending?.nextElementSibling; next && pending; next = next.nextElementSibling) if (next.dataset.role === 'user') pending = null;
+    if (asked && pending) pending.hidden = true;
     if (!shows) {
       stanceNode?.remove();
       stanceNode = null;
@@ -155,7 +181,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       stanceNode.className = 'tile-transcript-stance';
       stanceNode.setAttribute('aria-live', 'polite');
     }
-    const key = `${now}\u0000${doing}`;
+    const key =`${now}\u0000${doing}\u0000${asked ? JSON.stringify(asked) : ''}\u0000${died}`;
     if (stanceNode.getAttribute?.('data-key') !== key) {
       stanceNode.setAttribute('data-key', key);
       stanceNode.setAttribute('data-stance', now);
@@ -165,9 +191,20 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         : now === 'no_progress'
           ? t('transcript.stance_no_progress', 'No progress for 12 min')
           : t('transcript.stance_working', 'Working');
-      if (flagged) {
-        // The options are answered in Terminal only (owner, 2026-11-12): one press takes
-        // the tile there, and nothing switches without it. The tile owns the switch.
+      if (asked) {
+        // The question itself, answered here (chat-question.js): the tile stays on Chat.
+        stanceNode.append(buildQuestion(asked, { send: onChoose, terminal: onAnswer && (() => onAnswer()) }));
+      } else if (now === 'stopped') {
+        // Its CLI exited (KAN-660): said plainly, with the one way on. Nothing to do in Terminal.
+        stanceNode.append(document.createTextNode(died || t('transcript.stance_stopped', 'Stopped')));
+        if (onResume) {
+          stanceNode.append(WorkspacePrimitives.createAction({
+            label: t('transcript.resume', 'Resume'), kind: 'primary', size: 'compact', className: 'tile-transcript-answer', action: () => onResume(),
+          }).el);
+        }
+      } else if (flagged) {
+        // A question Chat cannot answer (free text, one no hook names): one press takes the
+        // tile to Terminal, and nothing switches without it. The tile owns the switch.
         const said = document.createElement('span');
         said.textContent = words;
         stanceNode.append(said);
@@ -187,7 +224,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
           stanceNode.append(step);
         }
       }
-      stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
+      if (asked || now === 'stopped') stanceNode.removeAttribute('aria-label');
+      else stanceNode.setAttribute('aria-label', doing && !flagged ? `${words}: ${doing}` : words);
     }
     // Always last: records append above it, so the end of the conversation stays the end.
     el.append(stanceNode);
@@ -231,8 +269,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       entry.setAttribute('data-md', 'true');
       // A link to a file on the Ronin box opens in Docs, as the work record's attachments do: its
       // path means nothing to a browser on another machine.
-      const onLink = onDoc ? (href) => { if (!/^\/(?!\/)/.test(href)) return false; onDoc(href); return true; } : undefined;
-      entry.append(renderMarkdownDocument(text, document, { onLink }));
+      entry.append(renderMarkdownDocument(text, document, { onLink: openFileLink }));
       return entry;
     }
     // A blank line in what was written is a paragraph break, drawn as the paragraph space
@@ -283,10 +320,11 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     follow();
     return () => { const at = sent.indexOf(mark); if (at >= 0) sent.splice(at, 1); node.remove(); };
   }
-  /** A person's record arrived: the light copy of the same words goes. */
+  /** A person's record arrived: the light copy of the same words goes. In a hosted office the
+   *  record leads with who sent it ("From … [Message box]:"), so the words end it (KAN-623). */
   function landed(rec) {
     if (rec.role !== 'user' || typeof rec.seq !== 'number') return;
-    const at = sent.findIndex((mark) => rec.seq > mark.after && mark.text === said(rec.text));
+    const at = sent.findIndex((mark) => rec.seq > mark.after && said(rec.text).endsWith(mark.text));
     if (at < 0) return;
     sent[at].node.remove();
     sent.splice(at, 1);
@@ -349,9 +387,10 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         held.add(rec.seq);
         frontier = frontier === null ? rec.seq : Math.max(frontier, rec.seq);
       }
-      if (admit && !admit(rec)) continue;
-      insertInOrder(entryFor(rec), rec.seq);
-      landed(rec);
+      const shown = admit ? admit(rec) : rec;
+      if (!shown) continue;
+      insertInOrder(entryFor(shown), shown.seq);
+      landed(shown);
     }
     // What is still on its way stays after everything that has landed.
     for (const mark of sent) el.append(mark.node);
@@ -595,13 +634,15 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     if (active && unwritten && session) watch(session, reading);
   }
 
-  /** The home row's word on what this Agent is doing, and the tool it is in. */
-  function setStance(next, tool) {
+  /** The home row's word on what this Agent is doing, the tool it is in, and what it asks. */
+  function setStance(next, tool, asks = null, ended = '') {
     const value = typeof next === 'string' ? next : '';
     const step = tool?.name ? [tool.name, tool.target].filter(Boolean).join(' · ') : '';
-    if (value === stance && step === doing) return;
+    if (value === stance && step === doing && JSON.stringify(asks) === JSON.stringify(question) && ended === died) return;
     stance = value;
     doing = step;
+    question = asks || null;
+    died = ended;
     paintStance();
   }
 

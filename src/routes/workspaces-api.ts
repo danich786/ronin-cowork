@@ -5,17 +5,21 @@ import { initialCampaignId } from '../campaign-scope.js';
 import { listTeamRosters } from '../team-rosters.js';
 import { deleteWorkspace, isValidWorkspaceName, listWorkspaces, normalizeWorkspace, readWorkspace, saveWorkspace, type Workspace } from '../workspaces.js';
 import { PlanBadInput, PlanMissing, PlanRefused, movePlans, plansPlace } from '../plans.js';
+import { listCanvases } from '../canvases.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 const campaignOf = async (stated: unknown): Promise<string> => (typeof stated === 'string' && stated.trim()) || initialCampaignId();
 
 const withPlace = async (w: Workspace) => {
   const place = await plansPlace(w.campaign_id, w.name, w.plans).catch((e) => (e instanceof PlanMissing || e instanceof PlanBadInput ? null : Promise.reject(e)));
-  return { ...w, plans_place: place ? { location: place.location, path: place.path, recommended: place.recommended } : null };
+  // CANVASES (KAN-329): the Workspace's canvases by name, for the page's Canvases line.
+  const canvases = place ? (await listCanvases(w).catch(() => [])).map(({ name }) => name) : [];
+  return { ...w, plans_place: place ? { location: place.location, path: place.path, recommended: place.recommended } : null, canvases };
 };
 
 export function registerWorkspaces(app: express.Express): void {
-  // Each Workspace with where its plans are (`plans_place`, src/plans.ts): the page's Plans row.
+  // Each Workspace with where its plans are (`plans_place`, src/plans.ts) and its canvases' names:
+  // the page's Plans row and Canvases line.
   app.get('/api/workspaces', async (req, res) => {
     try {
       const workspaces = await listWorkspaces(await campaignOf(req.query.campaign_id));

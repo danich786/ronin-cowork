@@ -1,6 +1,8 @@
 import { readLaunchIdentity } from '../launch-binding.js';
 import { resolveLaunchJournal } from '../launch-journal.js';
 import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import type express from 'express';
 import {
   getLeads,
@@ -54,6 +56,7 @@ import {
   removeArchive,
   providerSessionInfo,
   writeArchive,
+  warmRestorable,
   type ArchivedSession,
 } from '../session-archive.js';
 import { ignoreEndingRequest, inspectSessionEnding, promptEnding } from '../desks/ending-runtime.js';
@@ -61,9 +64,12 @@ import type { EndingRequest } from '../desks/ending.js';
 import { resolveEndingRequest } from '../desks/ending-response.js';
 import { randomUUID } from 'node:crypto';
 import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
-import { listDesks } from '../desks/registry.js';
+import { listDeskRecords, listDesks } from '../desks/registry.js';
+import { resolveFileLink } from '../file-link.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
+import { clearHookRecord, readFields } from '../asking.js';
+import { providerPart } from '../provider-parts.js';
 
 interface PreparedEnding { proceed: boolean; acknowledgement?: Record<string, unknown> }
 
@@ -177,11 +183,12 @@ async function archiveProvider(name: string): Promise<{ agent: string; id: strin
 }
 
 /** The archive step itself, for a known provider conversation: manifest first, then stop. */
-async function archiveWith(name: string, provider: { agent: string; id: string }, desksLeftOpen: string[] = []): Promise<ArchivedSession> {
+async function archiveWith(name: string, provider: { agent: string; id: string }, desksLeftOpen: string[] = [], warm = false): Promise<ArchivedSession> {
   const key = await sessionKey(name);
   const runtime = await sessionRuntime(name);
   const archived: ArchivedSession = {
     ...(desksLeftOpen.length ? { desks_left_open: desksLeftOpen } : {}),
+    ...(warm ? { warm_restart: true as const } : {}),
     version: 1, id: key, name, key, archived_at: new Date().toISOString(), cwd: runtime.cwd,
     identity: (await listSessions()).find((s) => s.name === name)?.identity,
     agent: provider.agent, provider_session_id: provider.id, tags: await getTags(name), leads: await getLeads(name),
@@ -314,10 +321,18 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     if (await sessionExists(archived.name)) {
       return { status: 409, body: { error: `Session "${archived.name}" already exists.` } };
     }
-    let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id);
+    // Its birth receipt: the command it was born with (KAN-661) and the person it was born for.
+    const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { cmd?: unknown; user_email?: unknown };
+    let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id, typeof receipt.cmd === 'string' ? receipt.cmd : '');
     if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
     const wrap = resumeWraps.get(archived.name);
+    const part = providerPart(archived.identity?.provider ?? '');
     if (wrap) argv = wrap([...argv]);
+    // An Agent born on a part's provider (src/provider-parts.ts) is restored on it, for the
+    // person it was born for, so its house calls stay theirs (KAN-659).
+    else if (part?.wrapResume) {
+      argv = part.wrapResume([...argv], archived.identity?.model ?? '', typeof receipt.user_email === 'string' ? receipt.user_email : '');
+    }
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
     try {
       await setSessionKey(archived.name, archived.key);
@@ -429,6 +444,65 @@ export function registerSessions(app: express.Express): void {
     } catch (e) {
       res.status(500).json({ error: String((e as Error)?.message ?? e) });
     }
+  });
+
+  // WARM RESTART (KAN-672): archive all saves every live Agent through the one archive, for a
+  // planned stop of the office; restore all brings each back by the one restore. Like the park,
+  // the whole office stays: no desk or item refusal, holds and desks stay with their Agent, no
+  // Team is told. Unlike the park, one Agent that cannot be saved does not hold the rest: each
+  // is named in the answer. The calling Agent (`pane`) is saved last, so the others are saved
+  // before its own call is stopped. Both are idempotent: archive all saves only live Agents, and
+  // restore all brings back only what archive all saved and is not already running.
+  app.post('/api/machine/archive-all', async (req, res) => {
+    try {
+      const pane = String(req.body?.pane ?? '').trim();
+      const caller = /^%\d+$/.test(pane) ? await sessionOfPane(pane) : null;
+      const names = (await listSessions()).filter((s) => s.agent).map((s) => s.name)
+        .sort((a, b) => Number(a === caller) - Number(b === caller));
+      const saved: Array<{ name: string; id: string; agent: string }> = [];
+      const not_saved: Array<{ name: string; error: string }> = [];
+      for (const name of names) {
+        try {
+          const provider = await archiveProvider(name);
+          if ('error' in provider) { not_saved.push({ name, error: provider.error }); continue; }
+          const archived = await archiveWith(name, provider, [], true);
+          await clearHookRecord(name);
+          saved.push({ name, id: archived.id, agent: archived.agent });
+          count('ended', { name, end: 'warm_restart' });
+        } catch (e) { not_saved.push({ name, error: String((e as Error)?.message ?? e) }); }
+      }
+      res.json({ ok: true, saved, not_saved });
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
+  });
+
+  app.post('/api/machine/restore-all', async (req, res) => {
+    try {
+      const live = new Set((await listSessions()).map((s) => s.name));
+      const { restore, running } = warmRestorable(await listArchives(), live);
+      const restored: Array<{ name: string; id: string }> = [];
+      const not_restored = running.map(({ name, id }) => ({ name, id, error: `Session "${name}" already exists.` }));
+      for (const { name, id } of restore.reverse()) { // oldest first: the order archive all saved them
+        const { status, body } = await rehydrate(id, callerOf(req));
+        if (status === 200) restored.push({ name, id });
+        else not_restored.push({ name, id, error: String(body.error ?? `HTTP ${status}`) });
+      }
+      res.json({ ok: true, restored, not_restored });
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
+  });
+
+  // RESUME A STOPPED AGENT (KAN-660): its dead pane is archived and restored at once, so the CLI
+  // starts again on the same provider conversation, Teams, leads and items, as session_restore does.
+  app.post('/api/sessions/:name/resume', async (req, res) => {
+    const session = (await listSessions()).find((s) => s.name === req.params.name);
+    if (!session || session.key !== req.body?.key) return res.status(409).json({ error: 'This Agent session changed. Reopen its Tile.' });
+    if ((await readFields(session.name)).stance !== 'stopped') return res.status(409).json({ error: `${session.name} is running.` });
+    try {
+      const archived = await archiveAgent(session.name);
+      if (!archived) return res.status(409).json({ error: `${session.name}'s conversation cannot be resumed.` });
+      await clearHookRecord(session.name);
+      const { status, body } = await rehydrate(archived.id, callerOf(req));
+      res.status(status).json(body);
+    } catch (e) { res.status(500).json({ error: String((e as Error)?.message ?? e) }); }
   });
 
   app.post('/api/archived-sessions/:id/rehydrate', async (req, res) => {
@@ -571,6 +645,19 @@ export function registerSessions(app: express.Express): void {
       console.error(`[ronin] harakiri: ${name} (pane ${pane}) failed: ${error}`);
       res.status(500).json({ error });
     }
+  });
+
+  // A file link in this Agent's Chat, written as ~/… or relative to where it works, as the full
+  // path Docs opens (public/js/tile-transcript.js fileLinkPath).
+  app.get('/api/sessions/:name/file-link', async (req, res) => {
+    const { name } = req.params;
+    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
+    const desks = await listDeskRecords({ owner: name }).catch(() => []);
+    const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
+    const roots = await listProjectRoots().catch(() => []);
+    const file = resolveFileLink(String(req.query.path ?? ''), [...desks.map((d) => d.worktree), cwd, ...roots.filter((r) => !r.archived).map((r) => r.dir)]);
+    if (!file) return res.status(404).json({ error: 'No such file.' });
+    res.json({ path: file });
   });
 
   app.get('/api/sessions/:name/project-root', async (req, res) => {

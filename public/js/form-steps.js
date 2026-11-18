@@ -139,7 +139,7 @@ export function templateTray(rows, current, onPick, { includeOwn = true } = {}) 
  * `loadProviderCatalog()` when it is shown and paints from `providerCatalog()`; a picker
  * built before the first read paints again when it lands.
  */
-let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', model_info: { origin: '', fetched_at: '' }, withdrawn: [], loaded: false };
+let catalog = { rows: [], providers: [], machine: [], measured_at: '', refreshed_at: '', origin: '', withdrawn: [], loaded: false };
 let inflight = null;
 const NATIVE_MODEL = 'native';
 
@@ -153,7 +153,6 @@ export function loadProviderCatalog() {
       measured_at: read.ok ? String(read.data?.measured_at || '') : '',
       refreshed_at: read.ok ? String(read.data?.refreshed_at || '') : '',
       origin: read.ok ? String(read.data?.origin || '') : '',
-      model_info: { origin: String(read.data?.model_info?.origin || ''), fetched_at: String(read.data?.model_info?.fetched_at || '') },
       withdrawn: read.ok && Array.isArray(read.data?.withdrawn) ? read.data.withdrawn : [],
       loaded: true,
     };
@@ -163,7 +162,7 @@ export function loadProviderCatalog() {
   return inflight;
 }
 
-/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, model_info, withdrawn, loaded }`. */
+/** What every reader paints from: `{ rows, providers, machine, measured_at, refreshed_at, origin, withdrawn, loaded }`. */
 export const providerCatalog = () => catalog;
 
 /** light · standard · frontier, in the person's words. */
@@ -182,13 +181,6 @@ export function dayTime(iso) {
   return `${at.getDate()} ${month[at.getMonth()]} ${at.getFullYear()}, ${two(at.getHours())}:${two(at.getMinutes())}`;
 }
 
-/** A model's list price from its model info, `$4 in · $20 out per M tokens`; '' when it has none. */
-export function priceText(info) {
-  const cost = info?.cost ?? {};
-  if (typeof cost.input !== 'number' || typeof cost.output !== 'number') return '';
-  return t('forms.model_price', '${input} in · ${output} out per M tokens', { input: cost.input, output: cost.output });
-}
-
 /**
  * One model as an option reads: its name and its tier, and stops there. A picker is for
  * choosing, not for reading: the model's description belongs to the
@@ -200,9 +192,14 @@ export const modelLabel = (row) => {
   const known = row?.name ? null : catalog.rows.find((item) => item.provider === row?.provider && item.model === row?.model);
   return String(row?.name || known?.name || row?.model || '');
 };
-export const modelWord = (row) => row?.model === NATIVE_MODEL || !row?.tier
-  ? modelLabel(row)
-  : t('forms.model_word', '{model} · {tier}', { model: modelLabel(row), tier: tierWord(row.tier) });
+/** A row's tier in words, or '' when the name already says it (a Ronin models tier row is named for its tier). */
+export const rowTierWord = (row) => {
+  const word = row?.model === NATIVE_MODEL ? '' : tierWord(row?.tier);
+  return word && word.toLowerCase() !== modelLabel(row).toLowerCase() ? word : '';
+};
+export const modelWord = (row) => rowTierWord(row)
+  ? t('forms.model_word', '{model} · {tier}', { model: modelLabel(row), tier: rowTierWord(row) })
+  : modelLabel(row);
 
 /**
  * THE ONE PROVIDER → MODEL PICKER. Two selects, and either pick may stand alone: naming

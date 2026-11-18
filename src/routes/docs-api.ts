@@ -6,6 +6,7 @@ import { storeDir } from '../resources.js';
 import { listWorkspaces, readWorkspace, type Workspace } from '../workspaces.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { PLAN_STATUSES, listPlans, plansPlace } from '../plans.js';
+import { listCanvases } from '../canvases.js';
 
 const DOC_EXT = /\.(md|html?)$/i;
 const SKIP = new Set(['node_modules', '.git', 'dist', 'build', '.cache']);
@@ -53,6 +54,25 @@ async function planGroups(only: Workspace | null) {
   return groups;
 }
 
+/** THE CANVASES SHELF (KAN-329): one group per Workspace, its canvases by name, each as
+ * `canvas:<workspace>/<name>` (not a file: the client opens it read live, canvas-view.js). */
+async function canvasGroups(only: Workspace | null) {
+  const campaigns = only ? [only.campaign_id] : await readdir(storeDir('workspaces'), { withFileTypes: true }).then((all) => all.filter((d) => d.isDirectory()).map((d) => d.name).sort(), () => [] as string[]);
+  const groups = [];
+  for (const campaign of campaigns) {
+    for (const w of only ? [only] : await listWorkspaces(campaign)) {
+      const canvases = await listCanvases(w).catch(() => []);
+      if (!canvases.length && !only) continue;
+      groups.push({
+        root: campaigns.length > 1 ? `${campaign}/${w.name}` : w.name, dir: '', archived: false,
+        files: canvases.map((c) => `canvas:${w.name}/${c.name}`),
+        hints: canvases.map((c) => [c.template ? `from ${c.template}` : '', c.date].filter(Boolean).join(' · ')),
+      });
+    }
+  }
+  return groups;
+}
+
 /** A TEAM'S SHELF IS ITS WORKSPACE'S (owner, 2026-11-09; KAN-326): with `team`, Plans are its
  * Workspace's plans and Docs the Workspace Folders its Workspace names (repos and folders), and
  * `scope` says so in words. Without one — or for a Team with no Workspace — every Workspace's. */
@@ -65,10 +85,11 @@ async function teamWorkspace(team: string): Promise<Workspace | null> {
 export function registerDocs(app: express.Express): void {
   app.get('/api/docs', async (req, res) => {
     const shelf = String(req.query.shelf ?? '');
-    if (shelf !== 'plans' && shelf !== 'docs') return res.status(400).json({ error: 'shelf is "plans" or "docs".' });
+    if (shelf !== 'plans' && shelf !== 'docs' && shelf !== 'canvases') return res.status(400).json({ error: 'shelf is "plans", "canvases" or "docs".' });
     try {
       const w = await teamWorkspace(String(req.query.team ?? '').trim());
       if (shelf === 'plans') return res.json({ shelf, scope: w ? { workspace: w.name } : null, groups: await planGroups(w) });
+      if (shelf === 'canvases') return res.json({ shelf, scope: w ? { workspace: w.name } : null, groups: await canvasGroups(w) });
       const named = w ? [...w.repos, ...w.folders].map((one) => one.name) : null;
       const roots = (await listProjectRoots()).filter((r) => !named || named.includes(r.name));
       const groups = [];

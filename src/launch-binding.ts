@@ -94,7 +94,7 @@ export function processLaunch(request: LaunchRequest,
     const home = prepared.home;
     if (retained && home && grammar?.isolation) await linkInherited(grammar, home);
     const provision = grammar?.isolation?.provision;
-    if (!retained && home && provision && request.env?.RONIN_SETUP_ID) await provisioners[provision](request.env.RONIN_SETUP_ID, home);
+    if (!retained && home && provision && request.env?.RONIN_SETUP_ID) await provisioners[provision](request.env.RONIN_SETUP_ID, home, request.env.RONIN_PERSON);
     const identity: LaunchIdentity = {
       key, cli: request.cli, strategy: retained?.strategy ?? assigned.strategy,
       providerSession: assigned.id, home, env: prepared.env,

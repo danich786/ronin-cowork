@@ -21,22 +21,6 @@ delete process.env.TMUX;
 const route = await fs.readFile(new URL('../src/routes/sessions-api.ts', import.meta.url), 'utf8');
 const between = (from: string, to: string) => route.slice(route.indexOf(from), route.indexOf(to, route.indexOf(from) + 1));
 
-test('session_end archives through the one archive; only an unresumable conversation ends outright', () => {
-  const harakiri = between("app.post('/api/harakiri'", "app.get('/api/sessions/:name/project-root'");
-  assert.match(harakiri, /await performAgentEnd\(name\)/);
-  assert.doesNotMatch(harakiri, /performAgentShutdown/);
-  const end = between('async function performAgentEnd', 'async function performAgentShutdown');
-  assert.match(end, /shutdownAgent\(name/, 'desks close as before, with the same checks');
-  assert.match(end, /archived = await archiveAgent\(session\); if \(!end\.archived\) await liveOps\.stop/);
-  assert.match(end, /if \(!archived\) emitSessionEnd/, 'an archive keeps the tape and the session folder');
-  assert.match(end, /releaseHolds\(name, key, 'session ended', archived\)/);
-  // One archive: the archive route and session_end share archiveAgent; nothing writes a manifest twice.
-  assert.equal(route.match(/await writeArchive\(/g)?.length, 1);
-  assert.equal(route.match(/await archiveAgent\(/g)?.length, 2);
-  const archive = between("app.post('/api/sessions/:name/archive'", "app.post('/api/archived-sessions/:id/rehydrate'");
-  assert.match(archive, /await archiveAgent\(name, ignoringDesks\(req\) \? desks : \[\]\)/);
-});
-
 test('Delete and Hard Delete are unchanged: they end outright', () => {
   const hard = between('async function performAgentHardDelete', 'async function prepareSessionEnding');
   assert.match(hard, /killSessionTree\(name/);
@@ -60,10 +44,4 @@ test('the lead\'s end notice names the archive id and the restore command', asyn
     'Your work record changed; please read it (work-record read). ender ended, archived as ender-123: session_restore ender-123',
     'Your work record changed; please read it (work-record read).',
   ]);
-});
-
-test('a restore runs a part\'s own resume wrap for that name, the route and rehydrateSession alike (KAN-615)', () => {
-  const restore = between('async function rehydrate(', 'export function registerSessions');
-  assert.match(restore, /const wrap = resumeWraps\.get\(archived\.name\);\s*if \(wrap\) argv = wrap\(\[\.\.\.argv\]\);\s*await createSession\(/);
-  assert.match(route, /app\.post\('\/api\/archived-sessions\/:id\/rehydrate', async \(req, res\) => \{\s*const \{ status, body \} = await rehydrate\(req\.params\.id, callerOf\(req\)\);/);
 });

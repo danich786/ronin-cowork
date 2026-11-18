@@ -39,7 +39,7 @@ test('two subscribers, one pushed change: one paint each', () => {
   store.subscribe('home', (rows) => paints.a.push(rows));
   store.subscribe('home', (rows) => paints.b.push(rows));
 
-  sockets.made[0].push({ t: 'home', rows: [{ name: 'alpha', stance: 'replying' }] });
+  sockets.made[0].push({ t: 'cards', rev: 1, cards: [{ name: 'alpha', stance: 'replying' }] });
 
   assert.equal(paints.a.length, 1);
   assert.equal(paints.b.length, 1);
@@ -51,10 +51,10 @@ test('an unchanged push paints nothing, and a late subscriber is handed the snap
   store.connect();
   sockets.made[0].up();
   const rows = [{ name: 'alpha', stance: 'replying' }];
-  sockets.made[0].push({ t: 'home', rows });
+  sockets.made[0].push({ t: 'cards', rev: 1, cards: rows });
   let paints = 0;
   store.subscribe('home', () => { paints += 1; }); // open: the snapshot
-  sockets.made[0].push({ t: 'home', rows: structuredClone(rows) }); // same rows again
+  sockets.made[0].push({ t: 'cards', rev: 1, cards: structuredClone(rows) }); // same cards again
   assert.equal(paints, 1);
   assert.deepEqual(store.get('home'), rows);
 });
@@ -66,7 +66,7 @@ test('a closed subscriber hears nothing more', () => {
   let paints = 0;
   const close = store.subscribe('home', () => { paints += 1; });
   close();
-  sockets.made[0].push({ t: 'home', rows: [{ name: 'beta' }] });
+  sockets.made[0].push({ t: 'cards', rev: 1, cards: [{ name: 'beta' }] });
   assert.equal(paints, 0);
 });
 
@@ -75,7 +75,7 @@ test('the store reads nothing: boot, reconnect, resume and every message arrive 
   store.connect();
   sockets.made[0].up();
   sockets.made[0].push({ t: 'sessions', list: [{ name: 'alpha' }] });
-  sockets.made[0].push({ t: 'home', rows: [{ name: 'alpha', stance: 'working' }] });
+  sockets.made[0].push({ t: 'cards', rev: 1, cards: [{ name: 'alpha', stance: 'working' }] });
   sockets.made[0].push({ t: 'teams', rosters: [{ name: 'front-2' }] });
   sockets.made[0].drop();
   timers[0]();
@@ -86,7 +86,8 @@ test('the store reads nothing: boot, reconnect, resume and every message arrive 
 
   assert.deepEqual(requests, [], 'nothing asks REST for a resource the server pushes');
   assert.deepEqual(store.get('home'), [{ name: 'alpha', stance: 'working' }]);
-  sockets.made[1].push({ t: 'home', rows: [{ name: 'alpha', stance: 'awaiting_you' }] });
+  sockets.made[1].push({ t: 'cards', rev: 1, cards: [{ name: 'alpha', stance: 'working' }] }); // the reconnect's whole copy
+  sockets.made[1].push({ t: 'card', rev: 2, card: { name: 'alpha', stance: 'awaiting_you' } });
   assert.deepEqual(store.get('home'), [{ name: 'alpha', stance: 'awaiting_you' }], 'the newer push wins');
 });
 
@@ -103,15 +104,21 @@ test('a sessions push that moved only activity stamps paints nothing', () => {
   assert.equal(paints, 2, 'a painted field moving is a change');
 });
 
-test('a home push that moved only activity or stance time paints nothing', () => {
+test('a card is swapped in by name; a card that is not the next rev renews the socket for a whole copy (KAN-641)', () => {
   const { store, sockets } = rig();
   store.connect();
   sockets.made[0].up();
-  let paints = 0;
-  store.subscribe('home', () => { paints += 1; });
-  sockets.made[0].push({ t: 'home', rows: [{ name: 'alpha', stance: 'working', at: 1, activity: 1 }] });
-  sockets.made[0].push({ t: 'home', rows: [{ name: 'alpha', stance: 'working', at: 2, activity: 2 }] });
-  assert.equal(paints, 1);
+  sockets.made[0].push({ t: 'cards', rev: 5, cards: [{ name: 'alpha', ctx: 1 }, { name: 'beta', ctx: 1 }] });
+  sockets.made[0].push({ t: 'card', rev: 6, card: { name: 'beta', ctx: 2 } });
+  assert.deepEqual(store.get('home'), [{ name: 'alpha', ctx: 1 }, { name: 'beta', ctx: 2 }]);
+  sockets.made[0].push({ t: 'card', rev: 8, card: { name: 'alpha', ctx: 9 } }); // rev 7 never came
+  assert.deepEqual(store.get('home')[0], { name: 'alpha', ctx: 1 }, 'a copy that missed one is not patched');
+  assert.equal(sockets.made.length, 2, 'it is replaced: the new connection is sent every card whole');
+  sockets.made[1].up();
+  sockets.made[1].push({ t: 'card', rev: 9, card: { name: 'beta', ctx: 3 } }); // before this socket's whole copy
+  assert.equal(sockets.made.length, 2, 'a card before the whole copy waits for it, and renews nothing');
+  sockets.made[1].push({ t: 'cards', rev: 9, cards: [{ name: 'alpha', ctx: 9 }, { name: 'beta', ctx: 3 }] });
+  assert.deepEqual(store.get('home'), [{ name: 'alpha', ctx: 9 }, { name: 'beta', ctx: 3 }]);
 });
 
 test('the sessions reducer runs before any subscriber and is handed the list it replaces', () => {

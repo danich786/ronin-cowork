@@ -12,10 +12,12 @@ import { hermesConfigured, readHermesSettings } from './hermes-setups.js';
  *
  * Two writers, one record (owner's ruling, 2026-09-25):
  * - `measureAndRecordProviders` — machine facts; the recorded model lists and the last
- *   npm answer ride along unchanged. Ronin start, and a sign-in closing.
+ *   npm answer ride along unchanged. A sign-in closing, a switch, a setup saved.
  * - `refreshProviders` — Refresh all: the same facts, then every activated CLI's own
- *   model list read again through the reader its registry entry names, then npm asked
- *   for the newest release. The owner's press, never a timer.
+ *   model list read again through the reader its registry entry names, each provider
+ *   part's list (src/provider-parts.ts), then npm asked for the newest release. Ronin
+ *   start (so after every Update, which restarts it), the park's call in a hosted office,
+ *   and the member's press; never a timer (KAN-651, MODEL_MANAGEMENT.md §4).
  */
 import { readFile, readdir, stat } from 'node:fs/promises';
 import os from 'node:os';
@@ -25,6 +27,7 @@ import { AGENTS, listAgentAvailability, type AgentAvailability, type ModelsSourc
 import { execFile } from './spawn-broker.js';
 import { ensureInitialCampaign, initialCampaign, writeCampaignProviders } from './campaigns.js';
 import { readSetupSection } from './machine-state.js';
+import { operationalPartCount, refreshProviderParts } from './provider-parts.js';
 import { listProviderCatalog, type ModelConnection, type ModelList, type ModelRow, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
 
 interface SetupSection { providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>; [key: string]: unknown }
@@ -218,7 +221,8 @@ export async function measureProviders(section: SetupSection, ops: MeasureOps = 
     refreshed_at: '',
     installed, signed_in, operational,
     off: installed.filter((cli) => offAt(section, cli) !== null),
-    activated_count: operational.length,
+    // A part's provider (Ronin models in a hosted office) is a provider here as much as a signed-in CLI.
+    activated_count: operational.length + await operationalPartCount(),
     paths,
     versions,
     models: {},
@@ -290,7 +294,7 @@ export async function recordProviderSummary(summary: ProviderSummary): Promise<v
 /**
  * Machine facts, written: what is installed, signed in, activated, and what version each
  * activated CLI says. The recorded model lists, the last npm answer and the last Refresh
- * all date ride along unchanged — nothing is read again without the owner's press.
+ * all date ride along unchanged — nothing is read again but by a refresh.
  */
 export async function measureAndRecordProviders(section?: SetupSection, ops: MeasureOps = {}): Promise<ProviderSummary> {
   const previous = await readProviderSummary();
@@ -303,16 +307,16 @@ export async function measureAndRecordProviders(section?: SetupSection, ops: Mea
 }
 
 /**
- * REFRESH ALL — the owner's press. The same machine facts, then every activated CLI's own
+ * REFRESH ALL — start-up, the park's call, the member's press. The same machine facts, then every activated CLI's own
  * model list read again through the reader its registry entry names, then npm asked for
  * each activated CLI's newest release (one outbound request each, on the egress record).
- * The same door's second step is models.dev, on its own route (`src/model-info.ts`).
  * A CLI not activated gets nothing spent on it; its old list, if any, is dropped with it.
  */
 export async function refreshProviders(section?: SetupSection, ops: MeasureOps = {}, latest: LatestOps = {}): Promise<ProviderSummary> {
   const now = ops.now ?? (() => new Date().toISOString());
   const read = ops.models ?? readModels;
   const summary = await measureProviders(section ?? await readSetupSection(), ops);
+  await refreshProviderParts();
   const lists = await Promise.all(AGENTS.filter((agent) => summary.operational.includes(agent.id))
     .map(async (agent) => [agent.id, await read(agent, { file: summary.paths[agent.id] ?? '', version: summary.versions[agent.id] ?? '', now })] as const));
   for (const [id, list] of lists) summary.models[id] = list;

@@ -27,13 +27,13 @@ import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { IRASSHAI, irasshaiIn } from './setup-journey.js';
+import { IRASSHAI, irasshaiIn, irasshaiShown } from './setup-journey.js';
 import { createIntegrationsPanel } from './integrations-panel.js';
 import { campaigns, loadCampaigns } from './campaigns.js';
 import { subscribe } from './store.js';
 import { t } from './lexicon.js';
 
-export { IRASSHAI, irasshaiSteps, takeStepLine } from './setup-journey.js';
+export { IRASSHAI, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
 export const IRASSHAI_STEP_TYPE = 'setup.irasshai-step';
 export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.irasshai-integrations';
 /** The onboarding task whose step seats the integrations panel. */
@@ -80,14 +80,15 @@ export function createOpenIrasshai(onOpen) {
 }
 
 /**
- * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16; KAN-617): the person's messages and her
- * replies. It asks for the route's Chat reading, which leaves out Codex's own startup (its system
- * and developer text, skills, the session-start note) and injected context (AGENTS.md), and it
- * draws no record of Ronin's birth packet, her first message ("Read first: <packet>…"). Other
- * Agents' tiles are unchanged.
+ * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16 and 18; KAN-617): the person's messages and
+ * her replies, nothing else. It asks for the route's Chat reading, which leaves out Codex's own
+ * startup (its system and developer text, skills, the session-start note) and injected context
+ * (AGENTS.md). Of the user lines left, only the person's are drawn: what they typed (bare, or under
+ * Ronin's `From <person> [Message box]:` / `[Ronin Box]:` head, drawn without the head). Ronin's
+ * birth packet ("Read first: <packet>…") and every other delivery (House notice, Tell, Wipeboard
+ * notice, Scheduled job) are not. Other Agents' tiles are unchanged.
  */
 export const CHAT_READING = 'chat';
-export const birthPacket = (rec) => rec?.role === 'user' && /^\s*Read first: \S*AGENT_BIRTH_BRIEF\.md\b/.test(String(rec.text || ''));
 
 /** Her chat: the conversation and the message box, nothing else. */
 export function createIrasshaiChat() {
@@ -97,7 +98,7 @@ export function createIrasshaiChat() {
   body.className = 'tile-body';
   body.dataset.surface = 'chat';
   el.append(body);
-  const transcript = makeTileTranscript({ admit: (rec) => !birthPacket(rec) });
+  const transcript = makeTileTranscript({ admit: irasshaiShown });
   body.append(transcript.el);
   const say = (text) => {
     const drop = transcript.pending(text);

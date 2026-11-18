@@ -100,7 +100,14 @@ test('the memory gauge paints the pushed reading and hides when the box is off',
   gauge.setVisible(true);
   store.receive({ t: 'memory', reading: { mem: { total_mb: 16384, available_mb: 8192 }, swap: { total_mb: 0, used_mb: 0 }, load: [0.4, 0.3, 0.2], cpus: 8, off: false } });
   assert.equal(gaugeEl.hidden, false, 'a reading shows the gauge');
+  assert.equal(gaugeEl.dataset.band, 'ok', '50% full is green');
+  store.receive({ t: 'memory', reading: { mem: { total_mb: 8192, available_mb: 1126 }, swap: { total_mb: 2048, used_mb: 1229 }, load: [2, 3.2, 3], cpus: 8, disk: { total_mb: 100000, used_mb: 55000 } } });
+  assert.equal(gaugeEl.dataset.band, 'warn', 'swap adds nothing: 86% RAM in use is orange');
+  store.receive({ t: 'sessions', list: [{ agent: 'claude' }, { agent: 'codex' }, { agent: '' }] });
+  store.receive({ t: 'memory', reading: { mem: { total_mb: 15360, available_mb: 7782 }, swap: { total_mb: 4096, used_mb: 3379 }, load: [6, 6.4, 6], cpus: 8, disk: { total_mb: 100000, used_mb: 61000 } } });
+  assert.equal(gaugeEl.dataset.band, 'ok', 'the owner\'s 17 Nov box: RAM 49% sets the face; CPU 80% only its own row (KAN-640)');
+  assert.equal(gaugeEl.title, 'Agents 2 of 25 · Compute 80% · Storage 60 of 98 GB', 'current counts sessions with an Agent; max is RAM ÷ 0.6 GB');
   store.receive({ t: 'memory', reading: { off: true } });
   assert.equal(gaugeEl.hidden, true, 'off hides it');
-  assert.deepEqual(requests, [], 'the gauge never asks');
+  assert.deepEqual(requests, ['/api/office'], 'the gauge asks only for the office record, once');
 });

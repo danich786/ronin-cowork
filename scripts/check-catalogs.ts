@@ -14,7 +14,6 @@ import {
 import { listDeskProfiles } from '../src/desk-profiles.js';
 import { listLexicons } from '../src/lexicon-catalog.js';
 import { parseProviderCatalog, STOCK_CATALOG_MD } from '../src/model-providers.js';
-import { SHIPPED_MODEL_INFO, type ModelInfoFile } from '../src/model-info.js';
 import { AGENTS } from '../src/agents.js';
 import { readAgentLaunches, renderLaunch } from '../src/agent-launches.js';
 
@@ -164,15 +163,12 @@ const stockCatalogRaw = await readFile(STOCK_CATALOG_MD, 'utf8');
 const catalog = parseProviderCatalog(stockCatalogRaw);
 if (catalog.length === 0) fail('MODEL_PROVIDERS.md: the provider catalog yields no providers');
 {
-  const shipped = JSON.parse(await readFile(SHIPPED_MODEL_INFO, 'utf8')) as ModelInfoFile;
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(shipped.fetched_at ?? '')) fail('MODEL_INFO.json: the shipped snapshot carries no fetched_at');
   const providers = new Set<string>();
   const clis = new Set<string>();
   for (const entry of catalog) {
     const at = `MODEL_PROVIDERS.md: ${entry.label}`;
     if (providers.has(entry.provider)) fail(`${at}: provider id "${entry.provider}" is used by two sections`);
     providers.add(entry.provider);
-    if (entry.models_dev && !shipped.providers?.[entry.models_dev]) fail(`${at}: models_dev "${entry.models_dev}" is not in the shipped MODEL_INFO.json`);
     // A coming-soon section is display inventory, not a launch promise.
     if (!entry.launchable) continue;
     if (clis.has(entry.cli)) fail(`${at}: cli "${entry.cli}" is served by two sections`);

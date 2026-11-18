@@ -28,6 +28,14 @@ Hosted is a fact, not an inference. An office_unit carries an office record
 beside it in the same store (`entitlement_token` for Ronin HQ, `house_token` for the model
 gateway; directory 0700, files 0600). The house token is on disk once: the Hermes connection to
 the record's `gateway_office` reads it there and writes it into each birth's own Hermes home.
+
+**Each house call says whose Agent made it** (KAN-621). On that connection the birth's Hermes
+config also carries one header, `X-Ronin-Person: <email, lower-case>`: the person the Agent works
+for, its birth receipt's `user_email` (the signed-in launcher, or for an Agent made by an Agent,
+that Agent's person). gateway_office reads it so HQ can book the spend to the person. It is a
+self-declared label, not proof: it sits in a file the Agent can edit, like the house token beside
+it. No person (Mika's own launch, Ronin's Agents, Irasshai always) means no header: the call is the
+office's and is never refused for it. A personal key's calls never carry it.
 Self-hosted has no record and holds nothing HQ-related. `readOfficeRecord()` is the only reader;
 a present file that does not read is `unreadable`, a provisioning fault, never self-hosted.
 

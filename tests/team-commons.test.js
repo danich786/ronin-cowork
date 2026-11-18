@@ -15,7 +15,7 @@ test('Commons opens on its separate Roster and keeps Configuration separate', as
   assert.doesNotMatch(view, /commons\.config\.replaceChildren\(members, config\)/);
 });
 
-test('Roster remains a roster; the Team page selector is Commons, Agents, New Agent (owner, 2026-10-18)', async () => {
+test('Roster remains a roster; the Team page selector is Commons, Agents, canvases, New Agent (owner, 2026-10-18; canvases 2026-11-17)', async () => {
   const [view, members, retirement, css, workbench, coworkRoster, composition, newAgent, catalog, phalanx, kotoba] = await Promise.all([
     source('public/js/cowork-view.js'), source('public/js/team-members.js'), source('public/js/session-retire.js'), source('public/css/team-workspace.css'), source('public/js/workbench.js'), source('public/js/team-roster-surface.js'),
     source('public/js/agent-composition.js'), source('public/js/new-agent.js'), source('public/js/workbench-catalog.js'), source('public/js/phalanx.js'), source('KOTOBA.md'),
@@ -57,7 +57,7 @@ test('Roster remains a roster; the Team page selector is Commons, Agents, New Ag
   assert.match(view, /createTeamRosterSurface\(\{\s*teamDetail: \(name\) => leagueTeamDetail\(name, id\)/);
   assert.doesNotMatch(view, /gear/);
   assert.match(catalog, /type: WORKBENCH_TYPES\.team, header: 'surface', discover: \(\) => \[\]/, 'the selector offers no per-Team card');
-  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.team, \[WORKBENCH_TYPES\.commons, WORKBENCH_TYPES\.teamEpics, WORKBENCH_TYPES\.teamFindItem, WORKBENCH_TYPES\.epicRecord, WORKBENCH_TYPES\.terminal, WORKBENCH_TYPES\.newAgent, WORKBENCH_TYPES\.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE\]\)/, 'the Team page selector: Commons, Epics (KAN-232; Waiting on you removed, KAN-304), Find item (KAN-433), Agents, New Agent; the rest placeable only');
+  assert.match(catalog, /profiles\.define\(WORKBENCH_PROFILES\.team, \[WORKBENCH_TYPES\.commons, WORKBENCH_TYPES\.teamEpics, WORKBENCH_TYPES\.teamFindItem, WORKBENCH_TYPES\.epicRecord, WORKBENCH_TYPES\.terminal, WORKBENCH_TYPES\.canvas, WORKBENCH_TYPES\.newAgent, WORKBENCH_TYPES\.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE\]\)/, 'the Team page selector: Commons, Epics (KAN-232; Waiting on you removed, KAN-304), Find item (KAN-433), Agents, the Workspace\'s canvases (KAN-628), New Agent; the rest placeable only');
   assert.doesNotMatch(view, /workItemOffers|createWorkItemsSurface/, 'the Team page offers no Work Items card; the Agent workbench keeps its own');
   // Owner 2026-09-28: the roster that existed (js/roster.js) is back on Cowork and Desk, as it was.
   assert.match(catalog, /WORKBENCH_PROFILES\.cowork, \[[^\n]*WORKBENCH_TYPES\.sessionRoster/);

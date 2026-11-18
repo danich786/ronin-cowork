@@ -27,7 +27,18 @@ export interface OfficeRecord {
   /** The gateway_office this office's house calls go to, reachable from inside the office. */
   gateway_office: string;
   provisioned_at: string;
+  /** The office kind's Agents, written by Cloud's kohai at provisioning: `most` is the
+   * header gauge popup's Agents max. Absent: max is RAM total ÷ 0.6 GB. */
+  agents?: { fewest: number; most: number };
+  /** The office's model tier, the member's choice in the lounge, written by Cloud's park
+   * (samurai_lab/ronin_cloud/MODEL_MANAGEMENT.md §2, §5). Absent: Ronin asks for `default`. The
+   * member's provider behind each tier is the gateway's to apply; the record does not carry it. */
+  tier?: OfficeTier;
 }
+
+export const OFFICE_TIERS = ['light', 'standard', 'frontier'] as const;
+export type OfficeTier = typeof OFFICE_TIERS[number];
+const isOfficeTier = (v: unknown): v is OfficeTier => (OFFICE_TIERS as readonly unknown[]).includes(v);
 
 export type OfficeView =
   | { hosting: 'self_hosted'; host: string }
@@ -56,7 +67,20 @@ export function parseOfficeRecord(raw: unknown): OfficeRecord {
   }
   const provisioned_at = r.provisioned_at;
   if (typeof provisioned_at !== 'string' || Number.isNaN(Date.parse(provisioned_at))) throw new Error('provisioned_at must be a date');
-  return { office_id: name(r, 'office_id'), office_park: name(r, 'office_park'), gateway_office: url.href.replace(/\/$/, ''), provisioned_at };
+  const record: OfficeRecord = { office_id: name(r, 'office_id'), office_park: name(r, 'office_park'), gateway_office: url.href.replace(/\/$/, ''), provisioned_at };
+  if (r.agents !== undefined) {
+    const a = r.agents as Record<string, unknown> | null;
+    const count = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
+    if (!a || typeof a !== 'object' || !count(a.fewest) || !count(a.most) || a.fewest > a.most) {
+      throw new Error('agents must be { fewest, most }, whole numbers, fewest no more than most');
+    }
+    record.agents = { fewest: a.fewest, most: a.most };
+  }
+  if (r.tier !== undefined) {
+    if (!isOfficeTier(r.tier)) throw new Error('tier must be light, standard or frontier');
+    record.tier = r.tier;
+  }
+  return record;
 }
 
 export async function readOfficeRecord(): Promise<OfficeView> {

@@ -1,13 +1,10 @@
 # MODEL_PROVIDERS — the provider catalog (stock; yours shadows it)
 
 > **This file is stock, and an upgrade replaces it.** It is the one record of every model
-> provider Ronin offers: the vendor id a launch names, the CLI that serves it, the family
-> words that give each model its tier, and the key its models are filed under at
-> models.dev. It holds no model facts. The signed-in provider CLI owns the live model
-> list; **Refresh all** on the Model providers surface reads each activated CLI's own list
-> into the Campaign record. What each model is — its name, description, prices, limits and
-> dates — is **model info**, fetched from models.dev by the same press and used only once
-> the owner accepts it (`ronin_catalogs/MODEL_INFO.json` is the snapshot a release ships).
+> provider Ronin offers: the vendor id a launch names, the CLI that serves it, and the family
+> words that give each model its tier. It holds no model facts. The signed-in provider CLI
+> owns the live model list; every refresh (Ronin's start, **Refresh all** on the Model
+> providers surface) reads each activated CLI's own list into the Campaign record.
 > Nothing in here executes.
 >
 > **To change a section without a code release,** copy this file to your catalogs store
@@ -22,10 +19,9 @@ One `### <Vendor label>` section per provider. Its fields:
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, …) and the key of `agents.sessions.by_provider` |
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
-| `models_dev` | optional: the provider key models.dev files this vendor's models under; a provider without one shows no model info |
 | `transcript_source` | dated descriptive journal location and write discipline; availability requires a supported adapter and verified launch identity, not merely a file at that path |
 | `maturity` | optional display status: `beta` or `comingSoon`; a `comingSoon` provider is shown and never launched |
-| `families` | space-separated `word=tier` pairs, tier **light** · **standard** · **frontier**: a model the CLI lists takes the tier of the longest word standing whole in its id, else in its models.dev family, so a new generation keeps its band the day it is listed |
+| `families` | space-separated `word=tier` pairs, tier **light** · **standard** · **frontier**: a model the CLI lists takes the tier of the longest word standing whole in its id, so a new generation keeps its band the day it is listed |
 
 Transcript-source observations above were recorded by the transcript investigation on
 2026-09-22. Mint/claim capability belongs only to `docs/agents/<cli>.md` and is not
@@ -41,7 +37,6 @@ availability.
 
 - **provider:** `anthropic`
 - **cli:** `claude`
-- **models_dev:** `anthropic`
 - **transcript_source:** Observed 2026-09-22: `~/.claude/projects/<cwd-slug>/<uuid>.jsonl`; one record per completed message. Journal adapter exists; exact launch identity is required.
 - **families:** `haiku=light sonnet=standard opus=frontier fable=frontier`
 
@@ -53,7 +48,6 @@ as `sonnet` pass through unchanged and are never rewritten by Ronin.
 
 - **provider:** `openai`
 - **cli:** `codex`
-- **models_dev:** `openai`
 - **families:** `astra=frontier sol=frontier terra=standard luna=light spark=light`
 - **transcript_source:** Observed 2026-09-22: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`; ordinal-sequenced records with a session metadata header. Journal adapter exists; fresh Ronin launches isolate the journal home; the id comes from its header.
 
@@ -66,7 +60,6 @@ refused by Codex in the new tile, and Ronin never substitutes.
 
 - **provider:** `google`
 - **cli:** `agy`
-- **models_dev:** `google`
 - **families:** `pro=frontier flash=standard flash-lite=light`
 - **transcript_source:** Reported, not yet observed here: `~/.gemini/antigravity-cli/brain/<conversation-id>/.system_generated/logs/transcript.jsonl`. No adapter yet.
 
@@ -78,7 +71,6 @@ end to end through Ronin; the first real launch of each model is the proof, per
 
 - **provider:** `xai`
 - **cli:** `grok`
-- **models_dev:** `xai`
 - **families:** `grok-4.7=frontier grok-4.6=frontier grok-4.5=standard grok-4.3=standard`
 - **transcript_source:** No conversation journal found in the 2026-09-22 investigation. The sessions SQLite file was an empty FTS index; memtrace was memory profiling and logs/unified.jsonl telemetry. No transcript adapter available.
 

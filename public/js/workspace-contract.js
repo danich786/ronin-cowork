@@ -46,6 +46,8 @@ export function normalizeWorkbenchState(viewState = null, declaration = null) {
       ...(text(value.path) ? { path: value.path } : {}),
       ...(text(value.tab) ? { tab: value.tab } : {}),
       ...(text(value.doc) ? { doc: value.doc } : {}),
+      // A canvas card's Workspace (KAN-634), kept with the placement so a restore reads it at once.
+      ...(text(value.workspace) ? { workspace: value.workspace } : {}),
     });
   }
   return Object.freeze({

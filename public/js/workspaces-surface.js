@@ -12,6 +12,7 @@
  * GitHub CLI (`createFolderGithub`) is the sign-in box github-workspace-setup.js draws for Setup.
  * One read of the pinned folders for the bench (`createRootsReading`, /api/project-roots/detail).
  */
+import { openCanvas } from './canvas-view.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createStep, el } from './form-steps.js';
 import { createBriefSettingsPanel, layerLinks } from './brief-step.js';
@@ -308,6 +309,20 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
     row.append(el('b', null, t('workspaces.plans', 'Plans')), el('code', null, where), el('small', 'folder-kind', recommended ? t('workspaces.plans_recommended', 'recommended') : ''));
     row.addEventListener('click', () => { plansOpen = !plansOpen; paintPlans(); });
     plansBox.append(row);
+    // CANVASES (KAN-329, KAN-626): the Workspace's canvases by name; pressing one opens it, read
+    // fresh, over this surface (canvas-view.js).
+    const canvasNames = Array.isArray(w?.canvases) ? w.canvases : [];
+    const canvases = el('p', 'workspace-canvases-row');
+    const nameList = el('span');
+    if (!canvasNames.length) nameList.textContent = t('workspaces.canvases_none', 'none yet');
+    for (const name of canvasNames) {
+      const open = el('button', 'workspace-canvas-open', name); open.type = 'button';
+      open.title = t('workspaces.canvas_open', 'Open the canvas {name}, read now', { name });
+      open.addEventListener('click', () => { void openCanvas(open, w.name, name); });
+      nameList.append(open);
+    }
+    canvases.append(el('b', null, t('workspaces.canvases', 'Canvases')), nameList);
+    plansBox.append(canvases);
     if (!plansOpen) return;
     const names = [...new Set([LAB, ...picked.keys()])];
     const options = names.map((name) => ({ v: name, l: rootByName(name)?.title || name }));

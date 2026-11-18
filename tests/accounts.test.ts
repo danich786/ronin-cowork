@@ -107,3 +107,36 @@ test('in an office on an office_park the Ronin API default is the record\'s gate
     await rm(officeDir, { recursive: true, force: true });
   }
 });
+
+test('KAN-621: in an office, a house Agent\'s calls carry X-Ronin-Person (its user\'s email, lower-case); no person or a personal key carries none', async () => {
+  const { mkdir, writeFile, readFile } = await import('node:fs/promises');
+  const officeDir = path.join(box, 'office_unit_person');
+  await mkdir(officeDir, { recursive: true });
+  process.env.RONIN_OFFICE_UNIT_DIR = officeDir;
+  const originalFetch = globalThis.fetch;
+  try {
+    await writeFile(path.join(officeDir, 'office_record.json'), JSON.stringify({ office_id: 'glen', office_park: 'oh-1', gateway_office: 'http://10.0.0.2:4912', provisioned_at: '2026-11-06T09:00:00Z' }));
+    await writeFile(path.join(officeDir, 'house_token'), 'house-token-office');
+    const house = await a.saveAccount({ kind: 'ronin_api', name: 'Ronin API (office)' });
+    const personal = await a.saveAccount({ kind: 'personal_api', name: 'Own key', provider: 'custom', wireApi: 'responses', baseUrl: 'https://api.example.test/v1', apiKey: 'own-key' });
+    globalThis.fetch = async () => new Response(JSON.stringify({ data: [{ id: 'gpt-6-luna' }] }), { status: 200 });
+    await a.discoverAccount(house.id); await a.discoverAccount(personal.id);
+    globalThis.fetch = originalFetch;
+    const p1 = await a.savePreset({ name: 'Office house', account: house.id, model: 'gpt-6-luna', reasoning: 'medium', approvals: 'off' });
+    const p2 = await a.savePreset({ name: 'Office own', account: personal.id, model: 'gpt-6-luna', reasoning: 'medium', approvals: 'off' });
+    const ronin = async (setup: string, home: string, person?: string) => {
+      await h.prepareHermesHome(setup, path.join(box, home), person);
+      return JSON.parse(await readFile(path.join(box, home, 'config.yaml'), 'utf8')).providers.ronin;
+    };
+    assert.deepEqual((await ronin(p1.id, 'labelled', ' Ann@X.com ')).extra_headers, { [h.PERSON_HEADER]: 'ann@x.com' });
+    assert.equal(h.PERSON_HEADER, 'X-Ronin-Person');
+    assert.equal((await ronin(p1.id, 'nobody')).extra_headers, undefined, 'no person, no header');
+    assert.equal((await ronin(p2.id, 'own-key', 'ann@x.com')).extra_headers, undefined, 'a personal key never carries the label');
+    for (const id of [p1.id, p2.id]) await a.deletePreset(id);
+    for (const id of [house.id, personal.id]) await a.deleteAccount(id);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.RONIN_OFFICE_UNIT_DIR;
+    await rm(officeDir, { recursive: true, force: true });
+  }
+});

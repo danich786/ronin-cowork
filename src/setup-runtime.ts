@@ -1,6 +1,7 @@
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { operationalPartCount } from './provider-parts.js';
 import { updateCommand, updateLineOf } from './agent-install.js';
 import { AGENTS, discoverExecutable, launchArgv, listAgentAvailability } from './agents.js';
 import { updateSection } from './machine-state.js';
@@ -272,7 +273,7 @@ export async function setupRuntimeAnswer(
       state: offSince !== null && isInstalled ? 'off' : activated ? 'activated' : loginOpen ? 'login_open' : isInstalled ? 'installed' : agent.operations.install ? 'installable' : 'absent',
     };
   }));
-  const activated_count = providers.filter((provider) => provider.activated).length;
+  const activated_count = providers.filter((provider) => provider.activated).length + await operationalPartCount();
   const roots = INSTALLED_ROOTS.map((root) => ({ ...root, dir: path.join(rootDir('user'), root.name) }));
   return {
     providers,

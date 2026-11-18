@@ -37,7 +37,14 @@ declared first:
   `.ui-bar-value` is the plain loaded value beside it, and `.ui-bar-place` is the neutral
   island cut into the top edge that names which Workbench the doors led to. Its visible
   lower corners use the Workspace Kit surface radius (`--radius-large`). Native button
-  chrome and feature-local bar styling are forbidden.
+  chrome and feature-local bar styling are forbidden. At phone width (≤680px) the island
+  goes: beside the crumb and the right-hand end it had no room and sat on the gauge,
+  taking its taps; the crumb already names the place (KAN-640).
+- The bar's right-hand end is one group, `.bar-end` (KAN-640), in this order: the view's
+  own actions (`#viewactions`), the gauge (`#ramrpm`), Feedback, then `.bar-map`, the
+  surface map with its tile count (`#viewmap`, `#shapecycle`), at the far right as a pair.
+  One even `--space-inline` gap between pieces, `--space-row` inside the pair; the group's
+  auto margin carries it right even where the island leaves the flow (wide touch).
 - **app** — every composition and feature rule, in source order.
 
 Later layers win, so the cascade guarantees exactly one direction: every Ronin rule
@@ -377,14 +384,14 @@ written next to a predicate that stops it costing anything while its surface is 
 | Fact | Written by | Arrives via |
 |---|---|---|
 | session set (`S.sessions`) | `reconcileSessions` (`api.js`) — the only writer, fed only by the store's reducer in `events.js` | `{t:'sessions', list}` only: pushed whole to every new connection and again when a painted field changed (not `activity`); `events.js` owns births, deaths and chips, and the page's first list raises no chip · while the socket is closed — it never opened, or it dropped after boot — the failure bar says "cannot reach Ronin", and the next open clears it (`sayWhenUnreachable`, called by `main.js` and `phone.js`) · a feed silent past the server's beat is replaced by the store · a write (title, membership, lead, launch, retire) is answered by the push |
-| home rows | the store's `home` resource, read by `get('home')` or a subscription | `{t:'home', rows}` only: the server sends it whole to every new connection, a reconnect included, and again when a painted field changed (not `activity` or the stance's `at`) · a feed silent past the server's beat is replaced by the store (`store.js`) |
+| home rows (Agent cards) | the store's `home` resource, read by `get('home')` or a subscription | [The Agent card](agent-card.md) |
 | desk readings | read at open, not held: `readDesks` in `desks.js` | not pushed · the work record in the tile's メ menu asks `GET /api/desks?session=<name>` when the work record opens and paints the answer (`openWorkRecord`, `tilehead.js`: a full overlay over the tile body) |
 | Team rosters | the store's `teams` resource, projected by `team-controller.js`, which hears the store's `teams` and `sessions` and publishes once per change of either | `{t:'teams', rosters}` only, in the shape of `GET /api/team-rosters`, each row with the Team's `board` and `items`: pushed whole on connect and after a successful write under `/api/team-rosters`, `/api/team`, `/api/work-items` or a session's `teams` or `team_lead` · Team surfaces paint from the projection on entry and on each publish |
 | catalogs (projects) | `loadProjects` in `home.js` | boot, and the panes that edit them re-load after a write |
 | per-tile readings (gauge, work record) | the tile's `refreshCtx` / `refreshTegami`, reading its session's home row (`ctx`, `model`, `tegami`) | the tile subscribes to the store's `home` when it is made and unsubscribes when its host destroys it (`terminal-tile-host.js`) · connect repaints from the row the store holds |
 | docs list (tracked shelf) | `docs.js`, reading the store's home rows | `enter` subscribes to the store's `home` and draws the snapshot; each push redraws; `close` unsubscribes, called by the seat that leaves it (tile docs view, phone docs screen, Team and Agent workbench tabs, the document seat) · the Plans and Docs shelves read `GET /api/docs` on demand |
 | wipeboard thread, Cron jobs | the store's `wipeboard:<board>` and `jikan:<team>` (`jikan:*` for every team), painted by `team-wipeboard.js` and `team-jikan.js` | opening subscribes, which sends `{t:'want', resource, board}` or `{…, team}` on the socket; the server answers that connection with the message it broadcasts on every write (`{t:'wipeboard', board, posts, more}`, `{t:'jikan', team, jobs}`) · each reconnect says the wants again · a post, edit or removal is answered by that push · leaving unsubscribes |
-| message queue, machine reading | the store's `messages` and `memory`, painted by `message-queue.js`, the memory gauge (`ramrpm.js`) and the desk's machine panel | `{t:'messages', list}` and `{t:'memory', reading}`, held and sent on connect like the home rows, then on change · a dismissal is answered by the push · `memory` carries `off`, which hides the gauge |
+| message queue, machine reading | the store's `messages` and `memory`, painted by `message-queue.js`, the header gauge (`ramrpm.js`, KAN-638, KAN-640: the face is a five-segment bar and no text, filled by RAM in use only (total less MemAvailable over total; swap adds nothing), RAM being the real constraint; CPU and disk do not set it. Green under 60%, orange to 90%, red above. One tap opens the popup, three rows, label left, value and the row's own small five-segment bar right, same bands (Agents running of the most, load per core, disk used): "Agents 12 of 25" (Agents running now, counted from the pushed session list as `/api/health` `presence.agents.live` counts them, of the office record's `agents.most`, GET `/api/office` asked once, else RAM total ÷ 0.6 GB rounded down), "Compute 40%" (load per core, capped at 100) and "Storage 12 of 80 GB"; the title and aria label say the three rows as one line) and the desk's machine panel, which keeps its memory, swap, load and disk rows | `{t:'messages', list}` and `{t:'memory', reading}`, held and sent on connect like the home rows, then on change · a dismissal is answered by the push · `memory` carries `off`, which hides the gauge |
 | pane data (roots, koshi, stats) | the pane module | its own read on `enter()` — each owner is the file the surface lives in |
 | tile bytes | `TileWire` (`tilewire.js`) | the socket; reconnect/backoff lives there and nowhere else |
 

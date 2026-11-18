@@ -11,7 +11,8 @@ sync, commit, and hand-in are distinct; none is Git push.
 
 If `worktree-desk open` reports that the repository uses its checkout, use ordinary Git in
 that checkout and read the brief it names (`ronin-help checkout`); no worktree or hand-in
-applies there.
+applies there. `<repo>` is the repo handle; a Workspace name that has exactly one repo is
+taken as that repo, and a name matching nothing is refused with the valid handles listed.
 
 **Hand in** means submit committed worktree work to the Team review line with
 `worktree-desk hand-in`; it does not promote or push.

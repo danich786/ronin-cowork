@@ -49,10 +49,10 @@ GET /api/version    the release actually serving, and the services roster
 ```
 
 ```
-GET /api/health     ok · auth · login · transcribe · presence
+GET /api/health     ok · auth · login · transcribe · presence · machine
 ```
 
-`presence` is `{ browsers, last_input_at, people }`. `browsers` is how many browsers hold the
+`presence` is `{ browsers, last_input_at, people, agents }`. `browsers` is how many browsers hold the
 live /events socket now; `last_input_at` is the ISO time of the last action a person took, meaning
 the last non-GET `/api` request from a browser (Agents' tools on the operator socket do not count),
 or `null` since the server started. On an office_park the kohai reads it every 30 s
@@ -65,6 +65,14 @@ store beside `office_record.json` and Ronin re-reads when it changes. An email n
 role `null`. Self-hosted, or with no header (an Agent or a shell inside the unit), `people` is `[]`
 ([src/office-people.ts](../../src/office-people.ts)). It all lives in memory only: no request body,
 no keystrokes.
+
+`agents` is `{ live, archived }`: `live` is how many Agents are running now, `archived` how many
+archived Agents can still be restored (younger than 7 days). Both are counted on each call, from
+tmux and the archive folder; self-hosted carries the same field.
+
+`machine` is `{ swap_used_mb, mem_available_mb }`: the swap in use and MemAvailable (what a new
+allocation could get), in whole MB, from the reading the Services machine service makes once a
+minute. Each is `null` until that reading exists, with machine watching off, or without Services.
 
 ## Saying it back
 

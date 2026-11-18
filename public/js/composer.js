@@ -10,8 +10,8 @@ import { WorkspacePrimitives } from './workspace-primitives.js';
  *          send: (text: string) => boolean,
  *          sendMessage: (text: string) => Promise<{ok: boolean, why?: string}>,
  *          scrollToBottom: () => void}} hooks
- *   `send` is a command key, fire-and-forget. `sendMessage` is a message: it resolves to the
- *   host's answer, and the box clears on nothing else.
+ *   `send` is a command key, fire-and-forget. `sendMessage` is a message: the box clears on
+ *   the press, and the host's answer only gives the text back when the send failed.
  * @returns {{el: HTMLElement, ta: HTMLTextAreaElement, show: (on: boolean) => void, dispose: () => void}}
  */
 export function buildComposer(body, hooks) {
@@ -52,7 +52,7 @@ export function buildComposer(body, hooks) {
     setTimeout(() => button.classList.remove('pressed'), 250);
   });
 
-  const state = { inflight: false };
+  const state = { inflight: 0, chain: Promise.resolve() };
   // The wire's own words for a send that did not get through, in the owner's language.
   const reasons = {
     'not connected': () => t('composer.why_not_connected', 'the tile is not connected'),
@@ -98,31 +98,31 @@ export function buildComposer(body, hooks) {
     ta.focus();
   };
   const submit = () => {
-    // One message in flight at a time: a second Enter while the host is still answering
-    // would send the same text twice.
-    if (state.inflight) return;
     const text = ta.value;
     if (!text.trim()) {
+      // A press repeated while a message is on its way is not a command key: in a dialog its
+      // Enter would choose an option.
+      if (state.inflight) return;
       // An empty box sends a command key directly to the terminal.
       if (!hooks.connected()) { hold('not connected'); return; }
       hooks.send('\r');
       return;
     }
-    // The server owns text + Enter. The terminal socket is only for direct keys.
-    state.inflight = true;
-    wrap.classList.add('sending');
+    // The press hands the text to Ronin and the box clears now, whatever the answer or the
+    // terminal is doing (KAN-623). The server owns text + Enter; the socket is only for keys.
+    // Sends leave in press order, each after the one before has its answer.
+    ta.value = '';
+    grow();
     hold(null);
-    hooks.sendMessage(text).then((outcome) => {
-      state.inflight = false;
-      wrap.classList.remove('sending');
+    hooks.scrollToBottom();
+    state.inflight += 1;
+    state.chain = state.chain.then(() => hooks.sendMessage(text)).then((outcome) => {
+      state.inflight -= 1;
       const verdict = settleComposer(outcome, text, ta.value);
-      if (verdict.clear) {
-        ta.value = '';
-        grow();
-        hooks.scrollToBottom();
-        return;
-      }
-      if (verdict.why) hold(verdict.why);
+      if (verdict.box === null) return;
+      ta.value = verdict.box;
+      grow(true);
+      hold(verdict.why);
     });
   };
   /*

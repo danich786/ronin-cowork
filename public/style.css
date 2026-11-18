@@ -710,7 +710,18 @@ body {
 
 /* The document shell starts optional header capabilities hidden. Component display
    rules must never override that first-paint fact before the active view is known. */
-#bar > [hidden] { display: none !important; }
+#bar > [hidden], #bar .bar-end [hidden] { display: none !important; }
+
+/* THE RIGHT-HAND END (KAN-640): the view's actions, the gauge, Feedback, then the surface map
+   with its tile count, one group at the far right. One even gap between pieces; the map and
+   its count sit closer, so they read as a pair. The auto margin carries the run right even
+   where the island is lifted out of the flow (wide touch). */
+#bar .bar-end { display: inline-flex; flex: 0 0 auto; align-items: center; gap: var(--space-inline); margin-left: auto; }
+#bar .bar-map { display: inline-flex; align-items: center; gap: var(--space-row); }
+#bar .bar-map .shape-cycle { margin-left: 0; }
+/* A phone has no room for the centred island beside the crumb and the right-hand end: it sat
+   on top of the gauge and took its taps (KAN-640). The crumb already names the place. */
+@media (max-width: 680px) { #bar .view-island { display: none; } }
 
 #bar .shape-cycle,
 #bar .setup-open-irasshai-button,
@@ -3486,17 +3497,18 @@ body {
 .tile-transcript-entry[data-md='true'] { white-space: normal; }
 /* The Docs reader caps its column at 72ch and centres it, on the window's width. A Chat line
    is as wide as the tile, the person's and the Agent's alike (owner, 2026-11-01). */
-.tile-transcript-entry .markdown-reader { max-width: none; margin: 0; }
-.tile-transcript-entry .markdown-reader > :first-child { margin-top: 0; }
-.tile-transcript-entry .markdown-reader > :last-child { margin-bottom: 0; }
-.tile-transcript-entry .markdown-reader :is(p, ul, ol, pre) { margin: 0 0 var(--space-paragraph); }
-.tile-transcript-entry .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: var(--space-subsection) 0 var(--space-row); color: var(--fg-strong); font-size: 1em; font-weight: var(--weight-strong); line-height: var(--leading-tight); }
-.tile-transcript-entry .markdown-reader :is(ul, ol) { padding-left: var(--space-subsection); }
-.tile-transcript-entry .markdown-reader li + li { margin-top: var(--space-row); }
-.tile-transcript-entry .markdown-reader :is(code, pre) { font: var(--term-size)/var(--leading-body) var(--font-term); }
-.tile-transcript-entry .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
-.tile-transcript-entry .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
-.tile-transcript-entry .markdown-reader a { color: var(--accent); }
+/* The question card's plan and command (chat-question.js) read as a Chat line does (KAN-661). */
+:is(.tile-transcript-entry, .chat-question) .markdown-reader { max-width: none; margin: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader > :first-child { margin-top: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader > :last-child { margin-bottom: 0; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(p, ul, ol, pre) { margin: 0 0 var(--space-paragraph); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(h1, h2, h3, h4, h5, h6) { margin: var(--space-subsection) 0 var(--space-row); color: var(--fg-strong); font-size: 1em; font-weight: var(--weight-strong); line-height: var(--leading-tight); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(ul, ol) { padding-left: var(--space-subsection); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader li + li { margin-top: var(--space-row); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :is(code, pre) { font: var(--term-size)/var(--leading-body) var(--font-term); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
+:is(.tile-transcript-entry, .chat-question) .markdown-reader a { color: var(--accent); }
 /* Sent, and not yet written down by the CLI: the person's words in a lighter shade until they land. */
 .tile-transcript-entry[data-role='user'][data-pending='true'] { color: var(--muted); }
 /* A pipe table, wherever markdown is read (Chat, Docs, Help): a heavier rule under the header
@@ -3562,13 +3574,30 @@ body {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 /* Stopped at a question: the person has to act, so it says so, in the colour that means act. */
-.tile-transcript-stance[data-stance='asking'],
-.tile-transcript-stance[data-stance='no_progress'] {
+.tile-transcript-stance:is([data-stance='asking'], [data-stance='no_progress'], [data-stance='stopped']) {
   color: var(--bad);
   font-weight: var(--weight-strong);
 }
-.tile-transcript-stance[data-stance='asking'] .tile-transcript-answer,
-.tile-transcript-stance[data-stance='no_progress'] .tile-transcript-answer { font-weight: normal; }
+.tile-transcript-stance:is([data-stance='asking'], [data-stance='no_progress'], [data-stance='stopped']) .tile-transcript-answer { font-weight: normal; }
+/* The question itself (chat-question.js, KAN-657): a card at the end of the conversation, as the
+   secret ask is at the tile's foot, with ERABI's stones for the answers. */
+.chat-question {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-row);
+  padding: var(--space-row) var(--space-inline);
+  border: var(--edge) solid var(--line);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  color: var(--fg);
+  font-weight: normal;
+}
+.chat-question-title { margin: 0; color: var(--fg-strong); font-weight: var(--weight-strong); }
+.chat-question-reason, .chat-question-notice { margin: 0; color: var(--muted); }
+.chat-question-notice:empty { display: none; }
+.chat-question:is([data-state='sending'], [data-state='sent']) .ask { pointer-events: none; }
 /* Continue in Chat (KAN-571): at the foot of the terminal while it was reached by Answer in
    Terminal, above the box when there is one; the right corner leaves the question's options
    and keys hint readable. */
@@ -3772,9 +3801,6 @@ body {
 
 .tile:is(.tape-on, .keys-on, .transcript-on) .composer.held textarea {
   border-color: var(--bad-deep);
-}
-.tile:is(.tape-on, .keys-on, .transcript-on) .composer.sending textarea {
-  opacity: 0.6;
 }
 /* The reason a send was held — its own row above the box, only while it is true. */
 .tile:is(.tape-on, .keys-on, .transcript-on) .composer .cwhy {
@@ -4280,11 +4306,19 @@ body {
   cursor: default;
 }
 
-.ramrpm { margin-left: var(--space-inline); border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); padding: var(--space-row) var(--space-inline); font: var(--text-small) var(--font-mono); cursor: pointer; user-select: none; }
-.ramrpm[data-band='warn'] { color: var(--warn); border-color: var(--warn); }
-.ramrpm[data-band='red'] { color: var(--bad); border-color: var(--bad); }
-.ramrpm-pop { position: fixed; z-index: 50; width: min(300px, calc(100vw - 16px)); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); box-shadow: var(--shadow-menu); padding: var(--space-inset); color: var(--fg); font: var(--text-body) var(--font-ui); }
-.ramrpm-pop p { display: flex; justify-content: space-between; gap: var(--space-inline); margin: 0; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }
+.ramrpm { border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); padding: var(--space-row) var(--space-inline); font: var(--text-small) var(--font-mono); cursor: pointer; user-select: none; }
+.ramrpm { display: inline-flex; align-items: center; gap: 2px; }
+.ramrpm[hidden] { display: none; }
+/* The five segments: the face, and each popup row's own bar (.ramrpm-bar). */
+.ramrpm-bar { display: inline-flex; gap: 2px; }
+:is(.ramrpm, .ramrpm-bar) i { display: block; width: 6px; height: 10px; border-radius: 1px; background: var(--line-2); }
+:is(.ramrpm, .ramrpm-bar) i.on { background: currentColor; }
+:is(.ramrpm, .ramrpm-bar)[data-band='ok'] { color: var(--ok); }
+:is(.ramrpm, .ramrpm-bar)[data-band='warn'] { color: var(--warn); }
+:is(.ramrpm, .ramrpm-bar)[data-band='red'] { color: var(--bad); }
+.ramrpm-pop { position: fixed; z-index: 50; width: min(240px, calc(100vw - 16px)); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); box-shadow: var(--shadow-menu); padding: var(--space-inset); color: var(--fg); font: var(--text-body) var(--font-ui); }
+/* A row: label left, value and its own five-segment bar right (KAN-640). */
+.ramrpm-pop p { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--space-inline); margin: 0; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }
 .ramrpm-pop p:last-child { border-bottom: 0; }
 .ramrpm-pop strong { color: var(--fg-strong); }
 .ramrpm-pop span { color: var(--muted); text-align: right; }
@@ -4513,9 +4547,7 @@ body {
 .setup-provider-models { width: 100%; min-width: 340px; table-layout: fixed; border-collapse: collapse; font-size: var(--text-body); }
 .setup-provider-models th { text-align: left; padding: var(--space-row) var(--space-inline); color: var(--muted); font-weight: var(--weight-strong); border-bottom: var(--edge) solid var(--line-2); }
 .setup-provider-models td { padding: var(--space-inline); vertical-align: top; border-bottom: var(--edge) solid var(--line); overflow-wrap: anywhere; }
-.setup-provider-models th:nth-child(1) { width: 22%; }
-.setup-provider-models th:nth-child(2) { width: 10%; }
-.setup-provider-models th:nth-child(3) { width: 20%; }
+.setup-provider-models th:nth-child(2) { width: 8rem; }
 .setup-provider-models td b { color: var(--fg-strong); font-weight: var(--weight-strong); }
 /* Two names per model: the CLI's own name in bold, the id every launch uses beneath it. */
 .setup-provider-model-id { display: block; margin-top: var(--space-row); color: var(--muted); font-family: var(--mono, monospace); font-size: var(--text-small); overflow-wrap: anywhere; }
@@ -4554,13 +4586,6 @@ body {
 .models-refresh-facts { display: grid; gap: var(--space-row); }
 .models-refresh-line { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-paragraph) var(--space-inline); }
 .models-refresh-key { color: var(--muted); }
-.models-review th:nth-child(1) { width: 24%; }
-.models-review th:nth-child(2) { width: 22%; }
-.models-review th:nth-child(3) { width: 11%; }
-.models-review th:nth-child(4) { width: 15%; }
-.models-review td:nth-child(3) { white-space: nowrap; }
-.models-review tr[data-change='removed'] td { color: var(--muted); }
-.models-review tr[data-change='removed'] :is(b, .setup-provider-model-id), .models-review tr[data-change='removed'] td:not(:first-child) { text-decoration: line-through; }
 .setup-provider-note { margin: 0; color: var(--muted); font-size: var(--text-body); line-height: var(--leading-body); overflow-wrap: anywhere; }
 .setup-provider-command { color: var(--muted); font: var(--text-body) var(--font-mono); overflow-wrap: anywhere; }
 .setup-provider-control { display: flex; flex-wrap: wrap; gap: var(--space-inline); min-width: 0; grid-column: 2; }
@@ -4975,6 +5000,28 @@ button.wk-card { cursor: pointer; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The Agent card's situation (KAN-665), as the desktop pill says it: the flagged look (⚑ and
+   amber), one Chat dot after the name while working (a hollow ring when just finished), muted
+   ink when stopped. */
+#phone .ph-agent.flagged {
+  border-color: color-mix(in srgb, var(--warn) 55%, transparent); /* status: a person is needed */
+  background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: a person is needed */
+}
+#phone .ph-agent.flagged :is(.ph-card-name, .ph-agent-flag, .home-job) { color: var(--warn); }
+/* At the card's right edge, one column down the list (KAN-673). */
+#phone .ph-agent:is(.working, .ready) .ph-card-line::after {
+  content: '';
+  flex: none;
+  align-self: center;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: var(--edge) solid var(--kaki);
+  border-radius: 50%;
+  background: var(--kaki); /* kaki: the Chat's working dot */
+}
+#phone .ph-agent.ready .ph-card-line::after { background: transparent; }
+#phone .ph-agent.stopped :is(.ph-card-name, .home-job) { color: var(--muted); }
 #phone .ph-empty {
   padding: var(--space-inset) var(--space-inset);
   color: var(--muted);
@@ -5208,12 +5255,6 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
     color: inherit;
     transform: none;
   }
-  /* The readings — surface map, RAM/RPM, the view's own actions, Feedback — belong at
-     the right-hand end. The island above is absolutely positioned, so its .grow no
-     longer pushes them there, and trimBarForTouch removes #shapecycle and its
-     margin-left: auto with it. #viewmap is first of the trailing group, so the auto
-     margin here carries the whole group right. */
-  #bar > .wk-view-map { margin-left: auto; }
   /* Keyed on the control, not on its parent: the caret is styled the same whether it is
      riding the island or docked over the work surfaces below. */
   :root:is([data-workbench='team'], [data-workbench='cowork']) .app-header-collapse {

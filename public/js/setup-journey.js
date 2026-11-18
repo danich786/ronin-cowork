@@ -37,3 +37,14 @@ export function irasshaiSteps(epics, items, order = []) {
 
 /** The line a press sends her. */
 export const takeStepLine = (step) => `Let's do ${step.title} (${step.id}).`;
+
+/** Irasshai's chat (KAN-617): a record as her chat draws it, or null. See setup-irasshai.js. */
+const HEAD = /^From [^\n]*\[([^\]\n]+)\]:\n/;
+const PERSON_CHANNELS = ['Message box', 'Ronin Box'];
+export function irasshaiShown(rec) {
+  if (rec?.role !== 'user') return rec;
+  const text = String(rec.text || '');
+  const head = text.match(HEAD);
+  if (head) return PERSON_CHANNELS.includes(head[1]) ? { ...rec, text: text.slice(head[0].length) } : null;
+  return /^\s*Read first: \S*AGENT_BIRTH_BRIEF\.md\b/.test(text) ? null : rec;
+}

@@ -125,7 +125,7 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   const host = new FakeNode('div');
   renderTeamConfiguration(host, roster);
   const form = await painted(host);
-  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').textContent), ['Team', 'New Agent defaults', 'Behaviors'], 'unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20); Behaviors is the Team\u2019s brief settings (docs/architecture/brief.md, Where it is set in the UI)');
+  assert.deepEqual(form.all('fs-step').map((step) => step.one('fs-step-head').children.find((node) => node.tagName === 'H3').textContent),['Team', 'New Agent defaults', 'Behaviors'],'unnumbered sections inside the Team\u2019s Configuration step; only the outer steps number (owner, 2026-10-20); Behaviors is the Team\u2019s brief settings (docs/architecture/brief.md, Where it is set in the UI)');
   const identity = form.one('tw-config-identity');
   assert.ok(identity, 'the identity line exists');
   const labels = identity.all('wk-field-label').map((node) => node.textContent);
@@ -138,9 +138,14 @@ test('the tab is the launch forms’ format: step 1 Team (ID · Title · Kind, t
   const purpose = form.all('wk-field').find((node) => node.one('wk-field-label')?.textContent === 'Purpose');
   assert.equal(purpose.one('wk-field-control').tagName, 'TEXTAREA');
   assert.equal(purpose.one('wk-field-control').value, 'Polish.');
-  const defaults = form.all('fs-step')[1];
+  const [team, defaults, behaviors] = form.all('fs-step');
+  assert.ok(team.all('ask-group-head').some((node) => node.textContent === 'Workspace'), 'the Team’s own Workspace sits in the Team section, under Purpose');
+  assert.equal(team.dataset.collapsed, 'false', 'Team opens unfolded');
+  assert.deepEqual([defaults.dataset.collapsed, behaviors.dataset.collapsed], ['true', 'true'], 'New Agent defaults and Behaviors start folded');
+  await defaults.one('fs-step-head').click();
+  assert.equal(defaults.dataset.collapsed, 'false', 'its head opens it');
   assert.match(defaults.one('fs-step-help').textContent, /each new Agent on this Team starts from/);
-  assert.deepEqual(defaults.all('ask-group-head').map((node) => node.textContent), ['Workspace', 'Mandate'], 'everything under Purpose is a New Agent default');
+  assert.deepEqual(defaults.all('ask-group-head').map((node) => node.textContent), ['Mandate'], 'the New Agent defaults are the mandate menus');
   assert.equal(form.all('wk-field-label').some((node) => /References/.test(node.textContent)), false, 'no references — that field left the shape');
   for (const node of form.walk()) {
     assert.notEqual(node.tagName, 'SELECT', 'no native select');

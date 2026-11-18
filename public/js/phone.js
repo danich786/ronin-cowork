@@ -14,10 +14,10 @@ import { trackAppHeight } from './appheight.js';
 import { request } from './request.js';
 import { guard, showFailure } from './errors.js';
 import { sayWhenUnreachable, sessionsHandlers } from './events.js';
-import { connect } from './store.js';
+import { connect, get as held, subscribe as hear } from './store.js';
 import { membersOfTeam, subscribe, teamByName, teamsFromState, UNASSIGNED, unassignedSessions } from './team-controller.js';
 import { listedTeam } from './roster-groups.js';
-import { loadProjects, projectData } from './home.js';
+import { agentSituation, loadProjects, onAgeTick, projectData, situationTitle } from './home.js';
 import { buildDocs } from './docs.js';
 import { createTerminalTileHost } from './terminal-tile-host.js';
 import { closeMenu } from './menu.js';
@@ -248,8 +248,8 @@ export async function buildPhone() {
       const list = el('div', 'ph-list');
       const cards = WorkspaceKit.primitives.createKeyedList({
         key: (row) => row.key,
-        shows: (row) => JSON.stringify(row.member ? [row.member.name, agentLabel(row.member), row.member.team_lead === true] : row.key),
-        draw: (row) => (row.member ? agentCard(team, row.member) : row.key === '!launch' ? launchCard(team) : el('div', 'ph-empty', t('phone.no_agents', 'No Agents on this Team yet.'))),
+        shows: (row) => JSON.stringify(row.member ? [row.member.name, agentLabel(row.member), row.member.team_lead === true, row.situation] : row.key),
+        draw: (row) => (row.member ? agentCard(team, row.member, row.situation) :row.key === '!launch' ? launchCard(team) : el('div', 'ph-empty', t('phone.no_agents', 'No Agents on this Team yet.'))),
       });
       agentsScreen = { team, list, cards, bar: '' };
       agentsPainted = team;
@@ -257,12 +257,15 @@ export async function buildPhone() {
     }
     const bar = teamLabel({ ...teamByName(team), name: team });
     if (bar !== agentsScreen.bar) { agentsScreen.bar = bar; teamBar(team); }
-    const members = membersOfTeam(team).map((member) => ({ key: member.name, member }));
+    // Each Agent's situation off its card (KAN-665), as the desktop pill reads it.
+    const cardOf = new Map((held('home') || []).map((card) => [card.name, card]));
+    const members = membersOfTeam(team).map((member) => ({ key: member.name, member, situation: agentSituation(cardOf.get(member.name)) }));
     agentsScreen.cards.set(agentsScreen.list, [...(members.length ? members : [{ key: '!empty' }]), { key: '!launch' }]);
   };
-  const agentCard = (team, member) => {
-    const card = el('a', 'ph-card');
+  const agentCard = (team, member, situation) => {
+    const card = el('a', `ph-card ph-agent${situation ? ` ${situation}` : ''}`);
     card.href = sessionHash(team, member.name);
+    card.title = situationTitle(agentLabel(member), situation);
     const line = el('div', 'ph-card-line');
     const identity = el('span', 'ph-card-identity');
     if (member.team_lead) {
@@ -271,6 +274,7 @@ export async function buildPhone() {
       lead.setAttribute('aria-label', t('league.team_lead', 'Team Lead'));
       identity.append(lead);
     }
+    if (situation === 'flagged') identity.append(el('span', 'ph-agent-flag', '⚑'));
     identity.append(el('span', 'ph-card-name', agentLabel(member)));
     line.append(identity);
     card.append(line);
@@ -380,6 +384,10 @@ export async function buildPhone() {
     if (title && title.textContent !== agentLabel(row)) title.textContent = agentLabel(row);
   });
   subscribe(() => { if (route.screen !== 'terminal') render(); });
+  // A card change redraws only that Agent's card (the keyed list compares its situation).
+  hear('home', () => { if (route.screen === 'agents') paintAgents(); });
+  // Ready ages into idle with no push: the one local clock looks again.
+  onAgeTick(() => { if (route.screen === 'agents') paintAgents(); });
 
   // Ask the operator which optional surfaces are plugged in BEFORE a tile is born, the
   // way main.js does: `stream:false` means the 🔓 views are off and every tile is 🔒.

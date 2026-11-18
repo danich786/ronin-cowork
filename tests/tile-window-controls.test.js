@@ -91,12 +91,14 @@ test('the wide-touch bar keeps its readings at the right-hand end', async () => 
   const [style, html] = await Promise.all([read('public/style.css'), read('public/index.html')]);
   // The island goes position: absolute on wide touch, so its .grow stops pushing the
   // readings right and trimBarForTouch removes the only other right-hand push.
-  assert.match(style, /#bar > \.wk-view-map \{ margin-left: auto; \}/);
-  // The auto margin only carries the group if the map is still first of the trailing run.
+  assert.match(style, /#bar \.bar-end \{[^}]*margin-left: auto;/);
+  // KAN-640: one trailing group, the surface map and its tile count last, together.
   const bar = html.slice(html.indexOf('<header id="bar">'), html.indexOf('</header>'));
-  for (const after of ['id="ramrpm"', 'id="viewactions"', 'id="feedbackaction"']) {
-    assert.ok(bar.indexOf('id="viewmap"') < bar.indexOf(after), `the map precedes ${after}`);
+  const end = bar.slice(bar.indexOf('class="bar-end"'));
+  for (const before of ['id="viewactions"', 'id="ramrpm"', 'id="feedbackaction"']) {
+    assert.ok(end.indexOf(before) >= 0 && end.indexOf(before) < end.indexOf('id="viewmap"'), `${before} precedes the map`);
   }
+  assert.ok(end.indexOf('id="viewmap"') < end.indexOf('id="shapecycle"'), 'the tile count follows the map');
 });
 
 test('a UI diagnostic asks the host contract where Ronin answers instead of guessing', async () => {

@@ -8,7 +8,7 @@ import { t } from './lexicon.js';
 /**
  * ⚙ THE MACHINE — the detail behind the header gauge.
  *
- * RAM_RPM is the glance: one number, always there, learned by seeing it every day. This
+ * The gauge is the glance: how full the machine is, always there, learned by seeing it every day. This
  * is the look, for the moment the glance made someone curious — the same reading with
  * more of it shown, plus the switch that turns watching off.
  *
@@ -68,6 +68,10 @@ export function buildMachinePanel() {
       : t('machine.used_of', '{used} used of {total}', { used: gb(m.swap.used_mb), total: gb(m.swap.total_mb) }));
     line(body, t('machine.load', 'load'), t('machine.load_value', '{one} · {five} · {fifteen}  on {cpus} cores', { one: m.load[0], five: m.load[1], fifteen: m.load[2], cpus: m.cpus }),
       t('machine.load_note', '1, 5 and 15 minute averages. Compare against the core count, not against zero.'));
+    if (m.disk) {
+      line(body, t('machine.disk', 'disk'), t('machine.used_of', '{used} used of {total}', { used: gb(m.disk.used_mb), total: gb(m.disk.total_mb) }),
+        t('machine.disk_note', 'The filesystem holding Ronin’s home.'));
+    }
     if (m.scope === 'container') {
       line(body, t('machine.scope', 'scope'), t('machine.scope_container', 'container limit'), t('machine.scope_note', 'These are this container’s numbers, not the host’s.'));
     }

@@ -1,8 +1,17 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import type { WebSocket } from 'ws';
 import type { SessionInfo } from '../src/tmux.js';
-import { changed, feedEvents, handleEvents, homeSignature, publishHeld, pushJikan, pushMessages, pushTeams, pushWipeboard, sessionsSignature, tick, watchStore } from '../src/ws/events.js';
+
+// A card watches its Agent's folder in the session store: the store is a temp one.
+const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'ronin-home-push-'));
+process.env.RONIN_DATA_ROOT = temp;
+after(() => fs.rm(temp, { recursive: true, force: true }));
+const { changed, feedEvents, handleEvents, mark, publishHeld, pushJikan, pushMessages, pushTeams, pushWipeboard, sessionsSignature, tick, watchStore } = await import('../src/ws/events.js');
+const { sessionDir } = await import('../src/session-dir.js');
 
 // A browser on /events: records what it is sent, and can close.
 function browser() {
@@ -32,7 +41,7 @@ function open(t: { after: (fn: () => void) => void }) {
   return b;
 }
 
-const session = (name: string, patch: Record<string, unknown> = {}) => ({ name, tags: [], leads: [], campaign_id: '', activity: 1, ...patch }) as unknown as SessionInfo;
+const session = (name: string, patch: Record<string, unknown> = {}) => ({ name, key: `${name}-1`, tags: [], leads: [], campaign_id: '', activity: 1, ...patch }) as unknown as SessionInfo;
 // Joins whatever tick is in flight (a connection starts one), then lets its sends land.
 const settle = async () => { await tick(); await new Promise((resolve) => setImmediate(resolve)); };
 function deferred<T>() {
@@ -41,68 +50,111 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-test('a changed row broadcasts home once; an unchanged tick broadcasts nothing; a fresh connection receives the rows', async (t) => {
-  let rows: Array<Record<string, unknown>> = [{ name: 'a', stance: 'idle', activity: 1, at: '2026-09-26T01:00:00Z', ctx: 10 }];
-  feedEvents({ teams: async () => [], list: async () => [session('a')], home: async () => rows });
+const until = async (done: () => boolean) => { for (let i = 0; i < 200 && !done(); i++) await new Promise((resolve) => setTimeout(resolve, 5)); };
 
+test('a tab is sent every card whole at connect, then each card that moved, reading only its marked part (KAN-641)', async (t) => {
+  const reads: string[] = [];
+  let ctx = 1;
+  feedEvents({
+    list: async () => [session('a'), session('b')],
+    card: async (s, parts) => { reads.push(`${s.name} ${[...parts].sort().join(',')}`); return { name: s.name, ctx }; },
+  });
   const first = open(t);
   await settle();
-  assert.deepEqual(first.got('home'), [{ t: 'home', rows }], 'a fresh connection receives the rows');
-  assert.equal(first.got('sessions').length, 1, 'and the session list');
+  assert.deepEqual(first.got('cards').at(-1), { t: 'cards', rev: 3, cards: [{ name: 'a', ctx: 1 }, { name: 'b', ctx: 1 }] });
+  assert.deepEqual(reads, ['a fields,pane,record', 'b fields,pane,record'], 'a new Agent is read whole');
 
-  await tick();
-  assert.equal(first.got('home').length, 1, 'an unchanged tick broadcasts nothing');
-  assert.equal(first.got('sessions').length, 1);
-
-  rows = [{ ...rows[0], activity: 2, at: '2026-09-26T01:00:05Z' }];
-  await tick();
-  assert.equal(first.got('home').length, 1, 'activity and stance time are not painted, so they do not push');
-
-  rows = [{ ...rows[0], stance: 'working', ctx: 42 }];
-  await Promise.all([tick(), tick()]);
-  await tick();
-  assert.deepEqual(first.got('home').slice(1), [{ t: 'home', rows }], 'a changed row broadcasts home once');
+  reads.length = 0;
+  ctx = 2;
+  mark('b', 'pane');
+  await until(() => first.got('card').length === 3);
+  assert.deepEqual(reads, ['b pane'], 'a pane draw reads that pane alone');
+  assert.deepEqual(first.got('card').at(-1), { t: 'card', rev: 4, card: { name: 'b', ctx: 2 } });
+  reads.length = 0;
+  mark('b', 'pane', 'fields');
+  await settle();
+  assert.deepEqual(reads, ['b fields,pane'], 'two parts marked together are read in one read, never the record');
+  assert.equal(first.got('card').length, 3, 'a card that did not move is not sent');
+  changed();
+  await settle();
+  assert.equal(first.got('cards').length, 1, 'a tick on an unchanged listing sends nothing');
 
   const second = open(t);
+  assert.deepEqual(second.got('cards'), [{ t: 'cards', rev: 4, cards: [{ name: 'a', ctx: 1 }, { name: 'b', ctx: 2 }] }], 'a reconnect gets every card at the current rev');
   await settle();
-  assert.deepEqual(second.got('home'), [{ t: 'home', rows }], 'a later connection receives the current rows, once');
-  assert.equal(first.got('home').length, 2, 'and the connection already open is not sent them again');
 });
 
-test('one session listing per tick feeds the session list and the home rows', async (t) => {
-  let listings = 0;
-  const seen: string[][] = [];
-  feedEvents({
-    teams: async () => [],
-    list: async () => { listings += 1; return [session('a'), session('b')]; },
-    home: async (sessions) => { seen.push(sessions.map((s) => s.name)); return sessions.map((s) => ({ name: s.name })); },
-  });
-  open(t);
+test('a mark during a rebuild is read on the next round, with every part marked meanwhile', async (t) => {
+  let gate = deferred<void>();
+  const reads: string[] = [];
+  let ask: unknown = null;
+  feedEvents({ list: async () => [session('a')], card: async (s, parts) => { reads.push([...parts].sort().join(',')); await gate.promise; return { name: s.name, secret_ask: ask }; } });
+  const b = open(t);
+  gate.resolve();
   await settle();
-  listings = 0;
-  seen.length = 0;
-  await tick();
-  assert.equal(listings, 1);
-  assert.deepEqual(seen, [['a', 'b']], 'the home rows are built from the listing the tick took');
+  gate = deferred<void>();
+  reads.length = 0;
+  mark('a', 'pane');
+  await until(() => reads.length === 1);
+  ask = { name: 'test_key3' };
+  mark('a', 'fields');
+  mark('a', 'record');
+  gate.resolve();
+  await until(() => reads.length === 2);
+  await settle();
+  assert.deepEqual(reads, ['pane', 'fields,record']);
+  assert.deepEqual(b.got('card').at(-1)?.card, { name: 'a', secret_ask: { name: 'test_key3' } });
 });
 
-test('a failing loader leaves a fresh tab with no rows, and the next successful tick sends them', async (t) => {
-  let fail = true;
-  const rows = [{ name: 'a', stance: 'idle' }];
-  feedEvents({ teams: async () => [], list: async () => [session('a')], home: async () => { if (fail) throw new Error('capture failed'); return rows; } });
+test('a mark that lands while a rebuild is finishing is still read', async (t) => {
+  let n = 0;
+  feedEvents({ list: async () => [session('a')], card: async (s) => ({ name: s.name, n }) });
   const b = open(t);
   await settle();
-  assert.deepEqual(b.got('home'), [], 'nothing is sent in place of rows that could not be read');
-  assert.equal(b.got('sessions').length, 1, 'the session list still arrives');
-  fail = false;
-  await tick();
-  assert.deepEqual(b.got('home'), [{ t: 'home', rows }]);
+  // Each mark lands a few microtasks after the one before, as a part's async write does.
+  for (let delay = 0; delay < 8; delay++) {
+    n += 1;
+    mark('a', 'fields');
+    for (let i = 0; i < delay; i++) await Promise.resolve();
+    n += 1;
+    mark('a', 'fields');
+    await until(() => b.got('card').at(-1)?.card.n === n);
+    assert.equal(b.got('card').at(-1)?.card.n, n, `the second mark, ${delay} microtasks on, was read`);
+  }
+});
+
+test('a card\'s own folder marks its record: the letter, the brief, a drop, and nothing else', async (t) => {
+  const reads: string[] = [];
+  feedEvents({ list: async () => [session('w')], card: async (s, parts) => { reads.push([...parts].join(',')); return { name: s.name, n: reads.length }; } });
+  open(t);
+  await settle();
+  const dir = sessionDir('w-1');
+  reads.length = 0;
+  await fs.writeFile(path.join(dir, 'transcript.jsonl'), 'x');
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.deepEqual(reads, [], 'a transcript write is not the record');
+  await fs.writeFile(path.join(dir, 'tegami.md'), 'x');
+  await until(() => reads.includes('record'));
+  reads.length = 0;
+  await fs.writeFile(path.join(dir, 'drop', 'f.txt'), 'x');
+  await until(() => reads.includes('record'));
+  assert.ok(reads.includes('record'), 'a document dropped on it');
+});
+
+test('an Agent that leaves the listing goes from the cards', async (t) => {
+  let listing = [session('a'), session('b')];
+  feedEvents({ list: async () => listing, card: async (s) => ({ name: s.name }) });
+  const b = open(t);
+  await settle();
+  listing = [session('a')];
+  changed();
+  await settle();
+  assert.deepEqual(b.got('cards').at(-1)?.cards, [{ name: 'a' }]);
 });
 
 test('a tab that connects while the listing fails is sent what every other tab holds', async (t) => {
   let fail = false;
-  const rows = [{ name: 'a', stance: 'idle' }];
-  feedEvents({ teams: async () => [], list: async () => { if (fail) throw new Error('tmux is restarting'); return [session('a')]; }, home: async () => rows });
+  feedEvents({ list: async () => { if (fail) throw new Error('tmux is restarting'); return [session('a')]; }, card: async (s) => ({ name: s.name, stance: 'idle' }) });
   const first = open(t);
   await settle();
   assert.equal(first.got('sessions').length, 1);
@@ -110,47 +162,13 @@ test('a tab that connects while the listing fails is sent what every other tab h
   const late = open(t);
   await settle();
   assert.deepEqual(late.got('sessions').map((m) => (m.list as Array<{ name: string }>).map((s) => s.name)), [['a']], 'the last good session list');
-  assert.deepEqual(late.got('home'), [{ t: 'home', rows }], 'and the rows');
+  assert.deepEqual(late.got('cards').map((m) => m.cards), [[{ name: 'a', stance: 'idle' }]], 'and the cards');
   assert.equal(first.got('sessions').length, 1, 'the tab already open is sent nothing again');
-});
-
-test('a connection arriving while a tick is in flight receives each message once', async (t) => {
-  const rows = deferred<unknown[]>();
-  feedEvents({ teams: async () => [], list: async () => [session('a')], home: () => rows.promise });
-  const first = open(t);
-  while (!first.got('sessions').length) await new Promise((resolve) => setImmediate(resolve));
-  // The tick has broadcast the session list and now waits on the rows.
-  const late = open(t); // joins that tick: the session list went out before it arrived
-  rows.resolve([{ name: 'a', stance: 'idle' }]);
-  await settle();
-  for (const b of [first, late]) {
-    assert.equal(b.got('sessions').length, 1, 'the session list once: broadcast, or sent because the broadcast missed it');
-    assert.equal(b.got('home').length, 1, 'the rows once: the broadcast reached it');
-  }
-});
-
-test('a change during a tick that already read the rows runs one more tick, so it is never held back', async (t) => {
-  let ask: unknown = null;
-  let gate = deferred<void>();
-  let read = deferred<void>();
-  feedEvents({ teams: async () => [], list: async () => [session('a')], home: async () => { const rows = [{ name: 'a', secret_ask: ask }]; read.resolve(); await gate.promise; return rows; } });
-  const b = open(t);
-  gate.resolve();
-  await settle();
-  gate = deferred<void>();
-  read = deferred<void>();
-  changed(); // a tick reads the rows and waits
-  await read.promise;
-  ask = { name: 'test_key3' };
-  changed(); // the ask lands after that read
-  gate.resolve();
-  for (let i = 0; i < 100 && b.got('home').length < 2; i++) await new Promise((resolve) => setTimeout(resolve, 5));
-  assert.deepEqual(b.got('home').at(-1), { t: 'home', rows: [{ name: 'a', secret_ask: { name: 'test_key3' } }] });
 });
 
 test('the session list pushes when a painted field moves, and never for activity alone', async (t) => {
   let listing = [session('a', { title: 'one' })];
-  feedEvents({ teams: async () => [], list: async () => listing, home: async () => [] });
+  feedEvents({ teams: async () => [], list: async () => listing });
   const b = open(t);
   await settle();
   assert.equal(b.got('sessions').length, 1);
@@ -166,7 +184,7 @@ test('the session list pushes when a painted field moves, and never for activity
 test('the rosters are read once per write, pushed when they moved, and held for a fresh connection', async (t) => {
   let reads = 0;
   let rosters: unknown[] = [{ name: 'front-2', projects: [] }];
-  feedEvents({ list: async () => [session('a')], home: async () => [], teams: async () => { reads += 1; return rosters; } });
+  feedEvents({ list: async () => [session('a')], teams: async () => { reads += 1; return rosters; } });
   const first = open(t);
   await settle();
   await pushTeams();
@@ -186,7 +204,7 @@ test('the rosters are read once per write, pushed when they moved, and held for 
 
 test('roster reads land in write order', async (t) => {
   const gates: Array<(value: unknown[]) => void> = [];
-  feedEvents({ list: async () => [session('a')], home: async () => [], teams: () => new Promise((resolve) => gates.push(resolve)) });
+  feedEvents({ list: async () => [session('a')], teams: () => new Promise((resolve) => gates.push(resolve)) });
   const b = open(t);
   await settle();
   const one = pushTeams();
@@ -200,12 +218,6 @@ test('roster reads land in write order', async (t) => {
   assert.deepEqual(b.got('teams').map((m) => m.rosters), [[{ name: 'old' }], [{ name: 'new' }]]);
 });
 
-test('the home signature ignores only activity and stance time', () => {
-  const row = { name: 'a', stance: 'idle', activity: 1, at: 'x', tegami: { at: 'kept' } };
-  assert.equal(homeSignature([row]), homeSignature([{ ...row, activity: 9, at: 'y' }]));
-  assert.notEqual(homeSignature([row]), homeSignature([{ ...row, tegami: { at: 'changed' } }]));
-  assert.notEqual(homeSignature([row]), homeSignature([{ ...row, stance: 'working' }]));
-});
 
 test('held messages are sent when they change, and whole to a fresh connection', async (t) => {
   let list: unknown[] = [{ id: 'm1' }];

@@ -115,10 +115,11 @@ export function registerSetupRuntime(app: express.Express): void {
   });
 
   // REFRESH ALL — the one door that reads model lists: the machine facts, then every
-  // activated CLI's own list, then the one outbound ask — the newest release of each
-  // activated CLI whose install line names an npm package. The owner's press, never a
-  // timer; each ask is an egress line. Every other reader takes GET /api/setup/runtime,
-  // which is the record.
+  // activated CLI's own list and each provider part's, then the one outbound ask — the newest
+  // release of each activated CLI whose install line names an npm package. Ronin runs it at
+  // start; in a hosted office the park calls it over the unit's socket when it moved the CLIs
+  // in place (ronin_cloud office_kohai, KAN-651); the member's press. Never a timer; each ask
+  // is an egress line. Every other reader takes GET /api/setup/runtime, which is the record.
   app.post('/api/setup/providers/refresh', async (_req, res) => {
     try {
       res.json(await answer(await refreshProviders()));

@@ -196,8 +196,6 @@
   /* Its utility, small at the top right: Close. */
   .work-overlay-utility { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-inline); }
   .work-overlay:focus { outline: none; }
-  /* Model refresh's View payload (js/models-surface.js): the pending file as raw JSON, wrapped. */
-  .models-payload { margin: 0; padding: var(--space-inline); white-space: pre-wrap; overflow-wrap: anywhere; }
   /* The Teams card's stones (js/team-roster-surface.js): the 人 launch in a stone's corner. */
   .sws-stone > .teams-launch { position: absolute; inset-block-start: var(--sws-corner); inset-inline-end: var(--sws-corner); font-size: var(--text-heading); cursor: pointer; } /* the mark is 1.25em of this */
   @container stone-work-surface-seat (max-width: 40rem) {
@@ -540,6 +538,38 @@
   .workspace-plans-row b { color: var(--fg-strong); font-size: var(--form-key); font-weight: var(--weight-regular); white-space: nowrap; }
   .workspace-plans-row code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); background: transparent; padding: 0; }
   .workspace-plans-row .folder-kind { color: var(--muted); }
+  /* Canvases (KAN-329): one read-only line under Plans, the names in full, wrapping. */
+  .workspace-canvases-row { display: flex; align-items: baseline; gap: var(--space-inline); margin: 0; min-width: 0; }
+  .workspace-canvases-row b { color: var(--fg-strong); font-size: var(--form-key); font-weight: var(--weight-regular); white-space: nowrap; }
+  .workspace-canvases-row span { display: flex; flex-wrap: wrap; gap: var(--space-inline); min-width: 0; overflow-wrap: anywhere; color: var(--muted); }
+  .workspace-canvas-open { background: transparent; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; text-align: left; }
+  /* A canvas over the surface (KAN-626): its name and ×, then the painted reading. */
+  .canvas-view { display: flex; flex-direction: column; gap: var(--space-subsection); min-width: 0; }
+  .canvas-view-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-inline); }
+  .canvas-view-name { font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); overflow-wrap: anywhere; }
+  .canvas-view-close { background: transparent; border: 0; padding: 0; font: inherit; color: var(--muted); cursor: pointer; }
+  .canvas-view-body, .tw-canvas-body { min-width: 0; overflow-wrap: anywhere; }
+  /* The painted canvas (KAN-630, KAN-631): the kit's spacing, a section's room between blocks,
+     a subsection's between cards; a block's cards in a grid that wraps to one column on a phone. */
+  .canvas-reading { display: flex; flex-direction: column; gap: var(--space-section); min-width: 0; }
+  .canvas-block { display: flex; flex-direction: column; gap: var(--space-paragraph); min-width: 0; }
+  .canvas-block-title { margin: 0; font-size: var(--text-heading); font-weight: var(--weight-regular); color: var(--fg-strong); }
+  .canvas-cards {
+    --canvas-card-w: 256px; /* a card's narrowest; one column below it */
+  }
+  .canvas-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--canvas-card-w)), 1fr)); gap: var(--space-subsection); }
+  .canvas-card { display: flex; flex-direction: column; gap: var(--space-subsection); min-width: 0; padding: var(--space-inset); border: var(--edge) solid var(--line); border-left: var(--edge-2) solid var(--info); }
+  .canvas-card-title { margin: 0; font-size: var(--text-label); font-weight: var(--weight-strong); color: var(--fg-strong); }
+  .canvas-card-row { display: flex; flex-direction: column; gap: var(--space-row); min-width: 0; }
+  .canvas-card-row p { margin: 0; overflow-wrap: anywhere; }
+  .canvas-card-detail { color: var(--muted); font-size: var(--text-body); }
+  .canvas-card-warn { color: var(--warn); }
+  .canvas-card-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
+  .canvas-card-link { white-space: nowrap; }
+  .canvas-card-button { display: inline-flex; align-items: center; text-decoration: none; }
+  .canvas-card-plain { padding: 0; border: 0; }
+  .canvas-section-title { margin: var(--space-paragraph) 0 0; font-size: var(--text-label); font-weight: var(--weight-strong); color: var(--fg-strong); }
+  .tw-canvas-body { padding: var(--space-inline); }
   [data-gone="true"] { color: var(--muted); text-decoration: line-through; }
   .workspace-location-note { width: 100%; border: 0; background: transparent; color: var(--fg); padding: 0; }
   .workspace-location-note::placeholder { color: var(--muted); }

@@ -7,26 +7,24 @@ import { readHermesSettings } from './hermes-setups.js';
  * - THE CATALOG (`ronin_catalogs/MODEL_PROVIDERS.md`, stock; the owner's copy in the
  *   catalogs store is an OVERLAY on it, merged per `### <Vendor>` section and keyed by
  *   the section's `provider` id — `docs/architecture/shadowing.md`). It joins the vendor
- *   id a launch names to the CLI that serves it (`src/agents.ts`), the family words that
- *   give a model its tier, and the models.dev key its model info is filed under. It never
- *   says what is available, and it carries no model facts: those are MODEL INFO
- *   (`src/model-info.ts`), fetched from models.dev and used once the owner accepts it.
+ *   id a launch names to the CLI that serves it (`src/agents.ts`) and the family words that
+ *   give a model its tier. It never says what is available and carries no model facts.
  * - THE CAMPAIGN'S PROVIDER SUMMARY: what this machine measured, dated, hung on the
- *   Campaign record. Its `models` are each activated CLI's own list, read on Refresh all
- *   and never guessed. The CLI is the one source of truth for what can be launched.
+ *   Campaign record. Its `models` are each activated CLI's own list, read on every refresh
+ *   and never guessed. The CLI is the one source of truth for what can be launched
+ *   (owner, 18 Nov 2026: the models.dev pull is gone, KAN-653).
  *
  * `providerRows` is the one join: Native first, then every model the CLI listed, in the
  * CLI's order, each with its `model` (the id every launch uses) and `name` (the CLI's
- * own display name, which carries the version — "Opus 5.5"), enriched by the model info
- * of the same id when there is some. Launches, Mika, machine settings and every picker read
- * these rows; no client joins anything.
+ * own display name, which carries the version — "Opus 5.5"). Launches, Mika, machine
+ * settings and every picker read these rows; no client joins anything.
  */
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { mergeSections, readUserCatalog, STOCK_DIR, storeDir, type CatalogSection, type Origin } from './resources.js';
 import { commandText, readAgentLaunches, renderLaunch, type AgentLaunches } from './agent-launches.js';
 import { AGENTS } from './agents.js';
-import { readModelInfo, type ModelInfo, type ModelInfoFile } from './model-info.js';
+import { partProviderRows } from './provider-parts.js';
 
 export const CATALOG_FILE = 'MODEL_PROVIDERS.md';
 export const TIERS = ['light', 'standard', 'frontier'] as const;
@@ -46,8 +44,6 @@ export interface ProviderCatalogEntry {
   maturity?: string;
   /** False for a `comingSoon` section: shown, never launched. */
   launchable: boolean;
-  /** The provider key models.dev files this vendor's models under; absent when it lists none. */
-  models_dev?: string;
   /** Expand this harness into its explicitly configured inference connections. */
   connections?: boolean;
   inference_provider?: string;
@@ -86,8 +82,6 @@ export interface SessionLaunchSpec {
   tier: Tier | '';
   /** Native: the row a launch naming this provider and no model gets when no preference is set. */
   default: boolean;
-  /** What the accepted model info says of this id; null for Native and for an id it does not list. */
-  info: ModelInfo | null;
 }
 
 /** A joined row as the client paints it: the launch spec plus what this machine can do with it. */
@@ -112,13 +106,15 @@ export interface ProviderRows extends ProviderCatalogEntry {
   native?: string;
   nativeDangerousCmd?: string;
   launch_modes?: Array<'configured' | 'live_dangerously'>;
+  /** The Services part that serves this provider (src/provider-parts.ts); absent for a CLI's own. */
+  part?: string;
+  /** A part's one line for its provider page, in the part's words. */
+  note?: string;
   models: ProviderRow[];
 }
 
 /** What `GET /api/provider-catalog` answers: the catalog's own facts, and the joined rows. */
 export interface ProviderCatalogAnswer extends Omit<ProviderCatalog, 'providers'> {
-  /** The model info in use: the owner's accepted copy or the shipped snapshot, and when it was fetched. */
-  model_info: { origin: 'user' | 'stock'; fetched_at: string };
   measured_at: string;
   /** When Refresh all last read every activated CLI's list; '' when never. */
   refreshed_at: string;
@@ -193,11 +189,9 @@ export function parseProviderCatalog(raw: string, origin: Origin = 'stock'): Pro
     if (!label || !provider || !cli) continue;
     const maturity = field(section, 'maturity');
     const families = parseFamilies(field(section, 'families'));
-    const modelsDev = field(section, 'models_dev');
     out.push({
       provider, cli, label, origin, shadowed: false, launchable: maturity !== 'comingSoon',
       ...(maturity ? { maturity } : {}),
-      ...(modelsDev ? { models_dev: modelsDev } : {}),
       ...(field(section, 'connections') === 'configured' ? { connections: true } : {}),
       ...(families.length ? { families } : {}),
     });
@@ -420,11 +414,10 @@ async function grammarOf(cli: string): Promise<AgentLaunches | null> {
 
 /**
  * Every provider with its joined rows: Native first, then each model the CLI listed, in
- * the CLI's order, enriched by the model info of the same id. Providers this machine can
- * launch come first; catalog order holds within each group. A provider whose CLI has no
- * Agent page has no rows at all.
+ * the CLI's order. Providers this machine can launch come first; catalog order holds within
+ * each group. A provider whose CLI has no Agent page has no rows at all.
  */
-export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalogEntry[], info?: ModelInfoFile): Promise<ProviderRows[]> {
+export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalogEntry[]): Promise<ProviderRows[]> {
   const roots = catalog ?? await listProviderCatalog();
   const entries = roots.flatMap(entry => {
     if (entry.cli === 'hermes') return [{ ...entry, provider: 'hermes', label: 'Hermes', connections: false }];
@@ -435,11 +428,10 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
       const vendor = roots.find(row => row.provider === connection.provider);
       return { ...entry, provider: `${entry.cli}_${Buffer.from(connection.provider).toString('hex')}`,
         label: vendor?.label || connection.label, inference_provider: connection.provider,
-        connection_rows: connection.rows, models_dev: vendor?.models_dev,
+        connection_rows: connection.rows,
         families: vendor?.families ?? entry.families };
     });
   });
-  const facts = (info ?? await readModelInfo()).providers;
   const operational = new Set(summary?.operational ?? []);
   const turnedOff = new Set(summary?.off ?? []);
   const joined = await Promise.all(entries.map(async (entry): Promise<ProviderRows> => {
@@ -454,7 +446,7 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
         selectable: on, origin: entry.origin, shadowed: entry.shadowed, model: setup.id, name: setup.name,
         cmd: grammar ? commandText(renderLaunch(grammar.model, { model: setup.model })) : '',
         ...(grammar?.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, { model: setup.model })) } : {}),
-        tier: '', default: index === 0, info: null,
+        tier: '', default: index === 0,
       }));
       return { ...entry, provider: 'hermes', label: 'Hermes', cli_label: 'Hermes', operational: on && models.length > 0, off,
         models, launch_modes: ['configured', 'live_dangerously'] };
@@ -481,24 +473,24 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
       if (!entry.inference_provider) models.push({
         ...base, model: NATIVE_MODEL, name: NATIVE_NAME, cmd: native,
         ...(launch.nativeDangerousCmd ? { dangerousCmd: launch.nativeDangerousCmd } : {}),
-        tier: '', default: true, info: null,
+        tier: '', default: true,
       });
-      const known = entry.models_dev ? facts[entry.models_dev] ?? {} : {};
       for (const listed of entry.connection_rows ?? summary?.models?.[entry.cli]?.rows ?? []) {
         if (!SAFE_MODEL_ID.test(listed.id)) continue;
-        const meta = Object.hasOwn(known, listed.id) ? known[listed.id] : null;
         models.push({
           ...base, model: listed.id, name: listed.name || listed.id,
           cmd: commandText(renderLaunch(grammar.model, values(listed.id))),
           ...(grammar.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, values(listed.id))) } : {}),
-          tier: familyTier(listed.id, entry.families) || familyTier(meta?.family ?? '', entry.families), default: !!entry.inference_provider && models.length === 0, info: meta,
+          tier: familyTier(listed.id, entry.families), default: !!entry.inference_provider && models.length === 0,
         });
       }
     }
     const { families: _families, connection_rows: _connectionRows, ...rest } = entry;
     return { ...rest, cli_label: base.cli_label, operational: on, off, ...launch, models };
   }));
-  return [...joined.filter((entry) => entry.operational), ...joined.filter((entry) => !entry.operational)];
+  // A part's provider (Ronin models, in a hosted office) leads, apart from every CLI's list.
+  const parts = await partProviderRows();
+  return [...parts, ...joined.filter((entry) => entry.operational), ...joined.filter((entry) => !entry.operational)];
 }
 
 /** The joined rows flat: what a launch resolves against. */
@@ -508,14 +500,13 @@ export async function listSessionLaunchSpecs(summary: ProviderSummary | null = n
 
 /** The one catalog read for the client: the catalog's own facts, the dates, and the joined rows. */
 export async function providerCatalogAnswer(summary: ProviderSummary | null): Promise<ProviderCatalogAnswer> {
-  const [catalog, info] = await Promise.all([readProviderCatalog(), readModelInfo()]);
+  const catalog = await readProviderCatalog();
   const { providers: _entries, ...facts } = catalog;
   return {
     ...facts,
-    model_info: { origin: info.origin, fetched_at: info.fetched_at },
     measured_at: summary?.measured_at ?? '',
     refreshed_at: summary?.refreshed_at ?? '',
-    providers: await providerRows(summary, catalog.providers, info),
+    providers: await providerRows(summary, catalog.providers),
   };
 }
 

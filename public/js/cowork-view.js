@@ -12,8 +12,9 @@ import { createTeamJikan } from './team-jikan.js';
 import { buildMessageQueue } from './message-queue.js';
 import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
 import { buildArchives } from './archives.js';
-import { onProjects, projectData, stanceLabel } from './home.js';
+import { agentSituation, onAgeTick, onProjects, projectData, situationTitle, stanceLabel } from './home.js';
 import { request } from './request.js';
+import { paintCanvas } from './canvas-view.js';
 import { teamPageHandlers } from './events.js';
 import { createArranger, parseDraft, reportView as sendView } from './team-arrange.js';
 import { t } from './lexicon.js';
@@ -247,6 +248,29 @@ export function createCoworkView(options = {}) {
     },
     release: (name, id) => seats[id]?.pool.releaseBorrow(name),
   });
+  // THE TEAM'S CANVASES (KAN-329): its Workspace's canvases, read once per Team entered (the Docs
+  // API's canvases shelf); each is a selector card, and placed it paints the canvas read now.
+  let canvasOffer = { team: null, workspace: '', names: [] };
+  let canvasLoad = Promise.resolve(canvasOffer);
+  // One read per Team entered; a card placed before it answers (a restored one, after a refresh)
+  // waits for it rather than reading with no Workspace (KAN-634).
+  const loadCanvases = () => {
+    if (canvasOffer.team === team) return canvasLoad;
+    const asked = team;
+    canvasOffer = { team: asked, workspace: '', names: [] };
+    canvasLoad = request(`/api/docs?${new URLSearchParams({ shelf: 'canvases', team: asked })}`, { cache: 'no-store' }).then((r) => {
+      if (!r.ok || canvasOffer.team !== asked) return canvasOffer;
+      canvasOffer = { team: asked, workspace: r.data.scope?.workspace || '', names: (r.data.groups || []).flatMap((g) => g.files || []).map((f) => String(f).split('/').pop()) };
+      if (canvasOffer.names.length) bench.refreshSelector();
+      return canvasOffer;
+    });
+    return canvasLoad;
+  };
+  const teamCanvases = () => {
+    if (campaign || team === UNASSIGNED) return [];
+    void loadCanvases();
+    return canvasOffer.names.map((name) => ({ key: name, workspace: canvasOffer.workspace, label: name, summary: t('canvas.card_summary', 'Canvas: {workspace}, read live', { workspace: canvasOffer.workspace }) }));
+  };
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: commonsFor(id).el, show: (detail = {}) => { const item = commonsFor(id); if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
@@ -301,6 +325,15 @@ export function createCoworkView(options = {}) {
     // Epics (KAN-232): the bench keeps one per seat across Teams, so it reads the Team entered now.
     teamEpics: () => keepTeamSurface(createTeamEpics({ team: () => team })),
     teamFindItem: () => keepTeamSurface(createFindItem()),
+    canvases: teamCanvases,
+    canvas: (_id, detail = {}) => {
+      const surface = createSurface({ label: detail.key, className: 'tw-canvas' });
+      const body = document.createElement('div'); body.className = 'tw-canvas-body';
+      surface.content.append(body);
+      // The card carries its Workspace (saved with the placement); an older placement without one
+      // waits for the Team's canvases to load, never reading with none (KAN-634).
+      return { el: surface.el, show: () => void (detail.workspace ? Promise.resolve({ workspace: detail.workspace }) : loadCanvases()).then((offer) => paintCanvas(body, offer.workspace, detail.key)) };
+    },
     epics: () => [],
     epicRecord: (id, detail) => keepTeamSurface(createEpicRecord(detail.key, { epicsRead: createEpicsRead(() => '') })),
     archives: (id) => ({ el: archivesBySeat[id].el, show: () => void archivesBySeat[id].room.enter() }),
@@ -310,9 +343,12 @@ export function createCoworkView(options = {}) {
       const reading = readingsOf(member);
       const mika = team === STEERCO && member.name === 'mika_agent';
       // A FLAGGED AGENT (owner, 2026-11-15, KAN-521): any item it holds flagged puts ⚑ and the
-      // flagged amber on its pill; pressed, it opens as ever, the item ⚑ on its island.
-      return { key: member.name, label: mika ? t('mika.name', 'Mika') : agentTitle(member), className: `team-agent-card${reading.flagged ? ' flagged' : ''}`,
+      // flagged amber on its pill; pressed, it opens as ever, the item ⚑ on its island. Working
+      // adds the kit's dot after the name; stopped dims it (KAN-665). The title says it in words.
+      const label = mika ? t('mika.name', 'Mika') : agentTitle(member);
+      return { key: member.name, label, className: `team-agent-card${reading.situation ? ` ${reading.situation}` : ''}`,
         mark: `${member.team_lead ? '人' : ''}${reading.flagged ? '⚑' : ''}` || null,
+        title: situationTitle(label, reading.situation),
         summary: reading.step, metadata: reading.lines,
         ...(campaign ? { action: () => openAgentWorkbench(member.name) } : {}),
         ...(mika ? { action: () => placeMikaWorkspaceTwo() } : {}),
@@ -394,7 +430,7 @@ export function createCoworkView(options = {}) {
   // A remembered surface keeps its tab and document too: a preset seats the commons on
   // the Wipeboard or Cron jobs, and a document beside its agent, in the tab it opens.
   const surfaceRequest = (token) => token && typeof token === 'object'
-    ? { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}) } }
+    ? { type: token.type, detail: { key: token.key || '', root: token.root || '', path: token.path || '', ...(token.tab ? { tab: token.tab } : {}), ...(token.doc ? { doc: token.doc } : {}), ...(token.workspace ? { workspace: token.workspace } : {}) } }
     : { type: token || '', detail: {} };
   /** A surface other than the seat's own is in this workspace. */
   const surfaceIn = (id) => !bench?.isDefault(id);
@@ -712,6 +748,7 @@ export function createCoworkView(options = {}) {
     for (const view of leagueTeamSurfaces.values()) view.render?.();
   };
   let hearRows = null; // the unsubscribe, while entered
+  let stopAging = null; // the age clock's unsubscribe, while entered
   const onRows = (list) => {
     rows = new Map(list.map((row) => [row.name, row]));
     renderCards();
@@ -733,7 +770,8 @@ export function createCoworkView(options = {}) {
       model: (row.model || '').toLowerCase(),
       status: stanceLabel(row.stance),
       ctx: row.ctx != null ? `⛽ ${row.ctx}%` : '',
-      flagged: !!row.tegami?.flagged,
+      situation: agentSituation(row),
+      flagged: agentSituation(row) === 'flagged',
       lines: [current.text, stanceLabel(row.stance), row.ctx != null ? `⛽ ${row.ctx}%` : '', (row.model || '').toLowerCase()].filter(Boolean),
     };
   };
@@ -894,6 +932,9 @@ export function createCoworkView(options = {}) {
       else paint();
       hearRows?.();
       hearRows = subscribeStore('home', onRows);
+      // Ready ages into idle with no push (KAN-665): the one local clock looks again.
+      stopAging?.();
+      stopAging = onAgeTick(renderCards);
       reportView();
     },
     leave: () => {
@@ -903,6 +944,8 @@ export function createCoworkView(options = {}) {
       disarmPrewarm();
       hearRows?.();
       hearRows = null;
+      stopAging?.();
+      stopAging = null;
       // No transport survives outside the entered Team destination.
       for (const seat of Object.values(seats)) { seat.pool.destroyAll(); seat.empty?.destroy(); seat.empty = null; }
       for (const commons of builtCommons()) commons.channels.leave();

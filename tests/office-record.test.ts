@@ -22,6 +22,9 @@ test('office record: absent is self-hosted, present is office_park, wrong is unr
     assert.equal(v.hosting, 'office_unit');
     assert.deepEqual(v.hosting === 'office_unit' && v.record, { ...record, gateway_office: 'http://10.0.0.2:4912' });
     assert.equal(await isOfficeHost(), true);
+    assert.deepEqual(parseOfficeRecord({ ...record, agents: { fewest: 1, most: 2 } }).agents, { fewest: 1, most: 2 });
+    // The office's tier, written by Cloud's park (KAN-652).
+    assert.equal(parseOfficeRecord({ ...record, tier: 'frontier' }).tier, 'frontier');
 
     await fs.writeFile(path.join(dir, 'office_record.json'), '{not json');
     v = await readOfficeRecord();
@@ -35,6 +38,9 @@ test('office record: absent is self-hosted, present is office_park, wrong is unr
       { ...record, gateway_office: 'http://user:pw@x/' },
       { ...record, gateway_office: 'http://x/?q=1' },
       { ...record, provisioned_at: 'yesterday' },
+      { ...record, agents: { fewest: 3, most: 2 } },
+      { ...record, agents: { fewest: 1 } },
+      { ...record, tier: 'premium' },
       [record],
       null,
     ]) assert.throws(() => parseOfficeRecord(bad), `${JSON.stringify(bad)} must not parse`);

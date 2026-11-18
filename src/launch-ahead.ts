@@ -1,7 +1,7 @@
 /**
  * SET AHEAD AT LAUNCH (KAN-616): the questions a CLI asks before its first turn that have a
- * known answer are answered in its own files before it starts, and the hook that raises the
- * asking flag (ronin_bin/ronin-asking, src/asking.ts) is put in place. Each CLI's launch doc
+ * known answer are answered in its own files before it starts, and the hook that tells Ronin
+ * what the Agent is doing (ronin_bin/ronin-asking, src/asking.ts) is put in place. Each CLI's launch doc
  * (docs/agents/claude.md, codex.md) says what is set. Login is not: the owner signs in in the
  * terminal. Returns the argv the CLI is given after its executable.
  */
@@ -29,7 +29,7 @@ async function claude(cwd: string): Promise<string[]> {
 
 // The hooks in the Codex home's hooks.json. Codex asks the person to trust a new hook
 // ("Hooks need review") unless it is launched with --dangerously-bypass-hook-trust.
-const CODEX_HOOK_EVENTS = ['PermissionRequest', 'PreToolUse', 'PostToolUse', 'UserPromptSubmit', 'Stop'];
+const CODEX_HOOK_EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PermissionRequest', 'PostToolUse', 'Stop', 'Interrupt'];
 
 /** One `key = value` in a TOML text, left alone when the key is already there. Line-wise, so
  * the owner's file keeps its layout; Codex itself edits the file the same way. */

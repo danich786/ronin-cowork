@@ -93,7 +93,7 @@ export function stanceKey(stance) {
   if (stance === 'asking') return 'question';
   if (stance === 'no_progress') return 'stopped';
   if (stance === 'awaiting_you') return 'turn';
-  if (stance === 'interrupted' || stance === 'error') return 'stopped';
+  if (stance === 'interrupted' || stance === 'error' || stance === 'stopped') return 'stopped';
   return '';
 }
 
@@ -116,6 +116,7 @@ export function stanceWords(stance) {
     awaiting_you: t('island.stance_awaiting_you', 'Your turn: the turn ended'),
     interrupted: t('island.stance_interrupted', 'Stopped: interrupted'),
     error: t('island.stance_error', 'Stopped: a tool failed'),
+    stopped: t('island.stance_stopped', 'Stopped: its CLI exited; Resume from Chat'),
   }[stance] || '';
 }
 

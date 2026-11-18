@@ -70,6 +70,9 @@
 
   .wk-workbench-selector-cards .wk-selector-utility { border-color: var(--define-line); box-shadow: inset var(--edge-2) 0 var(--define-line); }
   .wk-workbench-selector-cards .wk-selector-entity { border-color: var(--kaki); box-shadow: inset var(--edge-2) 0 var(--kaki); }
+  /* A canvas card (KAN-329): beside the Agents, in its own colour. */
+  .wk-workbench-selector-cards .wk-selector-canvas { border-color: var(--info); box-shadow: inset var(--edge-2) 0 var(--info); }
+  .wk-workbench-selector-cards .wk-selector-entity + .wk-selector-canvas { margin-top: var(--space-paragraph); }
   .wk-workbench-selector-cards .wk-selector-utility + .wk-selector-entity,
   .wk-workbench-selector-cards .wk-selector-entity + .wk-selector-utility,
   .wk-workbench-selector-cards .wk-selector-group-after { margin-top: var(--space-paragraph); }
@@ -106,6 +109,16 @@
     background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */
   }
   .team-agent-card.flagged .wk-card-heading, .team-agent-card.flagged .wk-card-mark { color: var(--warn); }
+  /* WORKING (KAN-665): one of the Chat's dots after the name; Ready (its turn just ended) the
+     same dot as a hollow ring. Stopped (its pane died): muted ink, no icon. Idle: the plain pill.
+     The dot sits at the pill's right edge, one column down the list (KAN-673). */
+  .team-agent-card .wk-card-heading { display: flex; align-items: center; }
+  .team-agent-card:is(.working, .ready) .wk-card-heading::after {
+    content: ''; flex: none; box-sizing: border-box; width: 6px; height: 6px; margin-left: auto; padding: 0;
+    border: var(--edge) solid var(--kaki); border-radius: 50%; background: var(--kaki); /* kaki: the Chat's working dot */
+  }
+  .team-agent-card.ready .wk-card-heading::after { background: transparent; }
+  .team-agent-card.stopped .wk-card-heading, .team-agent-card.stopped .wk-card-mark { color: var(--muted); }
   .league-team-agent.flagged, .league-team-member.flagged > .league-team-member-toggle {
     background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: an Agent holds a flagged item */
   }

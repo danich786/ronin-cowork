@@ -67,7 +67,9 @@ never moves global development. `worktree-desk assign` is the lead-facing CLI ov
 function for a named session; it adds no authorization layer. The operation is refused when the repository is `direct`, has no
 `RONIN_REPO`, or sits in a Syncthing share whose `.stignore` does not exclude `.git`;
 refused when the requested branch is a funnel point. An explicit `worktree-desk open <repo>`
-does not require that repository to already appear on the team's roster. Any Agent can
+does not require that repository to already appear on the team's roster; `<repo>` is the
+project-root handle, or a Workspace name holding exactly one repository (`arrangementOf`,
+KAN-627), and an unknown name is refused listing the handles. Any Agent can
 name any managed repository; the roster only determines which desks birth opens
 automatically. Otherwise: the team line is created
 from the working line if missing and mounted at its worktree; the desk branch is cut from

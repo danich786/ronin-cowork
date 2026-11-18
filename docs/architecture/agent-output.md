@@ -1,8 +1,8 @@
 # Agent output
 
 Every Agent has one output file, `~/.ronin/sessions/<agent>/transcript.jsonl`, whatever its
-provider. Two reads write it. Everything else (Chat, status, the tool flow) reads only that
-file; nothing reads a provider log or a screen around it.
+provider. Two reads write it. Everything else (Chat, the log's input to status, the tool flow)
+reads only that file; nothing reads a provider log or a screen around it.
 
 ```
  provider log ──► log read ──────┐
@@ -66,21 +66,36 @@ else that uses the shape takes `tool.name` and `tool.target` only.
   `--font-term` at `--term-size`. The Markdown check on the tile's メ menu turns the rendering
   off, per Agent, kept in the browser. A message the person sends shows at once in `--muted` and is replaced when
   its own `user` line arrives.
-- **Status** (`rireki/stance.ts`) is the newest line: `tool` is *working* (with the tool's
-  name and target), `ask` is *asking you*, `turn` is *awaiting you*, anything else is
-  *working*, and an empty file is *unknown*. The CLI's injected text and a log's notes are
-  passed over, so a compaction (its summary, then *session started*) leaves an idle Agent
-  *awaiting you*. Each write calls `rowChanged`, and Core pushes the
-  home rows then; there is no clock.
-- **A question** (KAN-527, KAN-616) comes from the CLI's own hooks, and from the screen where no
-  hook tells. Claude Code and Codex run `ronin-asking` on their hook events (each CLI's launch
-  doc, `docs/agents/`); it posts the event to `/api/asking` and returns at once. A question
-  (Claude's AskUserQuestion, its plan approval (ExitPlanMode), a permission prompt, an MCP form;
-  Codex's approval) raises the
-  flag, and the CLI moving on (the turn ends, a prompt is sent, the next tool runs) lowers it
-  (`src/asking.ts`). Core's home row also reads the pane on each output (`asksForInput`,
-  `src/status.ts`, the vendors' `asking` patterns and the house y/n) for what no hook tells: a
-  login lapsing mid-run, Codex's request_user_input, a launch menu not set ahead: a numbered
+- **Status is the card's** (KAN-664), from the two inputs below, newest wins and a dead pane
+  over everything: [The Agent card](agent-card.md).
+- **The hook record** (Claude Code, Codex; KAN-656) is `hook.json` in the Agent's folder,
+  written by `src/asking.ts`. Both run `ronin-asking` on their
+  hook events (each CLI's launch doc, `docs/agents/`); it posts the whole event, cut at 128 KB,
+  to `/api/asking` and returns at once. A prompt submitted is *working* (thinking included), a
+  tool starting is *working* with the tool's name and target, a question is *asking you*, the
+  turn's Stop is *awaiting you*, Claude's StopFailure is *error*, Codex's Interrupt or a tool
+  cut off is *interrupted*, SessionStart is *awaiting you*.
+- **The log's status line** (`rireki/stance.ts`) is the newest line of a log that
+  reports it (`STANCE_REPORTS`): `tool` is *working* (with the tool's name and target), `turn`
+  is *awaiting you*, anything else is *working*, and an empty file is *unknown*. Each write
+  calls `rowChanged`, which marks that Agent's card, and Core pushes it then; there is no clock.
+- **A dead pane** (KAN-660): its CLI exited (remain-on-exit keeps the pane). tmux's pane-dead
+  push is the one source (`src/pane-death.ts`): the hook record reads *stopped* with the exit
+  status and time, the Agent is flagged (`agent_flag: 'stopped'`), Chat says *Stopped: exit N
+  at HH:MM* with one Resume (`/api/sessions/:name/resume`: archive and restore at once, on the
+  same provider conversation), and the Agent's leads get one house notice naming its items. An
+  Agent ended with session_end, or closed, has its session killed: no pane dies, nobody is told.
+- **A question** (KAN-527, KAN-657) rides the hook record as `question`, whole: Claude's
+  AskUserQuestion and Codex's request_user_input (each question, its options and their
+  descriptions, checkboxes), a plan to approve (Claude's ExitPlanMode; Codex's
+  `<proposed_plan>`, read from its rollout on Stop, where alone it is said), a permission (the
+  tool and its exact command or file), an MCP form. It goes when the CLI moves on. Chat answers
+  it (`public/js/chat-question.js`, ERABI stones; KAN-658): `/api/sessions/:name/answer` types
+  the option the way the CLI's own prompt takes it (`answerKeys`, each CLI's launch doc) and
+  records the answer, since a prompt declined with Escape fires no hook; the tile stays on
+  Chat. Free text and an MCP form keep Answer in Terminal. For a CLI without hooks Core's home
+  row reads the pane on each output (`asksForInput`, `src/status.ts`, the vendors' `asking`
+  patterns and the house y/n): a numbered
   choice list with its selector (`❯ 1.`, `› 1.`) reads as a question. Either sets the stance *asking* for the
   row and puts an Agent flag on its work record (`agent_flag: 'asking'`, `flagged`): ⚑ and
   the flagged amber on its selector pill, a ⚑ line on its work record. It is not an item flag

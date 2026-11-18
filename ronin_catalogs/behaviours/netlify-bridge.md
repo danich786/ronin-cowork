@@ -15,11 +15,12 @@ Netlify's own CLI and API still work for anything it doesn't cover.
   It goes live when the person you work for says ship and the PR merges.
 - `netlify sites`: is it live, and did the last deploy fail? A failed build also shows red on
   the PR's checks.
-- `netlify previews`: the site's deploy previews, the latest per PR, with its state and link.
+- `netlify previews`: the site's deploy previews, the latest per PR and the latest drafts, with state and link.
 - `netlify env`, `netlify env set <KEY> <value> --context <c>` (or `--branch <b>`): the
   variables a build reads. A change applies from the next deploy.
 - `netlify forms [<form>]`: what visitors sent through the site's forms.
 - `netlify traffic`: views and visitors, when Netlify Analytics is on for the site.
+- A draft for the person you work for to check, on a Workspace with no repo: `netlify deploy <dir> --message "<item>: <what changed>"`; the canvas shows that message, the item and your name.
 - `netlify deploy <dir>`: only for a Workspace with no repo. Without `--prod` it is a draft
   with its own URL. A site that builds from a repo changes by PR, not by this.
 - `--site <name>` reaches another site on the account; without it, the Workspace's.

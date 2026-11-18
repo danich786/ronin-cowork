@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { settleComposer, sendComposerMessage } from '../public/js/composer-rules.js';
 
-test('the composer clears only on ok, and only if the box still holds what was sent', () => {
-  assert.deepEqual(settleComposer({ ok: true }, 'hello', 'hello'), { clear: true, why: null });
-  assert.deepEqual(settleComposer({ ok: true }, 'hello', 'hello and more'), { clear: false, why: null });
-  assert.deepEqual(settleComposer({ ok: false, why: 'disconnected' }, 'hello', 'hello'), { clear: false, why: 'disconnected' });
-  assert.deepEqual(settleComposer({ ok: false }, 'hello', 'hello'), { clear: false, why: 'refused' });
-  assert.deepEqual(settleComposer(undefined, 'hello', 'hello'), { clear: false, why: 'refused' });
+test('an accepted send leaves the box alone; a failed one gives its text back ahead of a new draft', () => {
+  assert.deepEqual(settleComposer({ ok: true }, 'hello', ''), { box: null, why: null });
+  assert.deepEqual(settleComposer({ ok: true }, 'hello', 'next'), { box: null, why: null });
+  assert.deepEqual(settleComposer({ ok: false, why: 'disconnected' }, 'hello', ''), { box: 'hello', why: 'disconnected' });
+  assert.deepEqual(settleComposer({ ok: false }, 'hello', 'next'), { box: 'hello\nnext', why: 'refused' });
+  assert.deepEqual(settleComposer(undefined, 'hello', ''), { box: 'hello', why: 'refused' });
 });
 
 test('one composer send uses the HTTP message funnel with plain text, without a terminal socket', async (t) => {
@@ -31,7 +31,7 @@ test('accepted queued text belongs to the server; an unreachable server keeps th
   assert.equal((await sendComposerMessage('agent', 'hello')).ok, false);
 });
 
-test('mobile box Enter sends once even with the terminal socket down; edits during send survive', async (t) => {
+test('the box clears on the press, before the answer: a late answer never keeps the text for a second send (KAN-623)', async (t) => {
   const oldWindow = globalThis.window;
   const oldDocument = globalThis.document;
   const oldResizeObserver = globalThis.ResizeObserver;
@@ -55,25 +55,37 @@ test('mobile box Enter sends once even with the terminal socket down; edits duri
   t.after(() => { globalThis.window = oldWindow; globalThis.document = oldDocument; globalThis.ResizeObserver = oldResizeObserver; });
   const { buildComposer } = await import('../public/js/composer.js');
   const sent = [];
-  let finish;
+  const answers = [];
   const composer = buildComposer(new Element(), {
     connected: () => false, send: () => assert.fail('message must not use terminal keys'),
     activate() {}, clearOverlays() {}, scrollToBottom() {},
-    sendMessage: (text) => { sent.push(text); return new Promise((resolve) => { finish = resolve; }); },
+    sendMessage: (text) => { sent.push(text); return new Promise((resolve) => { answers.push(resolve); }); },
   });
-  composer.ta.value = 'one press';
+  const settle = () => new Promise((resolve) => setImmediate(resolve));
   const enter = () => composer.ta.events.keydown({ key: 'Enter', preventDefault() {} });
-  enter(); enter();
-  assert.deepEqual(sent, ['one press']);
-  finish({ ok: true });
-  await Promise.resolve();
-  assert.equal(composer.ta.value, '');
-  composer.ta.value = 'second';
+  // The Agent is busy and the answer has not come: the box is already empty, and a press
+  // repeated meanwhile sends nothing again.
+  composer.ta.value = 'price follows the machine';
   enter();
+  assert.equal(composer.ta.value, '');
+  enter();
+  await settle();
+  assert.deepEqual(sent, ['price follows the machine']);
+  // A second message waits for the first's answer, so the queue takes them in press order.
+  composer.ta.value = 'sorry the chat was funky';
+  enter();
+  assert.equal(composer.ta.value, '');
+  await settle();
+  assert.deepEqual(sent, ['price follows the machine']);
+  answers.shift()({ ok: true });
+  await settle();
+  assert.deepEqual(sent, ['price follows the machine', 'sorry the chat was funky']);
+  assert.equal(composer.ta.value, '');
+  // A send that failed gives its text back, ahead of what was typed since.
   composer.ta.value = 'new draft';
-  finish({ ok: true });
-  await Promise.resolve();
-  assert.equal(composer.ta.value, 'new draft');
+  answers.shift()({ ok: false, why: 'not connected' });
+  await settle();
+  assert.equal(composer.ta.value, 'sorry the chat was funky\nnew draft');
 });
 
 import { readFile } from 'node:fs/promises';

@@ -183,7 +183,8 @@ export function buildSecretAsk(tile) {
       let ask = row?.secret_ask || null;
       if (!ask) answered = null;
       else if (ask.name === answered) ask = null;
-      if (open && ask && open.name === ask.name) return;
+      // The same ask, or still none: nothing on screen moves (KAN-664: a push repaints what changed).
+      if ((open?.name ?? null) === (ask?.name ?? null)) return;
       open = ask;
       input.value = '';
       resetExpiry();

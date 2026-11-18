@@ -48,6 +48,8 @@
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/campaign-surfaces.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/campaign-view.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/campaigns.js" />
+    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/canvas-view.js" />
+    <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/chat-question.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/composer-rules.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/composer.js" />
     <link rel="modulepreload" href="/__RONIN_ASSET_VERSION__/js/cowork-commons.js" />
@@ -226,12 +228,18 @@
            edge of the screen, visually separate from the Workbench headers.
            js/workspace-header.js writes it; nothing else does. -->
       <span id="viewisland" class="grow view-island"><span id="viewplace" class="ui-bar-place" hidden></span></span>
-      <span id="viewmap" class="wk-view-map"></span>
-      <button id="ramrpm" class="ramrpm" type="button" hidden aria-expanded="false"></button>
-      <!-- A view's own compact controls (Setup's light/dark). js/workspace.js seats them. -->
-      <span id="viewactions" class="wk-view-actions"></span>
-      <span id="feedbackaction"></span>
-      <button id="shapecycle" class="shape-cycle" hidden data-t-title="bar.shape_title" title="Two workspaces — click for four">2</button>
+      <!-- THE RIGHT-HAND END (KAN-640): a view's own compact controls (Setup's light/dark,
+           seated by js/workspace.js), the gauge and Feedback, then the surface map with its
+           tile count as one group at the far right. -->
+      <span class="bar-end">
+        <span id="viewactions" class="wk-view-actions"></span>
+        <button id="ramrpm" class="ramrpm" type="button" hidden aria-expanded="false"></button>
+        <span id="feedbackaction"></span>
+        <span class="bar-map">
+          <span id="viewmap" class="wk-view-map"></span>
+          <button id="shapecycle" class="shape-cycle" hidden data-t-title="bar.shape_title" title="Two workspaces — click for four">2</button>
+        </span>
+      </span>
       </header>
     <div id="viewhost">
       <section id="cowork-view" class="cc-view" hidden></section>

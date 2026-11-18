@@ -31,6 +31,7 @@ process.env.RONIN_TEAM_ROSTERS_DIR = path.join(tmp, 'rosters');
 process.env.RONIN_WORK_ITEMS_DIR = path.join(tmp, 'work-items');
 process.env.RONIN_SESSION_DIR = path.join(tmp, 'sessions');
 process.env.RONIN_MESSAGE_QUEUE_DIR = path.join(tmp, 'message-queue');
+process.env.RONIN_WORKSPACES_DIR = path.join(tmp, 'workspaces');
 
 const sh = (dir: string, args: string[]) =>
   execFileSync('git', ['-C', dir, ...args], { stdio: ['ignore', 'pipe', 'pipe'] }).toString().trim();
@@ -105,7 +106,17 @@ test('arrangement: absent RONIN_REPO is today, reviewed has defaults, bad values
   assert.throws(() => parseArrangement('x', '/x', 'mode=sideways\n'), /mode must be/);
   assert.equal((await arrangementOf('koe')).mode, 'direct');
   assert.equal((await arrangementOf('plain')).source, 'absent');
-  await assert.rejects(arrangementOf('nope'), /no project_root named/);
+  await assert.rejects(arrangementOf('nope'), /no project_root named 'nope'; repo handles: cowork, services, lagged, koe, plain/);
+});
+
+test('arrangement: a Workspace name with exactly one repo is that repo; with two it is refused (KAN-627)', async () => {
+  const dir = path.join(process.env.RONIN_WORKSPACES_DIR!, 'camp');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, 'ronin_koe.json'), JSON.stringify({ repos: [{ name: 'koe' }] }));
+  await fs.writeFile(path.join(dir, 'pair.json'), JSON.stringify({ repos: [{ name: 'koe' }, { name: 'plain' }] }));
+  const a = await arrangementOf('ronin_koe');
+  assert.deepEqual([a.repo, a.dir], ['koe', koe]);
+  await assert.rejects(arrangementOf('pair'), /no project_root named 'pair'; repo handles: cowork/);
 });
 
 test('deriveAssignment: the named repository is the desk unless an explicit list says otherwise', async () => {

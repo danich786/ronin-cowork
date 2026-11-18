@@ -187,6 +187,11 @@ def listed(held, watched=()):
     done = sorted([i for i in list(held or []) + list(watched or []) if i.get("status") == "Done"], key=lambda i: since(i) or "", reverse=True)
     ids = list(dict.fromkeys(i["id"] for i in done))
     if ids: print("- Done, not yet archived: %d (%s%s)" % (len(ids), ", ".join(ids[:8]), ", …" if len(ids) > 8 else ""))
+# A FLAGGED ITEM A TEAM YOU LEAD HOLDS (KAN-636): first, since the Team is told through its lead.
+team_flagged = [(t["team"], i) for t in r.get("teams") or [] for i in t.get("items") or [] if i.get("flagged") and i.get("status") != "Done"]
+if team_flagged:
+    print("\n## Flagged: held by a team you lead")
+    for team, i in team_flagged: print("- %s %s · %s · Team %s · flagged" % (i["id"], i["title"], i.get("status"), team))
 # A TEAM, IN FOUR LAYERS (KAN-331; src/team-layers.ts): each Team you are on, one line per layer,
 # read live where it lives, each naming the command that reads it whole.
 one = lambda h: "@" + h[6:] if h.startswith("agent:") else "Team " + h[5:] if h.startswith("team:") else "Workspace " + h[10:] if h.startswith("workspace:") else h

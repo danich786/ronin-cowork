@@ -77,7 +77,8 @@ export function buildWorkRecord(letter, deskEntry = null, { openDoc = null, sess
   const held = section(t('work_record.items', 'Work items'), 'wr-items');
   // An Agent flag (KAN-527): its terminal asks the owner something; not an item's flag.
   if (letter.agent_flag === 'no_progress') held.appendChild(line('wr-item wr-agent-flag', `⚑ ${t('work_record.agent_no_progress', 'No progress for 12 min: look in its terminal')}`));
-  if (letter.agent_flag === 'asking') held.appendChild(line('wr-item wr-agent-flag', `⚑ ${t('work_record.agent_asking', 'Asking you: answer in its terminal')}`));
+  if (letter.agent_flag === 'asking') held.appendChild(line('wr-item wr-agent-flag', `⚑ ${t('work_record.agent_asking', 'Asking you: answer in its Chat')}`));
+  if (letter.agent_flag === 'stopped') held.appendChild(line('wr-item wr-agent-flag', `⚑ ${t('work_record.agent_stopped', 'Stopped: its CLI exited; Resume from its Chat')}`));
   // Open items only (owner, 2026-11-05; KAN-271): Done waiting for the five-day archive is one
   // line under them, ids only, newest first, at most eight.
   const open = (letter.items || []).filter((item) => item.status !== 'Done');

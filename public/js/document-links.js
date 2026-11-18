@@ -20,3 +20,16 @@ export function productRepositoryHref(sourcePath, href) {
     return `https://github.com/ronincowork/ronin-cowork/blob/master/${file}${target.search}${target.hash}`;
   } catch { return null; }
 }
+
+/**
+ * A LINK TO A FILE ON THE RONIN BOX, in any form an Agent writes one: /abs, ~/…, file:///…,
+ * relative to where it works, each maybe ending :line or :line:col (the file opens; the line is
+ * dropped). Its path, or null for a web link, a mail link or an anchor, which keep the browser.
+ */
+export function fileLinkPath(href) {
+  let p = String(href || '').trim().replace(/(?::\d+){1,2}$|#L\d+(?:-L?\d+)?$/, '');
+  if (/^file:\/\//i.test(p)) p = p.replace(/^file:\/\/(?:localhost)?/i, '');
+  else if (!p || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#|\?)/i.test(p)) return null;
+  try { p = decodeURI(p); } catch { /* written as is */ }
+  return p.replace(/[?#].*$/, '') || null;
+}

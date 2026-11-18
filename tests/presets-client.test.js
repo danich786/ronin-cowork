@@ -353,7 +353,7 @@ test('Code Stack Eval keeps ticked folders on Apply and evaluates the chosen one
 
 test('the launched team page preserves Commons selections', async () => {
   const source = await readFile(new URL('../public/js/cowork-view.js', import.meta.url), 'utf8');
-  assert.match(source, /type: token\.type, detail: \{ key: token\.key \|\| '', root: token\.root \|\| '', path: token\.path \|\| '', \.\.\.\(token\.tab \? \{ tab: token\.tab \} : \{\}\), \.\.\.\(token\.doc \? \{ doc: token\.doc \} : \{\}\) \}/);
+  assert.match(source, /type: token\.type, detail: \{ key: token\.key \|\| '', root: token\.root \|\| '', path: token\.path \|\| '', \.\.\.\(token\.tab \? \{ tab: token\.tab \} : \{\}\), \.\.\.\(token\.doc \? \{ doc: token\.doc \} : \{\}\), \.\.\.\(token\.workspace \? \{ workspace: token\.workspace \} : \{\}\) \}/);
   const health = presets.seatingPlan('health_and_fitness', { team: 'health', sessions: [{ name: 'head_coach' }, { name: 'nutritionist' }] });
   assert.equal(health.seats[1].tab, 'wipeboard');
   const brief = presets.seatingPlan('morning_brief', { team: 'brief', sessions: [{ name: 'writer' }] });
