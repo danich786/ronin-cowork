@@ -43,7 +43,7 @@ in `src/tmux-client.ts` is the server's single door to tmux:
   subscription, and sends the session list and every Agent's card only when a field the UI
   paints moved (`sessionsSignature` leaves out `activity`). The activity subscription (a pane
   had output) wakes the transcript part's terminal read through `onPaneActivity` and marks
-  that Agent's card `pane`. [The data path](data-path.md) states the rule and the
+  that Agent's card `pane` and `fields`. [The data path](data-path.md) states the rule and the
   lifecycle; everything else on `/events`:
 
   | Message | Sent | On connect |
@@ -86,7 +86,8 @@ An Agent's card (its selector pill and tile head) is made by `cardOf` in
 `src/routes/launch.ts` from three parts with three speeds, each read only when it is marked
 (KAN-641): `pane`, the screen captured for the context gauge, model and a question drawn
 there, marked when tmux says the pane had output; `fields`, the parts' row fields (the
-transcript's stance and newest line, a secret ask), marked by `rowChanged`; and `record`, the
+transcript's stance and newest line, a secret ask), marked by `rowChanged` and by a pane
+draw (a thinking CLI draws but writes no line the transcript part tells); and `record`, the
 work record, marked by an item write and by the Agent's own folder (`watchRecord`: its
 letter, brief and `drop/`). The parts not marked are the last ones read. While a browser is
 connected, `src/ws/events.ts` sends `{t:'card'}` when a card moved and `{t:'cards'}` whole
@@ -101,7 +102,7 @@ comma-separated, where `over` is `0` while the stamp's second runs and `1` once 
 subscription each second, so the flip is one more report after a burst's last draw, and that
 push reads the pane afresh. The comma is written `#,` because a bare comma inside `#{S:…}`
 is tmux's own separator and is dropped. `activityMoved` in `src/ws/events.ts` names the sessions whose stamp moved; each
-wakes the terminal read (`onPaneActivity`) and marks its card `pane`. `LISTING_SUBSCRIPTION`
+wakes the terminal read (`onPaneActivity`) and marks its card `pane` and `fields`. `LISTING_SUBSCRIPTION`
 reports the Ronin options the listing carries (title, Teams, lead, Campaign), whoever sets
 them, and the tick lists again.
 

@@ -70,8 +70,10 @@ test('a tab is sent every card whole at connect, then each card that moved, read
   await until(() => first.got('card').length === 3);
   assert.deepEqual(reads, ['b pane'], 'a pane draw reads that pane alone');
   assert.deepEqual(first.got('card').at(-1), { t: 'card', rev: 4, card: { name: 'b', ctx: 2 } });
-  mark('b', 'pane');
+  reads.length = 0;
+  mark('b', 'pane', 'fields');
   await settle();
+  assert.deepEqual(reads, ['b fields,pane'], 'a pane draw reads its screen and its CLI\'s log in one read, never the record');
   assert.equal(first.got('card').length, 3, 'a card that did not move is not sent');
   changed();
   await settle();
@@ -102,6 +104,23 @@ test('a mark during a rebuild is read on the next round, with every part marked 
   await settle();
   assert.deepEqual(reads, ['pane', 'fields,record']);
   assert.deepEqual(b.got('card').at(-1)?.card, { name: 'a', secret_ask: { name: 'test_key3' } });
+});
+
+test('a mark that lands while a rebuild is finishing is still read', async (t) => {
+  let n = 0;
+  feedEvents({ list: async () => [session('a')], card: async (s) => ({ name: s.name, n }) });
+  const b = open(t);
+  await settle();
+  // Each mark lands a few microtasks after the one before, as a part's async write does.
+  for (let delay = 0; delay < 8; delay++) {
+    n += 1;
+    mark('a', 'fields');
+    for (let i = 0; i < delay; i++) await Promise.resolve();
+    n += 1;
+    mark('a', 'fields');
+    await until(() => b.got('card').at(-1)?.card.n === n);
+    assert.equal(b.got('card').at(-1)?.card.n, n, `the second mark, ${delay} microtasks on, was read`);
+  }
 });
 
 test('a card\'s own folder marks its record: the letter, the brief, a drop, and nothing else', async (t) => {
