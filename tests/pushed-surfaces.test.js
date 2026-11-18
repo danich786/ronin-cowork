@@ -105,7 +105,7 @@ test('the memory gauge paints the pushed reading and hides when the box is off',
   assert.equal(gaugeEl.dataset.band, 'warn', 'swap adds nothing: 86% RAM in use is orange');
   store.receive({ t: 'sessions', list: [{ agent: 'claude' }, { agent: 'codex' }, { agent: '' }] });
   store.receive({ t: 'memory', reading: { mem: { total_mb: 15360, available_mb: 7782 }, swap: { total_mb: 4096, used_mb: 3379 }, load: [6, 6.4, 6], cpus: 8, disk: { total_mb: 100000, used_mb: 61000 } } });
-  assert.equal(gaugeEl.dataset.band, 'warn', 'the owner\'s 17 Nov box: CPU 80% sets the bar');
+  assert.equal(gaugeEl.dataset.band, 'ok', 'the owner\'s 17 Nov box: RAM 49% sets the face; CPU 80% only its own row (KAN-640)');
   assert.equal(gaugeEl.title, 'Agents 2 of 25 · Compute 80% · Storage 60 of 98 GB', 'current counts sessions with an Agent; max is RAM ÷ 0.6 GB');
   store.receive({ t: 'memory', reading: { off: true } });
   assert.equal(gaugeEl.hidden, true, 'off hides it');

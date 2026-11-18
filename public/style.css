@@ -710,7 +710,18 @@ body {
 
 /* The document shell starts optional header capabilities hidden. Component display
    rules must never override that first-paint fact before the active view is known. */
-#bar > [hidden] { display: none !important; }
+#bar > [hidden], #bar .bar-end [hidden] { display: none !important; }
+
+/* THE RIGHT-HAND END (KAN-640): the view's actions, the gauge, Feedback, then the surface map
+   with its tile count, one group at the far right. One even gap between pieces; the map and
+   its count sit closer, so they read as a pair. The auto margin carries the run right even
+   where the island is lifted out of the flow (wide touch). */
+#bar .bar-end { display: inline-flex; flex: 0 0 auto; align-items: center; gap: var(--space-inline); margin-left: auto; }
+#bar .bar-map { display: inline-flex; align-items: center; gap: var(--space-row); }
+#bar .bar-map .shape-cycle { margin-left: 0; }
+/* A phone has no room for the centred island beside the crumb and the right-hand end: it sat
+   on top of the gauge and took its taps (KAN-640). The crumb already names the place. */
+@media (max-width: 680px) { #bar .view-island { display: none; } }
 
 #bar .shape-cycle,
 #bar .setup-open-irasshai-button,
@@ -4277,16 +4288,19 @@ body {
   cursor: default;
 }
 
-.ramrpm { margin-left: var(--space-inline); border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); padding: var(--space-row) var(--space-inline); font: var(--text-small) var(--font-mono); cursor: pointer; user-select: none; }
+.ramrpm { border: var(--edge) solid var(--line-2); border-radius: var(--radius-pill); background: var(--surface); color: var(--muted); padding: var(--space-row) var(--space-inline); font: var(--text-small) var(--font-mono); cursor: pointer; user-select: none; }
 .ramrpm { display: inline-flex; align-items: center; gap: 2px; }
 .ramrpm[hidden] { display: none; }
-.ramrpm i { display: block; width: 6px; height: 10px; border-radius: 1px; background: var(--line-2); }
-.ramrpm i.on { background: currentColor; }
-.ramrpm[data-band='ok'] { color: var(--ok); }
-.ramrpm[data-band='warn'] { color: var(--warn); }
-.ramrpm[data-band='red'] { color: var(--bad); }
+/* The five segments: the face, and each popup row's own bar (.ramrpm-bar). */
+.ramrpm-bar { display: inline-flex; gap: 2px; }
+:is(.ramrpm, .ramrpm-bar) i { display: block; width: 6px; height: 10px; border-radius: 1px; background: var(--line-2); }
+:is(.ramrpm, .ramrpm-bar) i.on { background: currentColor; }
+:is(.ramrpm, .ramrpm-bar)[data-band='ok'] { color: var(--ok); }
+:is(.ramrpm, .ramrpm-bar)[data-band='warn'] { color: var(--warn); }
+:is(.ramrpm, .ramrpm-bar)[data-band='red'] { color: var(--bad); }
 .ramrpm-pop { position: fixed; z-index: 50; width: min(240px, calc(100vw - 16px)); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); background: var(--surface); box-shadow: var(--shadow-menu); padding: var(--space-inset); color: var(--fg); font: var(--text-body) var(--font-ui); }
-.ramrpm-pop p { display: flex; justify-content: space-between; gap: var(--space-inline); margin: 0; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }
+/* A row: label left, value and its own five-segment bar right (KAN-640). */
+.ramrpm-pop p { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--space-inline); margin: 0; padding: var(--space-row) 0; border-bottom: var(--edge) solid var(--line); }
 .ramrpm-pop p:last-child { border-bottom: 0; }
 .ramrpm-pop strong { color: var(--fg-strong); }
 .ramrpm-pop span { color: var(--muted); text-align: right; }
@@ -5210,12 +5224,6 @@ html[data-screen='inside'] #phone .ph-bar .ph-title[data-boot='inside'] { displa
     color: inherit;
     transform: none;
   }
-  /* The readings — surface map, RAM/RPM, the view's own actions, Feedback — belong at
-     the right-hand end. The island above is absolutely positioned, so its .grow no
-     longer pushes them there, and trimBarForTouch removes #shapecycle and its
-     margin-left: auto with it. #viewmap is first of the trailing group, so the auto
-     margin here carries the whole group right. */
-  #bar > .wk-view-map { margin-left: auto; }
   /* Keyed on the control, not on its parent: the caret is styled the same whether it is
      riding the island or docked over the work surfaces below. */
   :root:is([data-workbench='team'], [data-workbench='cowork']) .app-header-collapse {

@@ -130,7 +130,7 @@ test('Setup and Settings share the machine-settings island without a right heade
   assert.match(header, /workspace\.navigate\(setup \? 'campaign' : 'setup'\)/);
   assert.match(header, /'Setup'/);
   assert.match(header, /'Settings'/);
-  assert.match(style, /#bar > \[hidden\] \{ display: none !important; \}/, 'optional header controls cannot flash before the active view owns them');
+  assert.match(style, /#bar > \[hidden\], #bar \.bar-end \[hidden\] \{ display: none !important; \}/, 'optional header controls cannot flash before the active view owns them');
 });
 
 test('Setup hints start collapsed without inheriting another workbench preference', async () => {
