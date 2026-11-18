@@ -115,9 +115,8 @@ as an activated provider when operational, and Refresh all asks it to read its l
 (`refresh`). Self-hosted, no part answers and nothing changes.
 
 The office record (`src/office-record.ts`) carries `tier` (`light` | `standard` | `frontier`,
-the office's tier) and `tier_providers` (the member's provider per tier), both written by
-Cloud's park; Ronin reads them and asks the house connection for a tier or `default`, never a
-model name (KAN-652).
+the office's tier), written by Cloud's park; Ronin asks the house connection for a tier or
+`default`, never a model name, and the gateway serves the member's provider behind it (KAN-652).
 
 ## Model info
 
