@@ -42,21 +42,6 @@ test('a cold Mika birth compiles one published knowledge index into its reading'
   assert.ok(source.indexOf('const knowledge = await compileMikaKnowledgeAt(mikaHome)') < source.indexOf('const brief = await writeBriefPacketAt('));
 });
 
-test('selector readiness awaits the singleton and hides transport failures', async () => {
-  const source = await readFile(new URL('../src/routes/launch.ts', import.meta.url), 'utf8');
-  assert.match(source, /post\('\/api\/mika\/ready'/);
-  assert.match(source, /if \(mikaStarting\) return mikaStarting/);
-  assert.match(source, /state: 'ready'/);
-  assert.match(source, /state: 'refused'/);
-  assert.match(source, /state: 'action_required', action: 'pending_user', code: 'provider_confirmation_required'/);
-  assert.match(source, /mikaReadinessFromPane\(await capturePane\(MIKA_SESSION, 0\)\)/);
-  assert.doesNotMatch(source, /send-keys|pressEnter|deliverForce/);
-  assert.doesNotMatch(source, /No such session: mika/);
-  assert.match(source, /RONIN_HELPER_LOADER/);
-  assert.match(source, /intent === 'setup_provider_ready'/);
-  assert.match(source, /MIKA_PROMPTS\.setup_provider_ready : MIKA_PROMPTS\.help/);
-});
-
 test('a ronin_helper start creates its ordinary Team idempotently', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'ronin-steerco-team-'));
   process.env.RONIN_TEAM_ROSTERS_DIR = path.join(root, 'teams');

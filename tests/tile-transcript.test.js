@@ -22,8 +22,27 @@ class Node {
   }
   addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
   dispatchEvent(event) { (this.listeners[event.type] || []).forEach((fn) => fn(event)); return true; }
-  setAttribute(key, value) { this.attributes[key] = value; }
+  setAttribute(key, value) {
+    this.attributes[key] = value;
+    // As the DOM does: a data-* attribute reads back through dataset.
+    if (key.startsWith('data-')) this.dataset[key.slice(5).replace(/-(\w)/g, (_, c) => c.toUpperCase())] = String(value);
+  }
   getAttribute(key) { return this.attributes[key]; }
+  // The two selector shapes the transcript asks: '.class' and '.class[attr="value"]'.
+  querySelectorAll(selector) {
+    const [, cls, attr, value] = selector.match(/^\.([\w-]+)(?:\[([\w-]+)="([^"]*)"\])?$/) || [];
+    const found = [];
+    const walk = (node) => node.children.forEach((child) => {
+      if (child.className?.split?.(/\s+/).includes(cls) && (!attr || child.attributes?.[attr] === value)) found.push(child);
+      if (child.children) walk(child);
+    });
+    walk(this);
+    return found;
+  }
+  get nextElementSibling() {
+    const siblings = this.parent?.children || [];
+    return siblings[siblings.indexOf(this) + 1] || null;
+  }
   remove() { this.parent?.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; }
   append(...nodes) {
     for (const n of nodes) {

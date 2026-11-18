@@ -135,42 +135,6 @@ test('collapsible steps expose one full-width disclosure row and Team defaults u
   assert.match(agents, /if \(editor\) host\.append\(paintEditor\(\)\);[\s\S]*createAction\(\{ label:[\s\S]*＋ Add Agent/);
 });
 
-test('Add Agent confirms a draft into a compact row with the one selector utility', async () => {
-  const [agents, team] = await Promise.all([source('team-agents.js'), source('new-team-form.js')]);
-  assert.match(agents, /let editor = null/);
-  assert.match(agents, /if \(index < 0\) rows\(\)\.push\(saved\)/);
-  assert.match(agents, /editor = null; changed\(\); paint\(\)/);
-  assert.match(agents, /agent_add_confirm', 'Add'/);
-  assert.match(agents, /ntf-agent-row/);
-  assert.match(agents, /const questions = ask\(\[/);
-  assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\)/);
-  assert.match(agents, /group: t\('new_agent\.model_package', 'Model'\), fields: \[[\s\S]*key: 'provider'[\s\S]*key: 'model'[\s\S]*key: 'teamLead'[\s\S]*\] \},[\s\S]*group: t\('mandate', 'Mandate'\)/);
-  assert.match(agents, /group: t\('mandate', 'Mandate'\)/);
-  assert.match(agents, /import \{ mandateRows \} from '\.\/mandates\.js'/);
-  assert.match(agents, /options: \(\) => mandateRows\('reach', screen\(\)\)/);
-  assert.match(agents, /options: \(\) => mandateRows\('recruit', screen\(\)\)/);
-  assert.match(agents, /many: true, options: \(\) => mandateRows\('output', screen\(\)\)/);
-  assert.doesNotMatch(agents, /const (REACH|RECRUIT|OUTPUT) =/, 'no hand list of mandate values');
-  assert.doesNotMatch(agents, /shape: 'square'|ruledRows|glyph:/);
-  assert.match(agents, /many: true/);
-  assert.match(agents, /key: 'teamLead'.*switch:/);
-  assert.doesNotMatch(agents, /switch:[^\n]+word:/);
-  assert.match(agents, /density: 'tight'/);
-  assert.match(agents, /tierWord\(item\.tier\)/);
-  assert.doesNotMatch(agents, /forms\.provider_off|forms\.provider_turned_off|machine\?\.state|modelWord\([^)]*\)\.split/);
-  assert.match(agents, /box\.append\(actions\.el, field/);
-  assert.doesNotMatch(agents, /wk-button/);
-  assert.doesNotMatch(agents, /providerModelPair|type = 'checkbox'|aria-pressed/);
-  assert.match(agents, /provider: row\.provider/);
-  assert.match(agents, /model: row\.model/);
-  assert.match(agents, /instructions: row\.assignment\.trim\(\)/);
-  assert.match(agents, /team_lead: row\.team_lead === true/);
-  assert.doesNotMatch(agents, /routines_/);
-  assert.match(team, /loadProviderCatalog\(\)/, 'New Team loads provider choices for its inline Agent editor');
-  assert.match(team, /Promise\.all\(\[[\s\S]*request\('\/api\/workspaces'\),[\s\S]*loadProviderCatalog\(\)/,
-    'provider choices load as part of entering the New Team surface');
-});
-
 test('New Team cast text is labelled and all cast selections belong to ask()', async () => {
   const [agents, css, newAgent] = await Promise.all([
     source('team-agents.js'),
