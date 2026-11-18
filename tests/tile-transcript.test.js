@@ -394,12 +394,12 @@ test('a record the server sends is appended; one it already holds is ignored', a
   view.dispose();
 });
 
-test('a view told what to admit draws only those records; the rest are held, not drawn (KAN-617)', async () => {
+test('a view told what to admit draws what admit answers; a left-out record is held, not drawn (KAN-617)', async () => {
   const view = makeTileTranscript({
     read: async () => ({ ok: true, data: { available: true, view: 'chat', readings: READINGS, more: false,
       records: [{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 2, role: 'agent', kind: 'say', text: 'hello' }] } }),
     watch() {},
-    admit: (rec) => rec.text !== 'left out',
+    admit: (rec) => (rec.text === 'left out' ? null : rec.text.startsWith('HEAD:') ? { ...rec, text: rec.text.slice(5) } : rec),
   });
   view.show('agent', 'chat');
   await tick();
@@ -407,6 +407,9 @@ test('a view told what to admit draws only those records; the rest are held, not
   const deliver = (records) => [...transcriptHandlers].forEach((fn) => fn({ t: 'transcript', session: 'agent', reading: 'chat', records }));
   deliver([{ seq: 1, role: 'user', kind: 'say', text: 'left out' }, { seq: 3, role: 'user', kind: 'say', text: 'hi' }]);
   assert.deepEqual(contents(view.el), ['hello', 'hi'], 'a left-out record stays out when it comes again');
+  view.pending('sent');
+  deliver([{ seq: 4, role: 'user', kind: 'say', text: 'HEAD:sent' }]);
+  assert.deepEqual(contents(view.el), ['hello', 'hi', 'sent'], 'drawn as admit shaped it, and its light copy goes');
   view.dispose();
 });
 

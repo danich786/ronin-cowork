@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { irasshaiIn, irasshaiSteps, takeStepLine } from '../public/js/setup-journey.js';
+import { irasshaiIn, irasshaiShown, irasshaiSteps, takeStepLine } from '../public/js/setup-journey.js';
 
 const source = (path) => readFile(new URL(`../public/${path}`, import.meta.url), 'utf8');
 const ORDER = ['Agent Harness', 'Workspace', 'Integrations', 'Ronin Tour', 'Meet your Agents'];
@@ -66,13 +66,18 @@ test('Open Irasshai: a hosted Setup header carries one button that asks Services
   assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one press, one request; Services decides open, restore or launch');
 });
 
-test('Irasshai’s chat reads as a conversation: the Chat reading, and no birth packet (KAN-617)', async () => {
+test('Irasshai’s chat reads as a conversation: the Chat reading, the person’s messages without Ronin’s head, her replies, nothing else (KAN-617)', async () => {
   const chat = await source('js/setup-irasshai.js');
   assert.match(chat, /transcript\.show\(IRASSHAI, CHAT_READING\)/, 'her chat asks for the Chat reading, which drops Codex startup and injected context');
   assert.match(chat, /export const CHAT_READING = 'chat';/);
-  assert.match(chat, /makeTileTranscript\(\{ admit: \(rec\) => !birthPacket\(rec\) \}\)/, 'Ronin’s birth packet is not drawn');
-  const birthPacket = new Function(`return ${chat.match(/export const birthPacket = ([^\n]+);/)[1]}`)();
-  assert.equal(birthPacket({ role: 'user', text: 'Read first: /home/x/.ronin/sessions/irasshai-1/AGENT_BIRTH_BRIEF.md — 90 lines, 6 KB, one read' }), true);
-  assert.equal(birthPacket({ role: 'user', text: 'Read first the Setup guide, please' }), false, 'the person’s own words show');
-  assert.equal(birthPacket({ role: 'agent', text: 'Read first: /x/AGENT_BIRTH_BRIEF.md' }), false);
+  assert.match(chat, /makeTileTranscript\(\{ admit: irasshaiShown \}\)/);
+  const shown = irasshaiShown;
+  const user = (text) => ({ seq: 1, role: 'user', kind: 'say', text });
+  assert.equal(shown(user('Read first: /home/ronin/.ronin/sessions/irasshai-1/AGENT_BIRTH_BRIEF.md — 90 lines, 6 KB, one read')), null, 'no birth packet');
+  assert.equal(shown(user("From Epic templates [House notice]:\nWalk this epic through: w1 'Getting set up in your new office'.")), null, 'no house notice');
+  assert.equal(shown(user('From @system_lead [Tell]:\nhi')), null, 'no Tell');
+  assert.deepEqual(shown(user('From Glen Osmond <g@x.com>, owner, Redpick [Message box]:\nhello')), user('hello'), 'the person’s words, without Ronin’s head');
+  assert.deepEqual(shown(user('hello')), user('hello'), 'typed bare, shown as typed');
+  const reply = { seq: 2, role: 'agent', kind: 'say', text: 'Welcome!' };
+  assert.equal(shown(reply), reply);
 });
