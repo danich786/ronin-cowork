@@ -5008,7 +5008,8 @@ button.wk-card { cursor: pointer; }
   background: color-mix(in srgb, var(--warn) 12%, transparent); /* status: a person is needed */
 }
 #phone .ph-agent.flagged :is(.ph-card-name, .ph-agent-flag, .home-job) { color: var(--warn); }
-#phone .ph-agent:is(.working, .ready) .ph-card-identity::after {
+/* At the card's right edge, one column down the list (KAN-673). */
+#phone .ph-agent:is(.working, .ready) .ph-card-line::after {
   content: '';
   flex: none;
   align-self: center;
@@ -5019,7 +5020,7 @@ button.wk-card { cursor: pointer; }
   border-radius: 50%;
   background: var(--kaki); /* kaki: the Chat's working dot */
 }
-#phone .ph-agent.ready .ph-card-identity::after { background: transparent; }
+#phone .ph-agent.ready .ph-card-line::after { background: transparent; }
 #phone .ph-agent.stopped :is(.ph-card-name, .home-job) { color: var(--muted); }
 #phone .ph-empty {
   padding: var(--space-inset) var(--space-inset);
