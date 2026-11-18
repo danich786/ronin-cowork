@@ -164,16 +164,14 @@ export function mikaLaunchBody(input: unknown, selection?: Pick<MikaSelection, '
   };
 }
 
-type WrapArgv = (argv: string[]) => string[];
-let inProcessLaunch: ((body: Record<string, unknown>, wrapArgv?: WrapArgv) => Promise<{ status: number; body: Record<string, unknown> }>) | null = null;
+let inProcessLaunch: ((body: Record<string, unknown>) => Promise<{ status: number; body: Record<string, unknown> }>) | null = null;
 /**
- * POST /api/launch from inside the server: the same session creation, its answer returned. A
- * caller here may wrap the argv Core built (brief included) just before birth, which an HTTP
- * caller cannot. Throws before registerLaunch has run.
+ * POST /api/launch from inside the server: the same session creation, the same body New Agent
+ * sends, its answer returned. Throws before registerLaunch has run.
  */
-export function launchSession(body: Record<string, unknown>, opts: { wrapArgv?: WrapArgv } = {}): Promise<{ status: number; body: Record<string, unknown> }> {
+export function launchSession(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }> {
   if (!inProcessLaunch) throw new Error('launchSession: the launch route is not registered yet.');
-  return inProcessLaunch(body, opts.wrapArgv);
+  return inProcessLaunch(body);
 }
 
 export interface LaunchControl {
@@ -327,7 +325,7 @@ export function registerLaunch(app: express.Express): LaunchControl {
     }
   });
 
-  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER, wrapArgv?: WrapArgv): Promise<unknown> => {
+  const launch = async (req: express.Request, res: express.Response, houseSeat?: 'mika', loader?: typeof RONIN_HELPER_LOADER): Promise<unknown> => {
     let mikaSelection: MikaSelection | undefined;
     let mikaHome = '';
     if (houseSeat === 'mika') {
@@ -415,8 +413,6 @@ export function registerLaunch(app: express.Express): LaunchControl {
       }
       const launchWords = resolved.session_type === 'bare_metal_agent' ? (form.prompt ?? '') : resolved.brief;
       launch = resolved.agent ? await launchArgv(resolved.cmd, launchWords) : { argv: [], parked: false };
-      // A caller in the server (launchSession) may wrap the argv, brief included, just before birth.
-      if (wrapArgv && launch.argv.length) launch = { ...launch, argv: wrapArgv([...launch.argv]) };
       // A part's provider (src/provider-parts.ts) wraps the argv of an Agent born on its rows.
       const part = providerPart(resolved.identity?.provider ?? '');
       if (part?.wrapLaunch && launch.argv.length) launch = { ...launch, argv: part.wrapLaunch([...launch.argv], form.person?.email ?? '') };
@@ -564,14 +560,14 @@ export function registerLaunch(app: express.Express): LaunchControl {
   };
   const launchJob: express.RequestHandler = (req, res) => launch(req, res);
   // The same launch, called from inside the server (a part): no browser, so nobody behind it.
-  inProcessLaunch = async (body, wrapArgv) => {
+  inProcessLaunch = async (body) => {
     let status = 200;
     let answer: Record<string, unknown> = {};
     const response = {
       status(code: number) { status = code; return this; },
       json(value: unknown) { answer = value && typeof value === 'object' ? value as Record<string, unknown> : {}; return value; },
     } as unknown as express.Response;
-    await launch({ body } as express.Request, response, undefined, undefined, wrapArgv);
+    await launch({ body } as express.Request, response);
     return { status, body: answer };
   };
   app.post('/api/launch', launchJob);

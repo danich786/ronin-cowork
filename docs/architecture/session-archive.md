@@ -22,11 +22,8 @@ The provider and tmux do different halves of the job:
    back with it, KAN-661) with the CLI's resume grammar after the executable:
    `claude --model <m> --dangerously-skip-permissions --resume <uuid>`, `codex --model <m>
    --dangerously-bypass-approvals-and-sandbox resume <uuid>`. A birth command that is not the
-   CLI itself (a part's wrapped launch) falls back to the CLI's plain command. A part that launched a
-   session with its own argv (`launchSession`'s `wrapArgv`) gives Core the same for its restore
-   with `wrapResumeArgv(name, wrap)`; every restore of that name runs the resume argv through
-   it. `rehydrateSession(id)` is the route called from inside the server (Ronin Services'
-   Irasshai uses both).
+   CLI itself (a part's wrapped launch) falls back to the CLI's plain command. An Agent born on a
+   part's provider (`src/provider-parts.ts`) is restored through that part's `wrapResume`.
 5. The provider CLI loads its own conversation history. Ronin restores the session key,
    teams, leads, wipeboards, note, project root, control dial, agent stamp, provider UUID,
    and session type. Only then is the archive manifest removed.
