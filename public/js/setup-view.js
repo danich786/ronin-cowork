@@ -20,7 +20,7 @@ import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
 import { setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, createIrasshaiChat, createOpenIrasshai, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, createIrasshaiChat, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -67,8 +67,6 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
-  // Hosted only (KAN-615): open, restore or launch Irasshai; her chat is Workspace 1's.
-  const openIrasshai = HOSTED ? createOpenIrasshai(() => bench?.select('workspace1')) : null;
   // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
   // her epic's steps. `irasshai` is whether she was live at the last look.
   let irasshai = false;
@@ -348,7 +346,7 @@ export function createSetupView() {
   return {
     el: bench.host,
     glyph: '人',
-    ...workbenchView('setup', { header: { ram: false, feedback: false, leading: [setupStepsHeader], actions: [...(openIrasshai ? [openIrasshai] : []), themeToggle] } }),
+    ...workbenchView('setup', { header: { ram: false, feedback: false, leading: [setupStepsHeader], actions: [themeToggle] } }),
     title: () => 'Ronin Setup',
     place: () => t('setup.short_title', 'Setup'), // the crumb: Home • Setup (owner, 2026-10-24)
     mount: (_host, context) => { ctx = context; },

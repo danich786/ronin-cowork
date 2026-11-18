@@ -10,11 +10,6 @@
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
  *
- * OPEN IRASSHAI (KAN-615): a hosted office's Setup header carries one button. A press asks Ronin
- * Services (POST /api/irasshai/open) to open her: it goes to her if she runs, restores her from
- * her archive if she ended, launches her if she never ran. Once her session is live the pushed
- * session list seats her chat as above. Self-hosted the button is not there.
- *
  * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
  * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
@@ -52,31 +47,6 @@ export function irasshaiOrder(onRead) {
     if (onboarding) { order = onboarding.tasks.slice(); onRead?.(); }
   });
   return order;
-}
-
-/** The Open Irasshai button; `onOpen` runs once she is live (to bring her chat forward). */
-export function createOpenIrasshai(onOpen) {
-  const wrap = document.createElement('span');
-  wrap.className = 'setup-open-irasshai';
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'setup-open-irasshai-button';
-  const label = t('setup.open_irasshai', 'Open Irasshai');
-  button.textContent = label;
-  const note = document.createElement('span');
-  note.className = 'setup-open-irasshai-note';
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    button.textContent = t('setup.opening_irasshai', 'Opening Irasshai…');
-    note.textContent = '';
-    const result = await request('/api/irasshai/open', { method: 'POST' });
-    button.disabled = false;
-    button.textContent = label;
-    if (result.ok) onOpen?.();
-    else note.textContent = result.data?.error || result.message || '';
-  });
-  wrap.append(button, note);
-  return wrap;
 }
 
 /**

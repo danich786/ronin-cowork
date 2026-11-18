@@ -59,11 +59,10 @@ test('Irasshai’s Integrations step seats the integrations panel, embedded, and
   assert.match(view, /if \(type && now && !started\.has\(step\.id\)\) bench\?\.place\(type, 'workspace2'\)/, 'a step she starts herself seats it too');
 });
 
-test('Open Irasshai: a hosted Setup header carries one button that asks Services to open her; self-hosted none (KAN-615)', async () => {
+test('No Open Irasshai: the Setup header carries no button and asks for nothing (KAN-676)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
-  assert.match(view, /const openIrasshai = HOSTED \? createOpenIrasshai\(/, 'hosted only');
-  assert.match(view, /actions: \[\.\.\.\(openIrasshai \? \[openIrasshai\] : \[\]\), themeToggle\]/);
-  assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one press, one request; Services decides open, restore or launch');
+  assert.doesNotMatch(view + chat, /createOpenIrasshai|\/api\/irasshai\/open/);
+  assert.match(view, /actions: \[themeToggle\]/);
 });
 
 test('Irasshai’s chat reads as a conversation: the Chat reading, the person’s messages without Ronin’s head, her replies, nothing else (KAN-617)', async () => {
