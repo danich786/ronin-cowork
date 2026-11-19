@@ -3,7 +3,8 @@
  * SETUP IS IRASSHAI'S WHILE SHE RUNS (owner, 2026-11-15; KAN-573). Irasshai is a hosted
  * office's onboarding Agent (Ronin Services, docs/irasshai.md). While her session is live:
  * - the Assist surface is her chat only: her conversation as Chat draws it (tile-transcript.js)
- *   and the message box under it, with no header tools, no terminal and no tile chrome;
+ *   and the message box under it, with no tile chrome; its header's one tool is the tile's
+ *   Term / Chat toggle, to her terminal and back (KAN-717);
  * - the selector's steps are her onboarding epic's tasks, in the template's order, a done one
  *   marked ✓; a press asks her to take that step, one line through the message queue, shown in
  *   her chat at once ("Let's do Workspace.", never an id); a press on a done one sends her nothing
@@ -145,7 +146,12 @@ export const CHAT_READING = 'chat';
 export const irasshaiReady = () => String(S.sessions.find((one) => one.name === IRASSHAI)?.ready || '');
 export const afterReady = (record, at) => !!at && Date.parse(record?.ts || '') >= Date.parse(at);
 
-/** Her chat: the conversation and the message box, nothing else. */
+/**
+ * Her chat: the conversation and the message box, and the tile's Term / Chat toggle in the
+ * surface header (owner, 2026-11-19; KAN-717): Chat cannot answer every question ("Waiting for
+ * your answer in Terminal"), so a press shows her terminal, a hosted tile on her session without
+ * its own head, and another press comes back. Answer in Terminal presses it.
+ */
 export function createIrasshaiChat() {
   const el = document.createElement('div');
   el.className = 'tile transcript-on setup-irasshai-chat';
@@ -153,7 +159,36 @@ export function createIrasshaiChat() {
   body.className = 'tile-body';
   body.dataset.surface = 'chat';
   el.append(body);
-  const transcript = makeTileTranscript({ admit: (record) => (afterReady(record, irasshaiReady()) ? irasshaiShown(record) : null) });
+  let terminal = null;
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'transcript-toggle';
+  const paintToggle = () => {
+    const on = !terminal || terminal.el.hidden; // pressed while Chat shows, as on a tile
+    toggle.setAttribute('aria-pressed', String(on));
+    toggle.textContent = on ? t('transcript.chat', 'Chat') : t('transcript.terminal', 'Term');
+    toggle.title = t('transcript.toggle_help', 'Each press shows more of the record; past the last one it returns to the terminal');
+    el.classList.toggle('transcript-on', on);
+  };
+  const toTerminal = () => {
+    terminal ||= WorkspaceKit.adapters.createTerminalTileHost({ mode: 'full' });
+    if (!terminal.el.isConnected) el.append(terminal.el);
+    const tile = terminal.mount(IRASSHAI);
+    if (tile) { tile.transcriptWantChat = false; if (tile.transcriptOn) tile.toggleTranscript(); }
+    body.hidden = true;
+    paintToggle();
+  };
+  const toChat = () => {
+    terminal?.park();
+    body.hidden = false;
+    paintToggle();
+  };
+  toggle.addEventListener('click', () => (body.hidden ? toChat() : toTerminal()));
+  paintToggle();
+  const transcript = makeTileTranscript({
+    admit: (record) => (afterReady(record, irasshaiReady()) ? irasshaiShown(record) : null),
+    onAnswer: toTerminal,
+  });
   body.append(transcript.el);
   const say = (text) => {
     const drop = transcript.pending(text);
@@ -173,13 +208,14 @@ export function createIrasshaiChat() {
   };
   return {
     el,
+    toggle,
     say,
     show: () => { transcript.show(IRASSHAI, CHAT_READING); stance(); },
     /** Her ready mark moved: read the chat again from it. */
     reread: () => { transcript.hide(); transcript.show(IRASSHAI, CHAT_READING); stance(); },
     stance,
-    hide: () => transcript.hide(),
-    dispose: () => { transcript.dispose(); composer.dispose(); },
+    hide: () => { toChat(); transcript.hide(); },
+    dispose: () => { terminal?.destroy(); transcript.dispose(); composer.dispose(); },
   };
 }
 
