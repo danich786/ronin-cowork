@@ -18,4 +18,6 @@ test('a Chat file link resolves ~ to home and a relative path in the first base 
   assert.equal(resolveFileLink('~/x/y.md', [], '/home/me'), null);
   assert.equal(resolveFileLink('/no/such/file.md', []), null);
   assert.equal(resolveFileLink(cwd, []), null);
+  // Written from the folder above a Workspace folder (samurai_lab/ronin_cloud/X.md): that folder is a base.
+  assert.equal(resolveFileLink(`${path.basename(cwd)}/docs/a.md`, [desk, path.dirname(cwd)]), path.join(cwd, 'docs', 'a.md'));
 });

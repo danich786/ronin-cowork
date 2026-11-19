@@ -7,7 +7,7 @@ import { WorkspacePrimitives } from './workspace-primitives.js';
 import { openDocOver } from './tile-doc-view.js';
 import { fileLinkPath } from './document-links.js';
 import { answerable, buildQuestion } from './chat-question.js';
-import { linkChat } from './chat-item-links.js';
+import { commitPagePath, linkChat } from './chat-item-links.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -268,7 +268,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   }
 
   /** A record drawn, its item ids made links to the item overlay (chat-item-links.js). */
-  const linkItems = (rec) => linkChat(entryFor(rec), { item: openItem, agent: openAgent, doc: openDoc, session: () => session });
+  const openCommit = (hash) => commitPagePath(session, hash).then((path) => { if (path) openDoc(path); });
+  const linkItems = (rec) => linkChat(entryFor(rec), { item: openItem, agent: openAgent, doc: openDoc, commit: openCommit, session: () => session });
   function entryFor(rec) {
     const entry = document.createElement('div');
     entry.className = 'tile-transcript-entry';

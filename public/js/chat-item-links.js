@@ -7,8 +7,11 @@
  *    (store.js `epics`, `epicItems`), else the item read answers it (a renamed id such as w806, a
  *    Done item no longer pushed).
  *  - an Agent's name, @name or bare, that the session list holds (KAN-701): opens that Agent.
- *  - a document, a path or a file name (~/ronin/library/ABOUT_USER.md, docs/a.md, ABOUT_USER.md),
- *    that the Agent's file-link route finds as a file (KAN-701): opens it in the tile's Docs.
+ *  - a document, a path or a file name (~/ronin/library/ABOUT_USER.md, docs/a.md, ABOUT_USER.md,
+ *    samurai_lab/ronin_cloud/X.md written from above the Workspace folders), that the Agent's
+ *    file-link route finds as a file (KAN-701): opens it in the tile's Docs.
+ *  - a commit hash (db709a8) that is a commit in the Agent's repos (KAN-701): opens
+ *    `git show --stat -p` of it in the tile's Docs, as a read-only page.
  *
  * One read per id or path per page, only for what the push and the session list cannot answer.
  */
@@ -21,12 +24,16 @@ const DOC = String.raw`(?:~|\.{1,2})?\/?[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]{1
 // The item store's ids (src/work-items.ts ID): w123, or a Jira key such as KAN-123.
 const ITEM = String.raw`w[1-9][0-9]*|[A-Z][A-Z0-9_]+-[1-9][0-9]*`;
 const AGENT = String.raw`@?[a-z][a-z0-9_-]*[a-z0-9]`;
-const TOKEN = new RegExp(String.raw`(?<![\w/.~@-])(?:(?<item>${ITEM})|(?<doc>${DOC})|(?<agent>${AGENT}))(?![\w/-])`, 'g');
+// A short or full commit hash, with at least one letter (not a number); alone, or after branch@
+// as hand-ins say it (dev@7e2b28b). The Agent's repos decide whether it is one.
+const COMMIT = String.raw`(?=[0-9]*[a-f])[0-9a-f]{7,40}`;
+const TOKEN = new RegExp(String.raw`(?:(?<=\w@)(?<atcommit>${COMMIT})(?![\w.])|(?<![\w/.~@-])(?:(?<item>${ITEM})|(?<commit>${COMMIT})(?![\w.])|(?<doc>${DOC})|(?<agent>${AGENT})))(?![\w/-])`, 'g');
 const HAS_TOKEN = new RegExp(TOKEN.source); // a stateless test: the /g one carries lastIndex into matchAll
 const BARE_DOC = /^[\w.@+-]+\.(?:md|html?|txt|json|ya?ml|csv|pdf|png|jpe?g)$/i;
 
 const items = new Map(); // id → Promise<item | null>
 const docs = new Map(); // session \0 path → Promise<path | null>
+const commits = new Map(); // session \0 hash → Promise<hash | null>
 
 function pushed(id) {
   for (const list of [get('epics'), get('epicItems')]) {
@@ -60,6 +67,21 @@ export function knownDoc(session, written) {
   }
   return docs.get(key);
 }
+
+/** The hash, when it is a commit in one of `session`'s repos (its desks, working folder, Workspace folders), else null. */
+export function knownCommit(session, hash) {
+  if (!session) return null;
+  const key = `${session}\u0000${hash}`;
+  if (!commits.has(key)) {
+    commits.set(key, request(`/api/sessions/${encodeURIComponent(session)}/commit?ref=${encodeURIComponent(hash)}`, { cache: 'no-store' })
+      .then((r) => (r.ok && r.data?.sha ? hash : null), () => null));
+  }
+  return commits.get(key);
+}
+
+/** `git show --stat -p` of a commit in `session`'s repos, as the page Docs opens (read-only), or null. */
+export const commitPagePath = (session, hash) => request(`/api/sessions/${encodeURIComponent(session)}/commit?ref=${encodeURIComponent(hash)}&show=1`, { cache: 'no-store' })
+  .then((r) => (r.ok && r.data?.path ? r.data.path : null), () => null);
 
 function link(doc, words, kind, target, open, title) {
   const a = doc.createElement('a');
@@ -97,10 +119,12 @@ export function linkChat(entry, open = {}) {
     const text = node.nodeValue;
     const found = [...text.matchAll(TOKEN)].map((m) => {
       const { item, doc: path, agent } = m.groups;
-      const kind = item ? 'item' : path ? 'doc' : 'agent';
-      const words = item || path || agent;
+      const commit = m.groups.commit || m.groups.atcommit;
+      const kind = item ? 'item' : commit ? 'commit' : path ? 'doc' : 'agent';
+      const words = item || commit || path || agent;
       if (!open[kind]) return null;
-      const target = kind === 'item' ? knownItem(words) : kind === 'doc' ? knownDoc(session, words) : knownAgent(words);
+      const target = kind === 'item' ? knownItem(words) : kind === 'commit' ? knownCommit(session, words)
+        : kind === 'doc' ? knownDoc(session, words) : knownAgent(words);
       return target ? { at: m.index, words, kind, target } : null;
     }).filter(Boolean);
     if (!found.length) continue;

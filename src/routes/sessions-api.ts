@@ -67,6 +67,7 @@ import { randomUUID } from 'node:crypto';
 import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
 import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
+import { commitPage, resolveCommit } from '../commit-link.js';
 import { storeDir } from '../resources.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
@@ -651,18 +652,41 @@ export function registerSessions(app: express.Express): void {
 
   // A file link in this Agent's Chat, written as ~/… or relative to where it works, as the full
   // path Docs opens (public/js/tile-transcript.js fileLinkPath).
+  // Where what an Agent names in Chat is looked for (KAN-701): its repos (desks, working folder,
+  // the Workspace folders), its session folder and drop/ (a file handed to it), the folders that
+  // hold the Workspace folders (a path written from above them: samurai_lab/ronin_cloud/X.md),
+  // and the library (ABOUT_USER.md and the like).
+  const chatPlaces = async (name: string) => {
+    const desks = await listDeskRecords({ owner: name }).catch(() => []);
+    const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
+    const roots = (await listProjectRoots().catch(() => [])).filter((r) => !r.archived).map((r) => r.dir);
+    const own = await sessionKey(name).then((key) => sessionRecordDir(key), () => '');
+    const repos = [...desks.map((d) => d.worktree), cwd, ...roots];
+    return { own, repos, files: [...repos, own, own && path.join(own, 'drop'), ...new Set(roots.map((dir) => path.dirname(dir))), storeDir('library')] };
+  };
+
   app.get('/api/sessions/:name/file-link', async (req, res) => {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
-    const desks = await listDeskRecords({ owner: name }).catch(() => []);
-    const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
-    const roots = await listProjectRoots().catch(() => []);
-    // Its session folder and drop/ (a file handed to it), and the library (ABOUT_USER.md and the like).
-    const own = await sessionKey(name).then((key) => sessionRecordDir(key), () => '');
-    const file = resolveFileLink(String(req.query.path ?? ''), [...desks.map((d) => d.worktree), cwd, own, own && path.join(own, 'drop'),
-      ...roots.filter((r) => !r.archived).map((r) => r.dir), storeDir('library')]);
+    const file = resolveFileLink(String(req.query.path ?? ''), (await chatPlaces(name)).files);
     if (!file) return res.status(404).json({ error: 'No such file.' });
     res.json({ path: file });
+  });
+
+  // A commit hash in this Agent's Chat: { sha } when it is a commit in one of its repos; with
+  // show=1, `git show --stat -p` of it written as a page in its session folder, { path } for Docs.
+  app.get('/api/sessions/:name/commit', async (req, res) => {
+    const { name } = req.params;
+    if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
+    const { own, repos } = await chatPlaces(name);
+    const ref = String(req.query.ref ?? '');
+    if (req.query.show && own) {
+      const page = await commitPage(ref, repos, path.join(own, 'commits')).catch(() => null);
+      return page ? res.json({ path: page }) : res.status(404).json({ error: 'No such commit.' });
+    }
+    const found = await resolveCommit(ref, repos);
+    if (!found) return res.status(404).json({ error: 'No such commit.' });
+    res.json({ sha: found.sha });
   });
 
   app.get('/api/sessions/:name/project-root', async (req, res) => {
