@@ -229,7 +229,7 @@ every terminal agent behaves like Claude.
 The model id and the command must agree: `openai · gpt-5.6-terra` resolves to a Codex
 command carrying `--model gpt-5.6-terra`; it must never resolve to bare `codex` and
 inherit an unseen local default. The internal `configured` launch mode is labelled Native, and is
-only an explicit choice: an absent launch mode is `live_dangerously`;
+only an explicit choice: anything else is `live_dangerously` ([Agent launches](agent-launches.md));
 on that axis it means no permission override, independently of Model. `live_dangerously`
 uses the Agent page's complete dangerous form and is unavailable when none is declared.
 
@@ -240,8 +240,8 @@ interface after starting the command:
 MODEL_PROVIDERS.md facts + docs/agents/<cli>.md commands
   → GET /api/provider-catalog
   → the one picker (providerModelPair, public/js/form-steps.js)
-  → POST /api/launch { cmd, launch_mode }
-  → combine the Model and Launch mode choices into one complete command
+  → POST /api/launch { provider, model }
+  → combine the Model choice and the Mode (Workspace's, else Campaign's, else Dangerously) into one complete command
   → run the resolved cmd in the new tile
   → recognize dialog or ready prompt
   → type the built brief
