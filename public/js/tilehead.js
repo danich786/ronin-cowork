@@ -12,6 +12,7 @@ import { isPlanRef, planName } from './plan-attachment.js';
 import { isLinkDoc, openLinkDoc } from './docs.js';
 import { chatMarkdown, setChatMarkdown } from './tile-transcript.js';
 import { createItemIsland, statusKey } from './tile-island.js';
+import { readAloudShown, speakButton, toggleReadAloud } from './read-aloud.js';
 
 /**
  * THE HEADER, left to right. One row per control; see the file header for the columns.
@@ -65,6 +66,14 @@ const HEADER = () => {
       if (el.textContent !== label) el.textContent = label; // a push repaints only what changed (KAN-664)
     },
     on: (tile) => tile.toggleTranscript() },
+
+  // READ ALOUD (KAN-705): plays the Agent's last reply. Only in a hosted office with KOE
+  // loaded; everywhere else it is not there at all. js/read-aloud.js holds its states.
+  { key: 'speakBtn', cls: 'speak-toggle', needs: 'session',
+    widget: () => ({ el: speakButton(Object.assign(document.createElement('button'), { type: 'button', className: 'speak-toggle' })) }),
+    quiet: t('koe.speak_help', 'Read the last reply aloud'),
+    read: (tile, el) => { el.hidden = !readAloudShown(); return el.title; },
+    on: (tile, el) => void toggleReadAloud(tile.session, el) },
 
   // Hidden until there is a reading — a plain shell pane has no context, and that is fine.
   //
