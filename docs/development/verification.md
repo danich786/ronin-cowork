@@ -13,8 +13,8 @@ Only what a user would hit when it breaks, one file each:
 | `tests/agents.test.ts` | launching an Agent (Claude, Codex, a terminal), archive and restore |
 | `tests/tools.test.ts` | an Agent's tools reaching Ronin: `item`, `work-record`, `edges`, `ronin-url` |
 | `tests/stores.test.ts` | Teams, Workspaces, plans, items and secrets reading back, also after a restart |
-| `tests/promotion.test.ts` | desk open, hand-in, promotion into `dev`; a failed health check reverted |
-| `tests/setup.test.ts` | a fresh box: health, the page, Setup's providers and sign-in, Help (Mika) |
+| `tests/promotion.test.ts` | desk open, hand-in, promotion into `dev`; a failed health check reverted; Chat's file and commit links |
+| `tests/setup.test.ts` | a fresh box: health, the page, Setup's providers and sign-in, the onboarding epic, Help (Mika) |
 | `tests/sign-in.test.ts` | the password gate on the page and the API, login and logout |
 | `tests/terminal.test.ts` | typing in a tile, the Message box, a foreign socket refused |
 
