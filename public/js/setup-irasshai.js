@@ -139,10 +139,11 @@ export const CHAT_READING = 'chat';
 /**
  * HER CHAT STARTS AT HER GREETING (owner, 2026-11-19; KAN-694): she runs `ready` right before she
  * speaks, and Core keeps that moment on her session (`ready`, pushed in the session list). Her chat
- * draws only records from that moment on; with no mark it draws everything. A new mark reads again.
+ * draws only records from that moment on; with no mark yet it draws nothing, only the working dots
+ * (owner, 2026-11-19: her pre-ready narration reached the chat). A new mark reads again.
  */
 export const irasshaiReady = () => String(S.sessions.find((one) => one.name === IRASSHAI)?.ready || '');
-export const afterReady = (record, at) => !at || Date.parse(record?.ts || '') >= Date.parse(at);
+export const afterReady = (record, at) => !!at && Date.parse(record?.ts || '') >= Date.parse(at);
 
 /** Her chat: the conversation and the message box, nothing else. */
 export function createIrasshaiChat() {
@@ -165,7 +166,9 @@ export function createIrasshaiChat() {
   composer.show(true);
   const stance = () => {
     const row = (get('home') || []).find((one) => one.name === IRASSHAI);
-    transcript.setStance(row?.stance || '', row?.tool);
+    // Before her greeting she is getting ready: the dots, never what she is doing.
+    if (!irasshaiReady()) transcript.setStance('working', null);
+    else transcript.setStance(row?.stance || '', row?.tool);
     transcript.rewatch();
   };
   return {
