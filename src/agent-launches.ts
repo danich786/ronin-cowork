@@ -57,3 +57,14 @@ export const renderLaunch = (template: readonly string[], values: Record<string,
   template.map((part) => part.replace(/\{([a-z_]+)\}/g, (_match, key: string) => values[key] ?? `{${key}}`));
 
 export const commandText = (argv: readonly string[]): string => argv.join(' ');
+
+/** The CLI's approval-bypass arguments: what `launch_native_dangerously` adds to `launch_native`. */
+export const bypassArgs = (grammar: AgentLaunches): string[] =>
+  grammar.nativeDangerously.slice(grammar.native.length);
+
+/** An argv in Dangerously: the bypass arguments added where they are missing (KAN-718). An argv
+ *  no Agent document describes, or one already carrying them, is returned unchanged. */
+export const withBypass = (argv: readonly string[], grammar: AgentLaunches): string[] => {
+  const add = bypassArgs(grammar);
+  return add.length && !add.every((arg) => argv.includes(arg)) ? [...argv, ...add] : [...argv];
+};

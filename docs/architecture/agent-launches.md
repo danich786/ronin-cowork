@@ -21,10 +21,13 @@ Native` does not prevent an explicit model. Only Native + Native produces the ba
 command. Resume is separate: it revives a known provider conversation and is not either
 a model choice or a launch mode.
 
-**The default Mode is Dangerously** (owner, 2026-11-18): a Campaign or Workspace that sets no
-Mode launches its Agents Dangerously; Native is only an explicit choice. A bare-metal Agent, which
-has no Workspace, stays Native unless Dangerously is chosen. **Mika always launches Dangerously**,
-whatever the Campaign says: an approval prompt would stop her mid-answer.
+**Every Agent launches Dangerously** unless a person chose Native (owner,
+2026-11-18 and 2026-11-19; KAN-676, KAN-718). An Agent nothing sets a Mode for (no Campaign, a
+bare-metal Agent) launches Dangerously. A command no catalog row
+names gets the CLI's own bypass arguments added (`withBypass`, `src/agent-launches.ts`). A resume
+is its birth command again; with none, the CLI's Dangerously command. **Mika always launches
+Dangerously**: an approval prompt would stop her mid-answer. Ronin writes no sandbox or approval
+setting into any CLI's config and runs no sandbox of its own (no bubblewrap).
 
 ## The standard command forms
 

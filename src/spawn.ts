@@ -5,6 +5,7 @@ import { REPO_ROOT } from './resources.js';
 import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
 import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
+import { bypassArgs, commandText, readAgentLaunches, withBypass } from './agent-launches.js';
 import { readAgentsSection, readSetupSection } from './machine-state.js';
 import { offAt, readProviderSummary } from './provider-summary.js';
 import { storeDir } from './resources.js';
@@ -243,10 +244,17 @@ async function resolveLaunch(form: SpawnForm, facts: LaunchFacts) {
     }
   }
   // Mode is the Workspace's, Mika's always Dangerously (owner, 2026-11-18: "this is a stupid check on
-  // an empty VM"); Dangerously where the provider declares it, Native otherwise.
-  const wanted = agent ? (form.house_seat === 'mika' ? 'live_dangerously' : parentSeed?.seeds.launch_mode.value ?? 'configured') as LaunchMode : 'configured';
-  const launchMode: LaunchMode = wanted === 'live_dangerously' && spec?.dangerousCmd ? 'live_dangerously' : 'configured';
-  if (launchMode === 'live_dangerously' && spec?.dangerousCmd) cmd = spec.dangerousCmd;
+  // an empty VM"). Every Agent is Dangerously unless Native was chosen (owner, 2026-11-19; KAN-718):
+  // no Campaign or a bare-metal Agent is Dangerously.
+  const wanted = agent ? (form.house_seat === 'mika' ? 'live_dangerously' : parentSeed?.seeds.launch_mode.value ?? 'live_dangerously') as LaunchMode : 'configured';
+  let launchMode: LaunchMode = 'configured';
+  if (wanted === 'live_dangerously' && spec?.dangerousCmd) { cmd = spec.dangerousCmd; launchMode = wanted; }
+  else if (wanted === 'live_dangerously') {
+    // A command no catalog row names (an explicit cmd): the CLI's own bypass arguments added.
+    const words = cmd.trim().split(/\s+/);
+    const grammar = await readAgentLaunches(spec?.cli || path.basename(words[0] ?? '')).catch(() => null);
+    if (grammar && bypassArgs(grammar).length) { cmd = commandText(withBypass(words, grammar)); launchMode = wanted; }
+  }
   return { cmd, spec, chosen, launchMode };
 }
 
