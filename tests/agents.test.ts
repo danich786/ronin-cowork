@@ -24,7 +24,9 @@ test('an Agent launches: its CLI starts with its brief, Ronin\'s tools on PATH a
   assert.match(run.argv, /^claude /);
   const brief = /Read first: (\S+AGENT_BIRTH_BRIEF\.md)/.exec(run.argv)?.[1];
   assert.ok(brief, run.argv);
-  assert.match(await fs.readFile(brief, 'utf8'), /— end of packet for ana —/);
+  const text = await fs.readFile(brief, 'utf8');
+  assert.match(text, /— end of packet for ana —/);
+  assert.ok(!text.includes('### Helpful Assistant'), 'an ordinary Agent is not told the Helpful Assistant (KAN-708)');
   assert.ok(brief.startsWith(ronin.scratch), 'the brief is in the private data root');
 
   const PATH = run.env.PATH.split(':');
@@ -48,6 +50,27 @@ test('a Codex Agent launches its own CLI', async () => {
   assert.equal(launched.status, 200, JSON.stringify(launched.body));
   const runs = await until(async () => (await ronin.cliRuns()).filter((r) => r.argv.startsWith('codex ')).length && ronin.cliRuns(), 'codex to start');
   assert.ok(runs.some((r) => r.argv.startsWith('codex ')));
+});
+
+test('a stock behaviour told only when added: the Helpful Assistant in full; the user\'s own file replaces it whole (KAN-708)', async () => {
+  const told = async (name: string): Promise<string> => {
+    const before = (await ronin.cliRuns()).length;
+    const launched = await ronin.api('/api/launch', { body: { name, provider: 'anthropic', prompt: 'Hello.', brief: { add: [{ name: 'irasshai', depth: 'full' }] } } });
+    assert.equal(launched.status, 200, JSON.stringify(launched.body));
+    const runs = await until(async () => { const r = await ronin.cliRuns(); return r.length > before && r; }, `${name}'s CLI`);
+    const brief = /Read first: (\S+AGENT_BIRTH_BRIEF\.md)/.exec(runs.at(-1)!.argv)![1];
+    return fs.readFile(brief, 'utf8');
+  };
+  const stock = await fs.readFile(path.join(ROOT, 'ronin_catalogs', 'behaviours', 'irasshai.md'), 'utf8');
+  const first = stock.split('\n\n')[1].split('\n')[0];
+  const text = await told('helper');
+  assert.ok(text.includes('### Helpful Assistant') && text.includes(first), 'added: the stock text, in full');
+  const own = path.join(ronin.env.RONIN_USER_ROOT!, 'behaviours', 'irasshai.md');
+  await fs.mkdir(path.dirname(own), { recursive: true });
+  await fs.writeFile(own, '# Helpful Assistant\n- **seed:** the owner\'s own\n- **depth:** none\n\nThe owner\'s own words.\n');
+  const shadowed = await told('helper2');
+  assert.ok(shadowed.includes('The owner\'s own words.') && !shadowed.includes(first), 'the user\'s file wins whole');
+  await fs.rm(own);
 });
 
 test('a terminal launches with no Agent CLI', async () => {
