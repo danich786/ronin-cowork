@@ -47,11 +47,12 @@ export function providerPresentation(provider) {
     action: 'off',
   };
   // How to sign in, in the CLI's own words (KAN-716): one line per provider from AGENTS' signIn.
+  // Once its credentials are on the machine, the step says so instead (KAN-723).
   if (provider?.login_open) return {
     inventoryState: 'Sign-in open',
-    detail: provider.sign_in_how
-      ? `${provider.sign_in_how} When ${label} says you are signed in, press Done. Cancel ends this terminal session without saving these details.`
-      : `Finish signing in to ${label} in the terminal below, then press Done. Cancel ends this terminal session without saving these details.`,
+    detail: provider.signed_in
+      ? `${label} is signed in on this machine. Press Done.`
+      : `${provider.sign_in_how || `Sign in to ${label} in the terminal below.`} Signed in? Press Done. Cancel ends this terminal session without saving these details.`,
     action: 'login_open',
   };
   if (provider?.install_open) return {

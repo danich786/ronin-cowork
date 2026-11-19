@@ -6,7 +6,7 @@ import { updateCommand, updateLineOf } from './agent-install.js';
 import { AGENTS, discoverExecutable, launchArgv, listAgentAvailability } from './agents.js';
 import { updateSection } from './machine-state.js';
 import { listProviderCatalog, newerVersion, type ModelList, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
-import { activatedAt, npmPackageOf, offAt } from './provider-summary.js';
+import { activatedAt, npmPackageOf, offAt, providerSignedIn } from './provider-summary.js';
 import { peekProjectRoots, upsertProjectRoot } from './project-roots.js';
 import { rootDir } from './resources.js';
 import { runCommand } from './send.js';
@@ -231,7 +231,8 @@ export async function setupRuntimeAnswer(
     const completed = activatedAt(section, agent.id);
     const offSince = offAt(section, agent.id);
     const isInstalled = summary.installed.includes(agent.id);
-    const signedIn = isInstalled && summary.signed_in.includes(agent.id);
+    // While its sign-in is open, the credential file is read now, not from the last measure (KAN-723).
+    const signedIn = isInstalled && (summary.signed_in.includes(agent.id) || (loginOpen && await providerSignedIn(agent.id)));
     const activated = isInstalled && offSince === null && (completed !== null || signedIn) && entry?.launchable === true;
     // Not activated: nothing was asked and nothing is offered — Installed, and stop. A
     // version from an earlier measurement is not printed as though it were current.

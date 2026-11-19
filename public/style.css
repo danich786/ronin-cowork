@@ -4628,6 +4628,7 @@ body {
 .setup-provider-completion { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-subsection); min-width: 0; padding: var(--space-inset); border: var(--edge) solid var(--line); border-radius: var(--radius-small); }
 .setup-provider-completion-actions { display: flex; flex-wrap: wrap; gap: var(--space-inline); width: 100%; }
 .setup-provider-completion-actions > .wk-action { flex: 0 0 10rem; width: 10rem; min-height: var(--control-height); }
+.setup-provider-completion-actions > .setup-provider-done { flex: 1 1 100%; width: 100%; }
 .setup-provider-authentication-fields { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-subsection); width: 100%; min-width: 0; }
 .setup-provider-completion[hidden], .setup-provider-sign-in-title[hidden] { display: none; }
 .setup-provider-completion > .setup-provider-note { margin: 0; }
