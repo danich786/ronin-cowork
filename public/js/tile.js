@@ -279,13 +279,14 @@ export class Tile {
     return Array.isArray(S.services) && S.services.includes('rireki');
   }
 
-  /** A tile's first view, by its session's type (owner, 2026-11-18, w779): Terminal for a Bare
-   *  Metal Agent or a Terminal session, Chat for the rest; null until the session's row carries
-   *  its launch identity (a newborn's row can arrive before it). */
+  /** A tile's first view, by its session's launch identity (owner, 2026-11-18, w779; 2026-11-19,
+   *  KAN-715): Chat only for a Cowork Agent running a CLI; the terminal for everything else (a
+   *  provider sign-in, a Terminal session, a Bare Metal Agent, a shell). Null until the session's
+   *  row carries its identity (a newborn's row can arrive before it). */
   firstView() {
-    const type = S.sessions.find((r) => r.name === this.session)?.identity?.sessionType;
-    if (!type) return null;
-    return type === 'bare_metal_agent' || type === 'terminal' ? 'terminal' : 'chat';
+    const identity = S.sessions.find((r) => r.name === this.session)?.identity;
+    if (!identity?.sessionType) return null;
+    return identity.sessionType === 'cowork_agent' && identity.cli ? 'chat' : 'terminal';
   }
 
   /**
