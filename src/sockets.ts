@@ -1,7 +1,7 @@
 import type { BornInfo, ItemChange, RowFields, Sockets } from './sockets-contract.js';
 import { deliverToWatchers } from './ws/watchers.js';
 
-type BootHook = { start(): void | Promise<void>; stop?(): void };
+type BootHook = { start(): void | Promise<void>; started?(): void | Promise<void>; stop?(): void };
 const bootHooks: BootHook[] = [];
 const willBornHooks: Array<(name: string) => void | Promise<void>> = [];
 const bornHooks: Array<(info: BornInfo) => void | Promise<void>> = [];
@@ -42,6 +42,10 @@ export async function startBootHooks(): Promise<void> {
       console.error('[sockets] boot hook failed:', e);
     }
   }
+}
+/** Once Ronin is listening: each part's `started`, not awaited (KAN-721). */
+export function runStartedHooks(): void {
+  for (const h of bootHooks) if (h.started) void Promise.resolve().then(() => h.started!()).catch((e) => console.error('[sockets] started hook failed:', e));
 }
 export function stopBootHooks(): void {
   for (const h of bootHooks) {
