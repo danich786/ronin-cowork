@@ -27,6 +27,7 @@ import {
   setProviderSessionId,
   setSessionKey,
   setSessionTitle,
+  setSessionReady,
   stopSessionTree,
 } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
@@ -36,7 +37,7 @@ import { sessionKey } from '../session-dir.js';
 import { isValidRootName, listProjectRoots } from '../project-roots.js';
 import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
-import { broadcastEvent, pushTeams } from '../ws/events.js';
+import { broadcastEvent, changed, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, readBriefRecord, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
 import { readAgentComposition } from '../agent-composition.js';
@@ -590,6 +591,22 @@ export function registerSessions(app: express.Express): void {
         shutdownOperations.delete(id);
       }, 5 * 60_000).unref();
     })());
+  });
+
+  // READY (KAN-694): `ready` from inside an Agent's pane marks this moment on its session; a chat
+  // that honours it (Setup's Helpful Assistant) draws only what follows. It acknowledges, never refuses.
+  app.post('/api/ready', async (req, res) => {
+    const pane = String(req.body?.pane ?? '').trim();
+    if (!/^%\d+$/.test(pane)) return res.status(400).json({ error: 'Expected a tmux pane id like %7.' });
+    const name = await sessionOfPane(pane);
+    if (!name) return res.status(404).json({ error: `No session owns pane ${pane}.` });
+    try {
+      const at = await setSessionReady(name);
+      changed();
+      res.json({ ok: true, name, at });
+    } catch (e) {
+      res.status(500).json({ error: String((e as Error)?.message ?? e) });
+    }
   });
 
   app.put('/api/sessions/:name/title', async (req, res) => {

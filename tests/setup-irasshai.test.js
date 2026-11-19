@@ -64,12 +64,14 @@ test('She opens a step’s surface with show; the integrations panel is one, emb
   assert.match(chat, /json: \{ tab: mikaTab\(\) \}/, 'the tab goes with each ask for her');
 });
 
-test('Opening a hosted Setup opens her; the bar button opens her anywhere; a new birth gets a new chat (KAN-676, KAN-691)', async () => {
+test('Opening a hosted Setup opens her; her selector entry opens her anywhere; a new birth gets a new chat (KAN-676, KAN-694)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
   assert.match(view, /if \(HOSTED\) void askIrasshai\(\);/, 'hosted, on opening Setup');
   assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one request; Services shows her or makes her fresh');
-  assert.match(view, /garden\.header\?\.actions\.prepend\(irasshaiButton\.el\)/, 'the button sits in Assist’s header, on any install');
-  assert.match(chat, /if \(button\.disabled\) return;/, 'repeats are ignored while a press runs');
+  assert.match(view, /profiles\.define\(PROFILE, \[IRASSHAI_OPEN_TYPE,/, 'her entry tops the selector');
+  assert.match(view, /selectorFilter: \(type\) => type === IRASSHAI_OPEN_TYPE \|\|/, 'always there, on any install');
+  assert.match(chat, /if \(state === 'opening'\) return;/, 'repeats are ignored while a press runs');
+  assert.match(chat, /afterReady\(record, irasshaiReady\(\)\)/, 'her chat starts at her ready mark');
   assert.match(view, /if \(chat && chat\.key !== irasshai\) \{ garden\.chat\(null\); chat\.dispose\(\); chat = null; \}/, 'a new birth key: the last chat goes');
 });
 

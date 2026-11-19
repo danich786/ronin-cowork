@@ -288,7 +288,8 @@ nothing paints exactly this.
 - **setup.open_settings:** Open Ronin Settings
 - **setup.open_setup:** Open Ronin Setup
 - **setup.irasshai_open:** Helpful Assistant
-- **setup.irasshai_open_title:** Open the Helpful Assistant, your welcome Agent
+- **setup.irasshai_open_title:** Your welcome Agent: start here
+- **setup.irasshai_here:** Here, in Assist
 - **setup.irasshai_opening:** Opening…
 - **setup.irasshai_failed:** Couldn’t open the Helpful Assistant
 

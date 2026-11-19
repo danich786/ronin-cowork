@@ -45,9 +45,6 @@
   .garden-canvas-scene[hidden] { display: none; }
   .garden-canvas[data-chat='on'] .wk-surface-header-actions { display: none; }
   .garden-canvas .setup-irasshai-chat { height: 100%; min-height: 0; border: 0; border-radius: 0; }
-  /* Her door in Assist's header (KAN-691): a word, not a glyph. */
-  .garden-canvas .setup-irasshai-button { width: auto; padding: 0 var(--space-control); white-space: nowrap; }
-  .garden-canvas .setup-irasshai-button:disabled { cursor: progress; opacity: 0.7; }
 
   /* The horizon keeps its height and crops at the sides: a narrower column
      shows less field, never a squashed one. */

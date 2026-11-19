@@ -21,7 +21,7 @@ import { mikaShowHandlers, setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
 import { mikaTab, reportMikaView } from './mika.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiButton, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -46,9 +46,10 @@ function registerSetupWorkbench() {
   registerPasswordSurface();
   registerGardenCanvas();
   registerPresetsSurface();
+  registerIrasshaiOpen();
   registerIrasshaiSteps();
   registerIrasshaiIntegrations();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, IRASSHAI_INTEGRATIONS_TYPE, ...ORDER]);
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [IRASSHAI_OPEN_TYPE, GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, IRASSHAI_INTEGRATIONS_TYPE, ...ORDER]);
 }
 
 export function createSetupView() {
@@ -68,7 +69,7 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
-  const irasshaiButton = createIrasshaiButton();
+  const opener = createIrasshaiOpener({ refresh: () => bench?.refreshSelector(), showChat: () => { bench?.select('workspace1'); garden?.el.scrollIntoView?.({ block: 'start' }); } }); // a phone stacks the workspaces
   // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
   // her epic's steps. `irasshai` is her session's birth key at the last look ('' not live): a new
   // birth gets a new chat, never the last one's records (KAN-676).
@@ -89,10 +90,13 @@ export function createSetupView() {
       chat.hide();
     }
   };
+  let ready = '';
   const followIrasshai = () => {
     const live = irasshaiKey();
-    irasshaiButton.paint();
+    const mark = irasshaiReady();
+    if (mark !== ready) { ready = mark; if (chat && live === irasshai) chat.reread(); }
     if (live !== irasshai) {
+      if (live && !irasshai) opener.arrived();
       irasshai = live;
       seatChat();
       refreshSetupStepsHeader();
@@ -170,10 +174,10 @@ export function createSetupView() {
       if (url) location.assign(url);
     },
     irasshaiSteps: () => steps(),
+    irasshaiOpen: () => opener.offer(),
     takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
     onGardenCanvas: (next) => {
       garden = next;
-      garden.header?.actions.prepend(irasshaiButton.el); // Assist's header: her door (KAN-691)
       seatChat();
       garden.controls.replaceChildren();
       garden.controls.hidden = true;
@@ -330,7 +334,7 @@ export function createSetupView() {
     selectorCurrent: true,
     hintsCollapsed: true,
     hintsPreferenceScope: 'setup',
-    selectorFilter: (type) => (irasshai ? type === IRASSHAI_STEP_TYPE : ORDER.includes(type)),
+    selectorFilter: (type) => type === IRASSHAI_OPEN_TYPE || (irasshai ? type === IRASSHAI_STEP_TYPE : ORDER.includes(type)),
     onSelectorRefresh: paint,
     onStateChange: save,
     onPlacement: (snapshot) => {
@@ -344,7 +348,7 @@ export function createSetupView() {
       save();
     },
   });
-  bench.host.querySelector('.wk-workbench-selector-cards')?.addEventListener('click', () => queueMicrotask(() => bench.select('workspace2')));
+  bench.host.querySelector('.wk-workbench-selector-cards')?.addEventListener('click', (event) => { if (!event.target.closest?.('.setup-irasshai-card')) queueMicrotask(() => bench.select('workspace2')); });
   followIrasshai();
 
   return {
@@ -369,7 +373,7 @@ export function createSetupView() {
       seatChat();
       entered = true; report();
       // A hosted office's Setup is Irasshai's: opening it asks for her (shown live, else a fresh launch).
-      // Elsewhere she comes on Assist's Helpful Assistant button (KAN-691).
+      // Elsewhere she comes on her selector entry (KAN-694).
       if (HOSTED) void askIrasshai();
       void request('/api/setup/progress', { cache: 'no-store' }).then((result) => {
         if (generation !== enterGeneration || !result.ok || !acceptProgress(result.data)) return;

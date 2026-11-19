@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" ready "$@"
+# ready — mark the moment you are about to speak to the person (KAN-694). A chat that honours
+# the mark (Setup's Helpful Assistant) draws only what follows it, so your reading and
+# preparing above it is not shown. It acknowledges; it never refuses or stops you.
+#
+# Usage: ready     — you do not name a session; Ronin resolves your pane.
+set -u
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+case "${1:-}" in
+  -h|--help) cat <<'H'
+ready — mark that you are about to speak to the person
+
+Usage:
+  ready
+
+Run it once, right before your first words to them. Ronin keeps the moment on your
+session; a chat that honours it shows only what you say after it. Running it again moves
+the mark. Without it, the chat shows everything, as before.
+H
+    exit 0 ;;
+  '') ;;
+  *) echo 'Usage: ready   (takes nothing; run ready --help)' >&2; exit 2 ;;
+esac
+pane="${TMUX_PANE:-$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)}"
+[ -n "$pane" ] || { echo "NOT-IN-TMUX: no session to mark (are you inside a tmux pane?)" >&2; exit 2; }
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+out=$(curl -sS -m 20 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -H 'content-type: application/json' -X POST "$url/api/ready" -d "{\"pane\":\"$pane\"}") || { echo "STUCK: could not reach Ronin (${out:-no reply})."; exit 5; }
+case "$out" in
+  *'"ok":true'*) echo "READY — your chat starts here. $out" ;;
+  *) echo "NOT MARKED: $out" ; exit 5 ;;
+esac
