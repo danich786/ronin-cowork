@@ -1188,6 +1188,11 @@ The catalog entry goes. {dir} is not touched.
 
 ## bar — layout.js
 
+## koe — read-aloud.js (the tile's speaker, hosted offices)
+- **koe.speak_help:** Read the last reply aloud
+- **koe.speak_stop:** Stop reading aloud
+- **koe.speak_failed:** Read aloud failed ({status}).
+
 ## transcript — tile-transcript.js (the tile's journal view)
 - **transcript.title:** Transcript
 - **transcript.toggle:** Transcript
