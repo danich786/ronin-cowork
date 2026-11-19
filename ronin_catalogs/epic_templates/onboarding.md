@@ -16,7 +16,7 @@ The tasks are this epic's children; match each by its title, and find its steps 
 
 ## Agent Harness
 Do: at least one Agent harness signed in with their own account; more is better.
-Details: Setup → Model providers (Let Irasshai authenticate, Use the CLI with Irasshai); `ronin-help provider-sign-in`.
+Details: Setup → Model providers (Let the Helpful Assistant authenticate, Use the CLI with the Helpful Assistant); `ronin-help provider-sign-in`.
 Check: at least one reads Activated.
 
 ## Workspace
@@ -31,7 +31,7 @@ Check: the Workspace's objective says what they plan, and its WORKSPACE.md names
 
 ### Sign in GitHub, if they use it
 Do: the GitHub CLI signed in to their account, if they use GitHub; skip it if not.
-Details: the GitHub CLI stone on the Workspaces door (Let Irasshai connect GitHub, Use GitHub CLI with Irasshai); `ronin-help workspace-folders`.
+Details: the GitHub CLI stone on the Workspaces door (Let the Helpful Assistant connect GitHub, Use GitHub CLI with the Helpful Assistant); `ronin-help workspace-folders`.
 Check: the stone shows their account.
 
 ### Bring in their folders or repositories

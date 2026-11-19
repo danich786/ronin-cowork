@@ -143,7 +143,7 @@ and code stay in the terminal's own type so they line up as they do there. **Mar
 marks and all, in the terminal's type; the choice is for that Agent and kept in this browser.
 
 A link in Chat to a file on the Ronin machine opens that file in Docs, on a desk as on a phone and
-in Irasshai's chat too, however the Agent wrote it: a full path, `~/…`, `file:///…`, a path relative
+in the Helpful Assistant's chat (Irasshai) too, however the Agent wrote it: a full path, `~/…`, `file:///…`, a path relative
 to where it works, or `path:line` (the file opens; the line is not jumped to). Web links open in the browser.
 
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in

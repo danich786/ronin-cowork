@@ -40,6 +40,7 @@ import { createPhalanx } from './phalanx.js';
 import { dayTime, loadProviderCatalog, modelLabel, providerCatalog, tierWord } from './form-steps.js';
 import { mountProviderAttachment, providerFromRuntime, providerPresentation, providerReadiness } from './setup-provider-state.js';
 import { createStatusMarker } from './status-marker.js';
+import { IRASSHAI_NAME } from './setup-journey.js';
 
 const el = (tag, cls = '', text = null) => { const out = document.createElement(tag); if (cls) out.className = cls; if (text != null) out.textContent = String(text); return out; };
 
@@ -456,9 +457,9 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       const assisted = typeof context.environment?.onMikaProviderGuide === 'function'
         && typeof context.environment?.onMikaProviderConnect === 'function';
       if (assisted) {
-        const irasshai = context.environment.assistName?.() === 'Irasshai';
-        const operate = control(auth, irasshai ? t('setup_surface.authenticate_irasshai', 'Let Irasshai authenticate') : t('setup_surface.authenticate_mika', 'Let Mika authenticate'), () => context.environment.onMikaProviderConnect({ provider, workspace: context.workspace }));
-        const guide = action(irasshai ? t('setup_surface.authenticate_guided_irasshai', 'Use the CLI with Irasshai') : t('setup_surface.authenticate_guided', 'Use the CLI with Mika'), '', async () => {
+        const irasshai = context.environment.assistName?.() === IRASSHAI_NAME;
+        const operate = control(auth, irasshai ? t('setup_surface.authenticate_irasshai', 'Let the Helpful Assistant authenticate') : t('setup_surface.authenticate_mika', 'Let Mika authenticate'), () => context.environment.onMikaProviderConnect({ provider, workspace: context.workspace }));
+        const guide = action(irasshai ? t('setup_surface.authenticate_guided_irasshai', 'Use the CLI with the Helpful Assistant') : t('setup_surface.authenticate_guided', 'Use the CLI with Mika'), '', async () => {
           guide.disabled = true;
           const result = await press(`/api/setup/providers/${encodeURIComponent(provider.id)}/login`);
           if (result?.ok) await context.environment.onMikaProviderGuide({ provider, setupSession: result.data?.attachment?.key || `provider_setup_${provider.id}`, workspace: context.workspace });

@@ -13,7 +13,13 @@
  * OPENING SETUP OPENS HER (KAN-676): a hosted office's Setup, on opening, asks Ronin Services for her
  * (POST /api/irasshai/open): live, she is there; not live, she is made fresh, as any Agent is made.
  * Once her session is live the pushed session list seats her chat as above; a new birth (a new key)
- * gets a new chat. Self-hosted Setup asks for nothing.
+ * gets a new chat. Self-hosted Setup asks for her only on Assist's button.
+ *
+ * THE BUTTON (owner, 2026-11-19; KAN-691): Setup's Assist surface has one Helpful Assistant button in its header (her name
+ * people see, IRASSHAI_NAME), on any ronin_install,
+ * this machine included. A press asks for her as opening a hosted Setup does: it reads Opening… at
+ * once and ignores presses while it runs; a failure says so on the button. While she is live the
+ * button is hidden: her chat is already Setup's.
  *
  * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
@@ -27,13 +33,13 @@ import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { IRASSHAI, irasshaiIn, irasshaiShown, onboardingDone } from './setup-journey.js';
+import { IRASSHAI, IRASSHAI_NAME, irasshaiIn, irasshaiShown, onboardingDone } from './setup-journey.js';
 import { createIntegrationsPanel } from './integrations-panel.js';
 import { campaigns, loadCampaigns } from './campaigns.js';
 import { subscribe } from './store.js';
 import { t } from './lexicon.js';
 
-export { IRASSHAI, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
+export { IRASSHAI, IRASSHAI_NAME, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
 export const IRASSHAI_STEP_TYPE = 'setup.irasshai-step';
 export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.irasshai-integrations';
 /** The onboarding task whose step seats the integrations panel. */
@@ -59,7 +65,31 @@ export function irasshaiOrder(onRead) {
 }
 
 /** Ask for her: one POST, answered at once; her chat follows the session push. */
-export const askIrasshai = () => { void request('/api/irasshai/open', { method: 'POST' }); };
+export const askIrasshai = () => request('/api/irasshai/open', { method: 'POST' });
+
+/** Setup's Irasshai button; `paint()` hides it while she is live. */
+export function createIrasshaiButton() {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'wk-action setup-irasshai-button';
+  button.dataset.size = 'compact';
+  const word = t('setup.irasshai_open', IRASSHAI_NAME);
+  const idle = (text = word, why = t('setup.irasshai_open_title', 'Open the Helpful Assistant, your welcome Agent')) => {
+    button.textContent = text; button.title = why; button.disabled = false; button.removeAttribute('aria-busy');
+  };
+  idle();
+  button.addEventListener('click', () => {
+    if (button.disabled) return;
+    button.disabled = true; button.setAttribute('aria-busy', 'true');
+    button.textContent = t('setup.irasshai_opening', 'Opening…');
+    void askIrasshai().then((result) => {
+      if (!result.ok || result.data?.ok === false) idle(t('setup.irasshai_failed', 'Couldn’t open the Helpful Assistant'), String(result.message || result.data?.error || ''));
+      else if (irasshaiLive()) idle(); // already here: her chat is Setup's
+      // Made: she arrives on the session push, and paint() hides the button.
+    });
+  });
+  return { el: button, paint: () => { button.hidden = irasshaiLive(); if (button.hidden && button.disabled) idle(); } };
+}
 
 /**
  * HER CHAT READS AS A CONVERSATION (owner, 2026-11-16 and 18; KAN-617): the person's messages and

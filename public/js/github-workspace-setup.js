@@ -3,6 +3,7 @@ import { t } from './lexicon.js';
 import { request } from './request.js';
 import { store } from './store.js';
 import { WorkspaceKit } from './workspace-kit.js';
+import { IRASSHAI_NAME } from './setup-journey.js';
 
 const el = (tag, className = '', text = '') => {
   const node = document.createElement(tag);
@@ -17,9 +18,9 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   const state = el('p', 'setup-fine setup-github-state');
   const install = action(t('roots.github_install', 'Install'), 'primary');
   const assisted = typeof onMikaGuide === 'function' && typeof onMikaConnect === 'function';
-  const irasshai = environment?.assistName?.() === 'Irasshai';
-  const connect = action(assisted ? (irasshai ? t('roots.github_connect_guided_irasshai', 'Use GitHub CLI with Irasshai') : t('roots.github_connect_guided', 'Use GitHub CLI with Mika')) : t('roots.github_connect', 'Connect GitHub'), assisted ? undefined : 'primary');
-  const mikaConnect = action(irasshai ? t('roots.github_connect_irasshai', 'Let Irasshai connect GitHub') : t('roots.github_connect_mika', 'Let Mika connect GitHub'), 'primary');
+  const irasshai = environment?.assistName?.() === IRASSHAI_NAME;
+  const connect = action(assisted ? (irasshai ? t('roots.github_connect_guided_irasshai', 'Use GitHub CLI with the Helpful Assistant') : t('roots.github_connect_guided', 'Use GitHub CLI with Mika')) : t('roots.github_connect', 'Connect GitHub'), assisted ? undefined : 'primary');
+  const mikaConnect = action(irasshai ? t('roots.github_connect_irasshai', 'Let the Helpful Assistant connect GitHub') : t('roots.github_connect_mika', 'Let Mika connect GitHub'), 'primary');
   mikaConnect.hidden = !assisted;
   const other = action(t('roots.git_other_method', 'Use another method'));
   const remove = action(t('roots.github_remove_auth', 'Remove authentication'), 'danger');

@@ -12,6 +12,8 @@ export const SETUP_SCENES = Object.freeze([
 /* IRASSHAI'S STEPS (KAN-573; setup-irasshai.js): while she runs, Setup's steps are her onboarding
    epic's tasks instead of the scenes above. */
 export const IRASSHAI = 'irasshai';
+/** The name people see (owner, 2026-11-19; KAN-691): "irasshai is cute but not legible". Code, route and session stay irasshai. */
+export const IRASSHAI_NAME = 'Helpful Assistant';
 const HELD = `agent:${IRASSHAI}`;
 
 /** Whether her session is in a session list (setup-irasshai.js reads the pushed one). */

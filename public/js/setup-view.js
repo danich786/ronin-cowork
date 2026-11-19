@@ -20,7 +20,7 @@ import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
 import { setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiButton, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -67,6 +67,7 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
+  const irasshaiButton = createIrasshaiButton();
   // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
   // her epic's steps. `irasshai` is her session's birth key at the last look ('' not live): a new
   // birth gets a new chat, never the last one's records (KAN-676).
@@ -81,7 +82,7 @@ export function createSetupView() {
     if (irasshai) {
       if (chat && chat.key !== irasshai) { garden.chat(null); chat.dispose(); chat = null; }
       chat ||= Object.assign(createIrasshaiChat(), { key: irasshai });
-      garden.chat(chat.el);
+      garden.chat(chat.el, IRASSHAI_NAME);
       chat.show();
     } else if (chat) {
       garden.chat(null);
@@ -90,6 +91,7 @@ export function createSetupView() {
   };
   const followIrasshai = () => {
     const live = irasshaiKey();
+    irasshaiButton.paint();
     if (live !== irasshai) {
       irasshai = live;
       seatChat();
@@ -175,6 +177,7 @@ export function createSetupView() {
     },
     onGardenCanvas: (next) => {
       garden = next;
+      garden.header?.actions.prepend(irasshaiButton.el); // Assist's header: her door (KAN-691)
       seatChat();
       garden.controls.replaceChildren();
       garden.controls.hidden = true;
@@ -366,7 +369,8 @@ export function createSetupView() {
       open(sceneOverride);
       seatChat();
       // A hosted office's Setup is Irasshai's: opening it asks for her (shown live, else a fresh launch).
-      if (HOSTED) askIrasshai();
+      // Elsewhere she comes on Assist's Helpful Assistant button (KAN-691).
+      if (HOSTED) void askIrasshai();
       void request('/api/setup/progress', { cache: 'no-store' }).then((result) => {
         if (generation !== enterGeneration || !result.ok || !acceptProgress(result.data)) return;
         const first = firstUnansweredSetupStep(progress);

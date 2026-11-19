@@ -62,11 +62,12 @@ test('Irasshai’s Integrations step seats the integrations panel, embedded, and
   assert.match(view, /if \(type && now && !started\.has\(step\.id\)\) bench\?\.place\(type, 'workspace2'\)/, 'a step she starts herself seats it too');
 });
 
-test('Opening a hosted Setup opens her; no button; a new birth gets a new chat (KAN-676)', async () => {
+test('Opening a hosted Setup opens her; the bar button opens her anywhere; a new birth gets a new chat (KAN-676, KAN-691)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
-  assert.match(view, /if \(HOSTED\) askIrasshai\(\);/, 'hosted only, on opening Setup');
+  assert.match(view, /if \(HOSTED\) void askIrasshai\(\);/, 'hosted, on opening Setup');
   assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one request; Services shows her or makes her fresh');
-  assert.doesNotMatch(view + chat, /createOpenIrasshai|setup-open-irasshai/, 'the Open Irasshai button is gone');
+  assert.match(view, /garden\.header\?\.actions\.prepend\(irasshaiButton\.el\)/, 'the button sits in Assist’s header, on any install');
+  assert.match(chat, /if \(button\.disabled\) return;/, 'repeats are ignored while a press runs');
   assert.match(view, /if \(chat && chat\.key !== irasshai\) \{ garden\.chat\(null\); chat\.dispose\(\); chat = null; \}/, 'a new birth key: the last chat goes');
 });
 
