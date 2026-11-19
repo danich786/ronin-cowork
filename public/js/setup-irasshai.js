@@ -21,7 +21,12 @@
  * once and ignores presses while it runs; a failure says so on the button. While she is live the
  * button is hidden: her chat is already Setup's.
  *
- * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
+ * SHE OPENS THE SURFACES (owner, 2026-11-19; KAN-692): each onboarding task names the surface to open
+ * for it, and she opens it with `show <tab> <surface>`, as Mika does; Setup reports its view for this
+ * tab and places what `show` names (setup-view.js). Nothing here maps a step to a surface. The tab
+ * goes with each ask for her (`askIrasshai`), into her launch prompt.
+ *
+ * THE INTEGRATIONS PANEL (KAN-601) is one of those surfaces, `setup.integrations`, embedded: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
  * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
  * pushed on `home`, leaves working): no timer, no new watcher.
@@ -38,13 +43,12 @@ import { createIntegrationsPanel } from './integrations-panel.js';
 import { campaigns, loadCampaigns } from './campaigns.js';
 import { subscribe } from './store.js';
 import { t } from './lexicon.js';
+import { mikaTab } from './mika.js';
 
 export { IRASSHAI, IRASSHAI_NAME, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
 export const IRASSHAI_STEP_TYPE = 'setup.irasshai-step';
-export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.irasshai-integrations';
-/** The onboarding task whose step seats the integrations panel. */
-export const INTEGRATIONS_STEP = 'Integrations';
-export const stepSurface = (step) => (step?.title === INTEGRATIONS_STEP ? IRASSHAI_INTEGRATIONS_TYPE : null);
+/** The integrations panel as a surface `show` names. */
+export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.integrations';
 /** Whether her session is live, as the pushed session list says. */
 export const irasshaiLive = () => irasshaiIn(S.sessions);
 /** A hosted Setup is hers while she runs or her onboarding is not over: opening it is what makes her (KAN-676). */
@@ -64,8 +68,8 @@ export function irasshaiOrder(onRead) {
   return order;
 }
 
-/** Ask for her: one POST, answered at once; her chat follows the session push. */
-export const askIrasshai = () => request('/api/irasshai/open', { method: 'POST' });
+/** Ask for her: one POST, answered at once, with this tab (what her `show` addresses); her chat follows the session push. */
+export const askIrasshai = () => request('/api/irasshai/open', { method: 'POST', json: { tab: mikaTab() } });
 
 /** Setup's Irasshai button; `paint()` hides it while she is live. */
 export function createIrasshaiButton() {

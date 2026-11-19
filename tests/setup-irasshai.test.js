@@ -51,15 +51,17 @@ test('Setup while Irasshai runs: Assist seats her chat, the selector offers only
   assert.match(view, /!HOSTED \|\| !NOT_HOSTED\.includes\(scene\.id\)/, 'a hosted Setup leaves out registration, password and installations');
 });
 
-test('Irasshai’s Integrations step seats the integrations panel, embedded, and reads it again as each of her turns ends (KAN-601)', async () => {
+test('She opens a step’s surface with show; the integrations panel is one, embedded, read again as each of her turns ends (KAN-601, KAN-692)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
   assert.match(chat, /createIntegrationsPanel\(.*\{ embedded: true \}\)/, 'the panel, embedded');
-  assert.match(chat, /stepSurface = \(step\) => \(step\?\.title === INTEGRATIONS_STEP \? IRASSHAI_INTEGRATIONS_TYPE : null\)/, 'only the Integrations step has a surface');
+  assert.match(chat, /IRASSHAI_INTEGRATIONS_TYPE = 'setup\.integrations'/, 'a surface show can name');
   assert.match(chat, /subscribe\('home'/, 'it reads again off the pushed roster, never a timer');
   assert.doesNotMatch(chat, /setInterval|setTimeout/, 'no timer');
   assert.match(view, /profiles\.define\(PROFILE, \[[^\]]*IRASSHAI_INTEGRATIONS_TYPE/, 'the surface is in Setup’s profile');
-  assert.match(view, /const type = stepSurface\(step\);\s*if \(type\) \{ bench\.place\(type, 'workspace2'\)/, 'a press seats it in Workspace 2');
-  assert.match(view, /if \(type && now && !started\.has\(step\.id\)\) bench\?\.place\(type, 'workspace2'\)/, 'a step she starts herself seats it too');
+  assert.doesNotMatch(view + chat, /stepSurface|INTEGRATIONS_STEP/, 'no step-to-surface wiring');
+  assert.match(view, /m\.tab !== mikaTab\(\)/, 'show places only for this tab');
+  assert.match(view, /selected: 'workspace1'/, 'her chat is never the target');
+  assert.match(chat, /json: \{ tab: mikaTab\(\) \}/, 'the tab goes with each ask for her');
 });
 
 test('Opening a hosted Setup opens her; the bar button opens her anywhere; a new birth gets a new chat (KAN-676, KAN-691)', async () => {

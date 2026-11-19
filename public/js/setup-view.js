@@ -17,10 +17,11 @@ import { createThemeToggle } from './theme-toggle.js';
 import { PASSWORD_SURFACE_TYPE, registerPasswordSurface } from './password-surface.js';
 import { firstUnansweredSetupStep } from './setup-progress.js';
 import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
-import { setupProgressHandlers } from './events.js';
+import { mikaShowHandlers, setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiButton, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
+import { mikaTab, reportMikaView } from './mika.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, askIrasshai, createIrasshaiButton, createIrasshaiChat, irasshaiKey, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -75,7 +76,6 @@ export function createSetupView() {
   let chat = null;
   let epics = [];
   let epicItems = [];
-  const started = new Set(); // her steps last seen In Progress
   const steps = () => irasshaiSteps(epics, epicItems, irasshaiOrder(() => bench?.refreshSelector()));
   const seatChat = () => {
     if (!garden) return;
@@ -170,11 +170,7 @@ export function createSetupView() {
       if (url) location.assign(url);
     },
     irasshaiSteps: () => steps(),
-    takeIrasshaiStep: (step) => {
-      const type = stepSurface(step);
-      if (type) { bench.place(type, 'workspace2'); bench.select('workspace2'); }
-      void chat?.say(takeStepLine(step));
-    },
+    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
     onGardenCanvas: (next) => {
       garden = next;
       garden.header?.actions.prepend(irasshaiButton.el); // Assist's header: her door (KAN-691)
@@ -231,7 +227,21 @@ export function createSetupView() {
     const result = await request('/api/setup/progress/scan', { method: 'POST' });
     return result.ok && acceptProgress(result.data);
   };
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride });
+  /* SHOW (KAN-692): Setup reports this tab's view, as the door workbenches do, and places what
+     `show <tab> <surface>` names. Workspace 1 is reported selected: it holds Assist, her chat, which
+     a `show` must never replace, so what she opens lands in Workspace 2. */
+  let entered = false;
+  const report = () => {
+    if (!entered || !bench) return;
+    const shown = (workspace) => bench.typeAt(workspace) || 'empty';
+    void reportMikaView({ workbench: 'setup', team: '', selected: 'workspace1', reading: '', workspaces: Object.fromEntries(bench.visibleIds().map((workspace) => [workspace, shown(workspace)])) });
+  };
+  const onShow = (m) => {
+    if (!entered || m.tab !== mikaTab() || !WorkspaceKit.workbench.library.has(m.surface)) return;
+    bench.place(m.surface, m.workspace); // not selected: the person stays in her chat
+  };
+  mikaShowHandlers.add(onShow);
+  const save = () => { ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride }); report(); };
   const defaultScene = () => SCENES.find((scene) => !sceneComplete(scene)) || SCENES[SCENES.length - 1];
   const sceneAt = (number) => SCENES[Number(number) - 1] || defaultScene();
   const activeScene = () => sceneAt(sceneOverride);
@@ -305,19 +315,8 @@ export function createSetupView() {
   const unhear = [
     hear('sessions', followIrasshai),
     hear('epics', (next) => { epics = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
-    hear('epicItems', (next) => {
-      epicItems = Array.isArray(next) ? next : [];
-      if (!irasshai) return;
-      bench?.refreshSelector();
-      // A step she starts herself seats its surface too, once, as it moves In Progress.
-      for (const step of steps()) {
-        const type = stepSurface(step);
-        const now = epicItems.find((item) => item.id === step.id)?.status === 'In Progress';
-        if (type && now && !started.has(step.id)) bench?.place(type, 'workspace2');
-        if (now) started.add(step.id); else started.delete(step.id);
-      }
-    }),
-    hear('home', () => { if (irasshai) chat?.stance(); }),
+    hear('epicItems', (next) => { epicItems = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
+    hear('home', () => { if (irasshai) { chat?.stance(); report(); } }), // each of her turns keeps the view fresh for `show`
   ];
 
   bench = WorkspaceKit.workbench.create({
@@ -368,6 +367,7 @@ export function createSetupView() {
       paint();
       open(sceneOverride);
       seatChat();
+      entered = true; report();
       // A hosted office's Setup is Irasshai's: opening it asks for her (shown live, else a fresh launch).
       // Elsewhere she comes on Assist's Helpful Assistant button (KAN-691).
       if (HOSTED) void askIrasshai();
@@ -392,7 +392,7 @@ export function createSetupView() {
         });
       }
     },
-    leave: () => { enterGeneration += 1; chat?.hide(); bench.leave(); },
-    destroy: () => { enterGeneration += 1; setupProgressHandlers.delete(onProgress); for (const stop of unhear) stop(); chat?.dispose(); providerSessions.destroyAll(); bench.leave(); ctx = null; },
+    leave: () => { entered = false; enterGeneration += 1; chat?.hide(); bench.leave(); },
+    destroy: () => { entered = false; mikaShowHandlers.delete(onShow); enterGeneration += 1; setupProgressHandlers.delete(onProgress); for (const stop of unhear) stop(); chat?.dispose(); providerSessions.destroyAll(); bench.leave(); ctx = null; },
   };
 }
