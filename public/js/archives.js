@@ -34,7 +34,8 @@ export function buildArchives(tile, host, onlyTeam = null) {
     sorts.append(choice.el);
     return [value, choice.el];
   });
-  head.append(title, count, sorts);
+  // One Team's list (KAN-711) has no choice: always newest archived first.
+  head.append(title, count, ...(onlyTeam ? [] : [sorts]));
   const list = document.createElement('div');
   list.className = 'home-archive-list';
   host.append(head, list);
