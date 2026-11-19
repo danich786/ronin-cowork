@@ -11,7 +11,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { bootRonin, ROOT } from './helpers/ronin.js';
 
-const ronin = await bootRonin('signin', { env: { NODE_ENV: 'production' } });
+const ronin = await bootRonin('signin');
 test.after(() => ronin.stop());
 
 test('open with no password; after one is set the page and API need a login, and logout closes them', async () => {

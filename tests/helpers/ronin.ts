@@ -83,13 +83,15 @@ export async function bootRonin(name: string, options: BootOptions = {}): Promis
     PATH: searchPath(tmux.root),
     HOME: home,
     TMUX_TMPDIR: privateTmux,
+    // The entry point binds its operator socket only as production (src/index.ts).
+    NODE_ENV: 'production',
     BIND: '127.0.0.1',
     PORT: String(port),
     RONIN_DATA_ROOT: path.join(scratch, 'data'),
     RONIN_USER_ROOT: path.join(scratch, 'user'),
     RONIN_SOCKET: path.join(scratch, 'data', 'run', 'ronin.sock'),
   };
-  for (const key of ['TMUX', 'TMUX_PANE', 'RONIN_URL', 'RONIN_CLI_TOKEN', 'RONIN_AUTH']) delete env[key];
+  for (const key of ['TMUX', 'TMUX_PANE', 'RONIN_URL', 'RONIN_CLI_TOKEN', 'RONIN_AUTH', 'RONIN_TEST_RUNNER']) delete env[key];
 
   let child: ChildProcess;
   let output = '';
