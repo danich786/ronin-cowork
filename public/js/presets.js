@@ -3,7 +3,7 @@ import { request } from './request.js';
 import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createPhalanx } from './phalanx.js';
-import { loadProviderCatalog, providerCatalog, modelLabel } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelLabel, rowTierWord } from './form-steps.js';
 import { ask } from './ask.js';
 
 export { createPhalanx };
@@ -385,7 +385,7 @@ function renderRows(host, state, key, addLabel) {
         : t('forms.reason_not_on_machine', 'not on this machine');
       const pair = ask([{ group: t('new_agent.model_package', 'Model'), fields: [
         { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('campaign_view.provider_default', 'Default provider'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
-        { key: 'model', label: t('forms.model', 'Model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: modelLabel(item), word: item.tier, sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
+        { key: 'model', label: t('forms.model', 'Model'), blank: t('campaign_view.model_default', 'Default model'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: modelLabel(item), word: rowTierWord(item), sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
       ] }], { value: { provider: row.provider || '', model: row.model || '' }, density: 'tight', onChange: (value) => { row.provider = value.provider; row.model = value.model; } });
       const remove = el('button', 'sp-remove', '✕'); remove.type = 'button'; remove.title = `Remove ${addLabel}`;
       remove.addEventListener('click', () => { state[key].splice(index, 1); paint(); });

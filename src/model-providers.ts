@@ -14,8 +14,8 @@ import { readHermesSettings } from './hermes-setups.js';
  *   and never guessed. The CLI is the one source of truth for what can be launched
  *   (owner, 18 Nov 2026: the models.dev pull is gone, KAN-653).
  *
- * `providerRows` is the one join: Native first, then every model the CLI listed, in the
- * CLI's order, each with its `model` (the id every launch uses) and `name` (the CLI's
+ * `providerRows` is the one join: Native first, then one model per tier from the CLI's list
+ * (`oneModelPerTier`), each with its `model` (the id every launch uses) and `name` (the CLI's
  * own display name, which carries the version — "Opus 5.5"). Launches, Mika, machine
  * settings and every picker read these rows; no client joins anything.
  */
@@ -63,6 +63,8 @@ export interface ProviderCatalog {
   providers: ProviderCatalogEntry[];
   /** Shipped providers the owner's copy withdrew with `- **hidden:** yes`. */
   withdrawn: Array<{ provider: string; label: string }>;
+  /** Each tier's strengths, from the `## Tiers` table: the owner's copy's when it has one. */
+  strengths: Partial<Record<Tier, string>>;
 }
 
 /** ONE JOINED ROW: what a launch runs and what a picker shows. */
@@ -80,6 +82,8 @@ export interface SessionLaunchSpec {
   dangerousCmd?: string;
   /** The tier of its family word; '' when the provider declares none that fits. */
   tier: Tier | '';
+  /** The tier's strengths in a few plain words, from the catalog; '' or absent for Native and untiered rows. */
+  strengths?: string;
   /** Native: the row a launch naming this provider and no model gets when no preference is set. */
   default: boolean;
 }
@@ -133,13 +137,58 @@ function parseFamilies(value: string | undefined): Array<{ family: string; tier:
   });
 }
 
-/** The tier of the longest family word that stands whole in the id (`flash-lite` before `flash`); '' when none. */
-export function familyTier(id: string, families: ProviderCatalogEntry['families'] = []): Tier | '' {
+/** The longest family word that stands whole in the id (`flash-lite` before `flash`); undefined when none. */
+function familyOf(id: string, families: ProviderCatalogEntry['families'] = []): { family: string; tier: Tier } | undefined {
   const escape = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const hit = [...families]
+  return [...families]
     .sort((a, b) => b.family.length - a.family.length)
     .find(({ family }) => new RegExp(`(^|[-._/])${escape(family)}($|[-._/])`, 'i').test(id));
-  return hit?.tier ?? '';
+}
+
+/** The tier of the id's family word; '' when none. */
+export function familyTier(id: string, families: ProviderCatalogEntry['families'] = []): Tier | '' {
+  return familyOf(id, families)?.tier ?? '';
+}
+
+/** The numbers in an id, in order (`gpt-6.2-sol` → 6,2; `claude-opus-5-5` → 5,5): its version. */
+const versionOf = (id: string): number[] => (id.match(/\d+/g) ?? []).map(Number);
+const newer = (a: number[], b: number[]): boolean => {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  return false;
+};
+
+/**
+ * THE ONE TIER RULE (owner, 19 Nov 2026, KAN-726): at most one model per tier per provider.
+ * A tier's model is the newest id of the first family the catalog names for that tier that
+ * the CLI lists; a tie goes to the CLI's order. Older versions, other families of the same
+ * tier and ids no family word fits drop out. Frontier first, then Standard, then Light.
+ * A provider whose catalog names no families keeps the CLI's list as it is.
+ */
+export function oneModelPerTier<T extends ModelRow>(rows: readonly T[], families: ProviderCatalogEntry['families'] = []): T[] {
+  if (!families.length) return [...rows];
+  return [...TIERS].reverse().flatMap((tier) => {
+    const order = families.filter((f) => f.tier === tier).map((f) => f.family);
+    let best: { row: T; rank: number; version: number[] } | undefined;
+    for (const row of rows) {
+      const hit = familyOf(row.id, families);
+      if (hit?.tier !== tier) continue;
+      const rank = order.indexOf(hit.family);
+      const version = versionOf(row.id);
+      if (!best || rank < best.rank || (rank === best.rank && newer(version, best.version))) best = { row, rank, version };
+    }
+    return best ? [best.row] : [];
+  });
+}
+
+/** `## Tiers` table: each tier's strengths in a few plain words, for every provider. */
+function parseTierStrengths(raw: string): Partial<Record<Tier, string>> {
+  const section = /^## Tiers\s*$([\s\S]*?)(?=^## |^### |(?![\s\S]))/m.exec(raw)?.[1] ?? '';
+  const out: Partial<Record<Tier, string>> = {};
+  for (const line of section.split('\n')) {
+    const [, tier = '', strengths = ''] = /^\|\s*\**([a-z]+)\**\s*\|\s*([^|]+?)\s*\|/i.exec(line.trim()) ?? [];
+    if (isTier(tier.toLowerCase()) && strengths) out[tier.toLowerCase() as Tier] = strengths;
+  }
+  return out;
 }
 
 /**
@@ -230,11 +279,13 @@ export async function readProviderCatalog(): Promise<ProviderCatalog> {
     const entry = parseProviderSection(section);
     if (entry) providers.push(entry);
   }
+  const own = parseTierStrengths(userRaw);
   return {
     origin: hasUser ? 'user' : 'stock',
     path: hasUser ? user : STOCK_CATALOG_MD,
     providers,
     withdrawn,
+    strengths: Object.keys(own).length ? own : parseTierStrengths(stockRaw),
   };
 }
 
@@ -413,12 +464,15 @@ async function grammarOf(cli: string): Promise<AgentLaunches | null> {
 }
 
 /**
- * Every provider with its joined rows: Native first, then each model the CLI listed, in
- * the CLI's order. Providers this machine can launch come first; catalog order holds within
- * each group. A provider whose CLI has no Agent page has no rows at all.
+ * Every provider with its joined rows: Native first, then one model per tier
+ * (`oneModelPerTier`), Frontier to Light, each with its tier's strengths. Providers this
+ * machine can launch come first; catalog order holds within each group. A provider whose
+ * CLI has no Agent page has no rows at all.
  */
-export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalogEntry[]): Promise<ProviderRows[]> {
-  const roots = catalog ?? await listProviderCatalog();
+export async function providerRows(summary: ProviderSummary | null, catalog?: ProviderCatalog): Promise<ProviderRows[]> {
+  const resolved = catalog ?? await readProviderCatalog();
+  const roots = resolved.providers;
+  const strengthsOf = (tier: Tier | '') => (tier && resolved.strengths[tier]) || '';
   const entries = roots.flatMap(entry => {
     if (entry.cli === 'hermes') return [{ ...entry, provider: 'hermes', label: 'Hermes', connections: false }];
     if (!entry.connections) return [entry];
@@ -446,7 +500,7 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
         selectable: on, origin: entry.origin, shadowed: entry.shadowed, model: setup.id, name: setup.name,
         cmd: grammar ? commandText(renderLaunch(grammar.model, { model: setup.model })) : '',
         ...(grammar?.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, { model: setup.model })) } : {}),
-        tier: '', default: index === 0,
+        tier: '', strengths: '', default: index === 0,
       }));
       return { ...entry, provider: 'hermes', label: 'Hermes', cli_label: 'Hermes', operational: on && models.length > 0, off,
         models, launch_modes: ['configured', 'live_dangerously'] };
@@ -473,15 +527,16 @@ export async function providerRows(summary: ProviderSummary | null, catalog?: Pr
       if (!entry.inference_provider) models.push({
         ...base, model: NATIVE_MODEL, name: NATIVE_NAME, cmd: native,
         ...(launch.nativeDangerousCmd ? { dangerousCmd: launch.nativeDangerousCmd } : {}),
-        tier: '', default: true,
+        tier: '', strengths: '', default: true,
       });
-      for (const listed of entry.connection_rows ?? summary?.models?.[entry.cli]?.rows ?? []) {
-        if (!SAFE_MODEL_ID.test(listed.id)) continue;
+      const listed = (entry.connection_rows ?? summary?.models?.[entry.cli]?.rows ?? []).filter((row) => SAFE_MODEL_ID.test(row.id));
+      for (const row of oneModelPerTier(listed, entry.families)) {
+        const tier = familyTier(row.id, entry.families);
         models.push({
-          ...base, model: listed.id, name: listed.name || listed.id,
-          cmd: commandText(renderLaunch(grammar.model, values(listed.id))),
-          ...(grammar.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, values(listed.id))) } : {}),
-          tier: familyTier(listed.id, entry.families), default: !!entry.inference_provider && models.length === 0,
+          ...base, model: row.id, name: row.name || row.id,
+          cmd: commandText(renderLaunch(grammar.model, values(row.id))),
+          ...(grammar.modelDangerously.length ? { dangerousCmd: commandText(renderLaunch(grammar.modelDangerously, values(row.id))) } : {}),
+          tier, strengths: strengthsOf(tier), default: !!entry.inference_provider && models.length === 0,
         });
       }
     }
@@ -506,7 +561,7 @@ export async function providerCatalogAnswer(summary: ProviderSummary | null): Pr
     ...facts,
     measured_at: summary?.measured_at ?? '',
     refreshed_at: summary?.refreshed_at ?? '',
-    providers: await providerRows(summary, catalog.providers),
+    providers: await providerRows(summary, catalog),
   };
 }
 
