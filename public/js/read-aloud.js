@@ -14,6 +14,21 @@ import { t } from './lexicon.js';
 const GLYPH = { idle: '🔊', fetching: '…', playing: '■' };
 let current = null; // { el, controller, audio, url }
 
+/* PLAYBACK SPEED (KAN-710): the button beside 🔊 steps 1× → 1.25× → 1.5× → 2× → 1×, changes
+ * the playing audio at once, and this device remembers it. The gateway speaks at 1.0. */
+const SPEEDS = [1, 1.25, 1.5, 2];
+const SPEED_KEY = 'ronin.koe.speed';
+let speed = (() => { try { const v = Number(localStorage.getItem(SPEED_KEY)); return SPEEDS.includes(v) ? v : 1; } catch { return 1; } })();
+const speedButtons = new Set();
+const paintSpeed = (el) => { el.textContent = `${speed}×`; };
+
+function nextSpeed() {
+  speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+  try { localStorage.setItem(SPEED_KEY, String(speed)); } catch { /* remembered for this page only */ }
+  if (current?.audio) current.audio.playbackRate = speed;
+  for (const el of speedButtons) el.isConnected ? paintSpeed(el) : speedButtons.delete(el);
+}
+
 /** The office runs KOE's read aloud: hosted, with the koe part loaded. */
 export const readAloudShown = () => HOSTED && Array.isArray(S.services) && S.services.includes('koe');
 
@@ -56,6 +71,7 @@ export async function toggleReadAloud(session, el) {
     if (current !== mark) return;
     mark.url = URL.createObjectURL(blob);
     mark.audio = new Audio(mark.url);
+    mark.audio.playbackRate = speed;
     mark.audio.addEventListener('ended', () => { if (current === mark) stop(); });
     await mark.audio.play();
     paint(el, 'playing');
@@ -66,5 +82,25 @@ export async function toggleReadAloud(session, el) {
   }
 }
 
-/** A fresh button, idle. */
-export function speakButton(el) { paint(el, 'idle'); return el; }
+const button = (cls, onClick) => {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = cls;
+  // A tap must not pull focus out of the box (the keys row's rule).
+  el.addEventListener('pointerdown', (e) => e.preventDefault());
+  el.addEventListener('click', onClick);
+  return el;
+};
+
+/** The tile's 🔊 and speed, in that order — between Stop and Enter on a desk, after Tab in
+ *  the keys row — or none where read aloud does not run. */
+export function readAloudButtons(tile) {
+  if (!readAloudShown()) return [];
+  const speak = button('speak-toggle', () => void toggleReadAloud(tile.session, speak));
+  paint(speak, 'idle');
+  const rate = button('speak-speed', nextSpeed);
+  rate.title = t('koe.speed_help', 'Playback speed — press for the next');
+  paintSpeed(rate);
+  speedButtons.add(rate);
+  return [speak, rate];
+}

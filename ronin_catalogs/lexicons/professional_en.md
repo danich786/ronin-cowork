@@ -1189,6 +1189,7 @@ The catalog entry goes. {dir} is not touched.
 - **koe.speak_help:** Read the last reply aloud
 - **koe.speak_stop:** Stop reading aloud
 - **koe.speak_failed:** Read aloud failed ({status}).
+- **koe.speed_help:** Playback speed — press for the next
 
 ## transcript — tile-transcript.js (the tile's journal view)
 - **transcript.title:** Transcript

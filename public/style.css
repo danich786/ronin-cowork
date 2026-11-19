@@ -3445,8 +3445,6 @@ body {
 /* Opaque: the route said this Agent has nothing to show. Still a button — pressing it
    opens the view, which says why in full. */
 .tile-head button.transcript-toggle.off { opacity: 0.4; }
-/* Read aloud (KAN-705, js/read-aloud.js): lit while fetching or playing, gone where KOE isn't. */
-.speak-toggle[hidden] { display: none !important; }
 /* The flag (KAN-709): the pill's amber ⚑ beside Chat, only while a held item is flagged. */
 .tile-flag[hidden] { display: none !important; }
 .tile-head button.tile-flag, #phone .ph-bar .tile-flag { color: var(--warn); }
@@ -3460,7 +3458,6 @@ body {
   font: var(--weight-strong) var(--text-body)/var(--leading-none) var(--font-ui);
   cursor: pointer;
 }
-.tile-head button.speak-toggle[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
 .tile-transcript-entry[data-kind='note'] { color: var(--muted); font-style: italic; }
 /* Tool lines and code read in the terminal's own face and size, so commands and paths line up
    as they do there (KAN-147). */
@@ -4847,6 +4844,14 @@ button.wk-card { cursor: pointer; }
   border-color: var(--kaki);
   color: var(--on-strong);
 }
+/* Read aloud (KAN-705, js/read-aloud.js): Stop's size on a desk, a key's in the keys row;
+   lit while fetching or playing. */
+/* The speed's face is a number ("1.25×"): Stop's height and look, as wide as its words. */
+.tile:is(.tape-on, .keys-on, .transcript-on) .composer .cctl.speak-speed { width: auto; min-width: 38px; padding: 0 var(--space-inline); }
+.tile:is(.tape-on, .keys-on, .transcript-on) .composer .speak-toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .tile.transcript-on .composer .keysrow [data-terminal-action='copy'] {
   display: none;
 }
@@ -4978,18 +4983,6 @@ button.wk-card { cursor: pointer; }
 }
 /* Nothing to show: quiet to the eye, still pressable — the press says why. */
 #phone .ph-bar .transcript-toggle.off { opacity: 0.4; }
-#phone .ph-bar .speak-toggle {
-  flex: 0 0 auto;
-  height: 40px;
-  min-width: 44px;
-  border: var(--edge) solid var(--line);
-  border-radius: var(--radius-small);
-  background: var(--surface);
-  color: var(--fg);
-  font: var(--weight-strong) var(--text-body)/var(--leading-none) var(--font-ui);
-  cursor: pointer;
-}
-#phone .ph-bar .speak-toggle[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
 #phone .ph-bar .transcript-toggle[hidden] { display: none; }
 #phone .ph-bar .transcript-toggle:active {
   background: var(--kaki); /* kaki: the action, or what needs you */

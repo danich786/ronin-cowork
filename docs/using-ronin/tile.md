@@ -11,7 +11,6 @@ column, or drag its card into the workspace where you want to see it.
 | Item island | A pill for every work item the Agent holds (below) |
 | ⚑ | Only while an item the Agent holds is flagged; hover for each flag's reason. One press unflags every flagged item it holds (comment "unflagged by owner") and the ⚑ goes. Also on the phone's bar |
 | Term / Chat | When Terminal transcript is active, switch between the terminal and the Agent's conversation |
-| 🔊 | In a hosted office: read the Agent's last reply aloud. It shows … while fetching and ■ while playing; press again to stop. A failure shows in one line. Also on the phone's bar |
 | メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
 
@@ -97,6 +96,14 @@ The context gauge appears when Ronin has a reading from the session. An empty wo
 has no Agent for session-specific actions to operate on.
 
 New Agents start read/write. There is no Control choice in the current tile header.
+
+## Read aloud
+
+In a hosted office, 🔊 reads the Agent's last reply aloud. On a desk it sits beside the
+message box, between Stop and Enter; on a phone it is in the keys row, right after Tab. It
+shows … while fetching and ■ while playing; press it again to stop. A failure shows in one line.
+The button after it shows the playback speed (1×, 1.25×, 1.5×, 2×): each press moves to the
+next and changes what is playing at once. This device remembers the choice.
 
 ## Type, copy, and paste
 
