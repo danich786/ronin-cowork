@@ -1626,6 +1626,15 @@ body {
   font-size: var(--text-small);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+  flex-wrap: wrap;
+  gap: var(--space-inline);
+}
+.home-archived-head > span { margin-right: auto; }
+.home-archive-sort {
+  display: flex;
+  gap: var(--space-inline);
+  letter-spacing: normal;
+  text-transform: none;
 }
 .home-archive-list {
   display: flex;
