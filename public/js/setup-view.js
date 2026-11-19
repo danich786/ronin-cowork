@@ -83,7 +83,7 @@ export function createSetupView() {
     if (irasshai) {
       if (chat && chat.key !== irasshai) { garden.chat(null); chat.dispose(); chat = null; }
       chat ||= Object.assign(createIrasshaiChat(), { key: irasshai });
-      garden.chat(chat.el, IRASSHAI_NAME);
+      garden.chat(chat.el, IRASSHAI_NAME, chat.toggle);
       chat.show();
     } else if (chat) {
       garden.chat(null);

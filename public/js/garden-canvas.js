@@ -137,10 +137,17 @@ function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } = {}) {
   };
 
   /* A chat seated in place of the scene (setup-irasshai.js), or none: the surface is then that
-     chat alone, its header without tools (garden-canvas.css), headed `label` (her name). */
+     chat alone, headed `label` (her name), its header's only tool the chat's own `toggle`
+     (Term / Chat, KAN-717) beside the name (garden-canvas.css). */
   let seated = null;
-  const chat = (view, label = '') => {
+  let seatedToggle = null;
+  const chat = (view, label = '', toggle = null) => {
     if (surface.header) surface.header.title.textContent = view ? label || 'Assist' : 'Assist';
+    if (seatedToggle !== toggle) {
+      seatedToggle?.remove();
+      seatedToggle = view && toggle && surface.header ? toggle : null;
+      if (seatedToggle) surface.header.title.after(seatedToggle);
+    }
     if (seated === view) return;
     seated?.remove();
     seated = view || null;
