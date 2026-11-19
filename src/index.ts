@@ -78,7 +78,7 @@ import { mountAssets, noCacheClient, publicFingerprint } from './assets.js';
 import { DocumentPathError, legacyDocumentPath, readDocumentFile, readProductDocumentFile, saveDocumentFile } from './document-file.js';
 import { checkTmuxServerCgroup } from './host-guard.js';
 import { startTeamLayers } from './team-layers.js';
-import { sockets, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
+import { sockets, runStartedHooks, startBootHooks, stopBootHooks, mountServiceRoutes, noteService, noteServiceCapabilityPlan, noteServiceFailure, noteServiceParked } from './sockets.js';
 import { startSessionRetention } from './session-retention.js';
 import { discoverParts, partsToLoad } from './parts.js';
 import { initialCampaign } from './campaigns.js';
@@ -554,6 +554,9 @@ server.listen(config.port, config.bind, async () => {
   // House helpers are request-loaded ordinary sessions. Ending one truly ends it; the
   // next Help request enters the ronin_helper loader and starts a fresh conversation.
   await campaignStart;
+  // Ronin is up, with its Campaign and the agent tools' door: what a part starts now (the Helpful
+  // Assistant on an office_unit, KAN-721) finds them. The box instance only.
+  if (isBoxInstance) runStartedHooks();
 });
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
