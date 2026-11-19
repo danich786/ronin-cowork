@@ -68,15 +68,16 @@ const run = (args: string[], as = 'mika') => new Promise<{ status: number; stdou
     resolve({ status: error ? Number((error as { code?: number }).code ?? 1) : 0, stdout, stderr }));
 });
 
-test('stock: onboarding is the five tasks in order, Workspace ending on Start Team 1 and the tour keeping two; no item ids', async () => {
+test('stock: onboarding is the six tasks in order, Your setup first (KAN-699), Workspace ending on Start Team 1 and the tour keeping two; no item ids', async () => {
   const onboarding = await readTemplate('onboarding');
   assert.equal(onboarding.title, 'Getting set up in your new office');
-  assert.deepEqual(onboarding.tasks.map((task) => task.title), ['Agent Harness', 'Workspace', 'Integrations', 'Ronin Tour', 'Meet your Agents']);
-  assert.deepEqual(onboarding.tasks[1]!.subtasks.map((sub) => sub.title), ['Decide its kind and name, and write down the plan', 'Sign in GitHub, if they use it', 'Bring in their folders or repositories', 'Start Team 1']);
-  assert.match(onboarding.tasks[1]!.subtasks[3]!.objective, /session_create .*epic-template start import-project --to <lead>/s);
-  assert.match(onboarding.tasks[2]!.objective, /ronin-help integrations/);
-  assert.deepEqual(onboarding.tasks[3]!.subtasks.map((sub) => sub.title), ['Behaviours', 'Project management']);
-  assert.match(onboarding.tasks[4]!.objective, /session_end/);
+  assert.deepEqual(onboarding.tasks.map((task) => task.title), ['Your setup', 'Agent Harness', 'Workspace', 'Integrations', 'Ronin Tour', 'Meet your Agents']);
+  assert.deepEqual(onboarding.tasks[2]!.subtasks.map((sub) => sub.title), ['Decide its kind and name, and write down the plan', 'Sign in GitHub, if they use it', 'Bring in their folders or repositories', 'Start Team 1']);
+  assert.match(onboarding.tasks[2]!.subtasks[3]!.objective, /session_create .*epic-template start import-project --to <lead>/s);
+  assert.match(onboarding.tasks[3]!.objective, /ronin-help integrations/);
+  assert.deepEqual(onboarding.tasks[4]!.subtasks.map((sub) => sub.title), ['Behaviours', 'Project management']);
+  assert.match(onboarding.tasks[5]!.objective, /session_end/);
+  assert.match(onboarding.tasks[0]!.objective, /ABOUT_USER\.md.*Where they are/s, 'her first task writes the situation into their record');
   assert.match(onboarding.objective, /^Irasshai: /);
   assert.match(onboarding.objective, /session_end/);
   assert.doesNotMatch(onboarding.objective, /\bMika:/);
@@ -136,4 +137,27 @@ test('start with no --to is the caller\'s own, untold; an unknown template or --
   assert.match(missing.stderr, /No epic template "nope"; epic-template list shows them\./);
   const gone = await run(['start', 'launch', '--new', 'b']);
   assert.equal(gone.status, 2);
+});
+
+test('refreshing a started epic brings the template to it: a stale task found and updated, a missing one made new, Done kept (KAN-699)', async () => {
+  const { startTemplate, refreshTemplate } = await import('../src/epic-templates.js');
+  const { editItem, deleteItem } = await import('../src/work-items.js');
+  const { epic } = await startTemplate('onboarding', { by: 'mapper', to: 'mapper' });
+  const template = await readTemplate('onboarding');
+  const kids = async () => (await listItems()).filter((one) => one.parent === epic);
+  const titled = async (title: string) => (await kids()).find((one) => one.title === title);
+  const setup = await titled('Your setup');
+  const harness = await titled('Agent Harness');
+  await editItem(setup!.id, { status: 'Done' }, 'mapper');
+  await editItem(harness!.id, { objective: 'Do: an old line.' }, 'mapper');
+  const tour = (await kids()).find((one) => one.title === 'Ronin Tour')!;
+  await deleteItem(tour.id, 'mapper');
+  await refreshTemplate('onboarding', epic, { by: 'mapper', to: 'mapper' });
+  const after = await kids();
+  assert.equal((await readItem(setup!.id))!.status, 'Done', 'what is done stays done');
+  assert.equal((await readItem(harness!.id))!.objective, template.tasks[1]!.objective, 'a stale task is updated');
+  const made = after.find((one) => one.title === 'Ronin Tour');
+  assert.ok(made && made.id !== tour.id, 'a missing task is made new');
+  assert.deepEqual((await listItems()).filter((one) => one.parent === made!.id).map((one) => one.title), ['Behaviours', 'Project management'], 'with its subtasks');
+  assert.ok((await holdersOf(made!.id)).some((one) => one.name === 'mapper'), 'held by her');
 });

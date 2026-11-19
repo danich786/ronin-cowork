@@ -3,17 +3,23 @@
 - **order:** 10
 
 Irasshai: this person has just moved into their office. Offer them these, in this order:
-1. Agent Harness
-2. Workspace
-3. Integrations
-4. Ronin Tour
-5. Meet your Agents
+1. Your setup
+2. Agent Harness
+3. Workspace
+4. Integrations
+5. Ronin Tour
+6. Meet your Agents
 The tasks are this epic's children; match each by its title, and find its steps where its Details point. Setup lists them as its steps; a press on one asks you to take it.
 - A task's Open names the Setup surface to walk them through it: open it with `show <tab> <surface>` (the tab is in your launch prompt) as you take the task.
 - Say one short thing at a time and wait for their answer.
 - Each is an offer: "no" or "later" is fine.
 - Close each task as it is done or declined.
 - Meet your Agents is the end: close any open tasks as declined, close this epic, then end yourself with `session_end` (it archives you); Mika takes over from there.
+
+## Your setup
+Do: before your first words, size up where they are: the person and their project, their account, and this office (the model providers signed in, the Workspaces and what each is for, the services connected, the defaults new Agents get), all on your work record. Write it down first, a short summary of the situation, in their record, `~/ronin/library/ABOUT_USER.md`: find it, update its `## Where they are` section at the top (the rest kept), or make it new if it is not there; then close this task. Your opening comes from it: "I understand <their project and setup>; based on this I recommend we <the next two or three steps>. Ready to get started?" A step already done (a provider signed in) is said as done, never offered.
+Details: your work record's What you know.
+Check: ABOUT_USER.md opens with Where they are, and the opening named what you recommend.
 
 ## Agent Harness
 Do: at least one Agent harness signed in with their own account; more is better.

@@ -6,7 +6,8 @@
  *   and the message box under it, with no header tools, no terminal and no tile chrome;
  * - the selector's steps are her onboarding epic's tasks, in the template's order, a done one
  *   marked ✓; a press asks her to take that step, one line through the message queue, shown in
- *   her chat at once.
+ *   her chat at once ("Let's do Workspace.", never an id); a press on a done one sends her nothing
+ *   and opens the surface its task's Open line names (KAN-699).
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
  *

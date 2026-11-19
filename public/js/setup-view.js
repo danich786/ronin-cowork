@@ -21,7 +21,7 @@ import { mikaShowHandlers, setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
 import { mikaTab, reportMikaView } from './mika.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, stepOpens, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -176,7 +176,12 @@ export function createSetupView() {
     irasshaiSteps: () => steps(),
     irasshaiOpen: () => opener.offer(),
     irasshaiPress: () => opener.press(),
-    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
+    // Not done: one line to her, and she opens its surface (KAN-692). Done: nothing to her; its surface opens (KAN-699).
+    takeIrasshaiStep: (step) => {
+      if (!step.done) return void chat?.say(takeStepLine(step));
+      const opens = stepOpens(step);
+      if (opens && WorkspaceKit.workbench.library.has(opens)) bench?.place(opens, 'workspace2');
+    },
     onGardenCanvas: (next) => {
       garden = next;
       seatChat();
