@@ -88,6 +88,14 @@ export async function buildPhone() {
   feedbackAction.type = 'button';
   feedbackAction.addEventListener('click', () => { location.hash = '#/feedback'; });
   const feedback = createFeedbackSurface(() => { location.hash = '#/'; });
+  // A session put on screen from elsewhere (an Agent's name pressed in Chat, KAN-701) is that
+  // Agent's own screen, as its card opens it.
+  S.connectSession = (name) => {
+    const team = teamsFromState().find((one) => membersOfTeam(one.name).some((member) => member.name === name));
+    if (!team) return false;
+    location.hash = sessionHash(team.name, name);
+    return true;
+  };
 
   const backLink = (href) => {
     const back = el('a', 'ph-back', '‹');
@@ -306,7 +314,8 @@ export async function buildPhone() {
   const openTerminal = () => {
     const { team, session } = route;
     closeTerminal();
-    host = createTerminalTileHost({ mode: 'reduced', transcriptCache });
+    // The tile's close (Chat's Close Tile, KAN-700) is the bar's back link: the phone has no blank tilespace.
+    host = createTerminalTileHost({ mode: 'reduced', transcriptCache, onMinimize: () => { location.hash = teamHash(team); } });
     const term = el('div', 'ph-term');
     term.append(host.el);
     main.replaceChildren(term);

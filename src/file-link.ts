@@ -5,17 +5,19 @@ import path from 'node:path';
 /**
  * A file an Agent links in Chat, as it wrote it: `~/…` is this machine's home, a full path is
  * itself, and a path relative to where it works is found in the first of `bases` that holds it
- * (its desks, then its working folder, then the Workspace folders). Null when none does.
+ * (its desks, then its working folder, its session folder and drop, the Workspace folders, the
+ * library). Only a file that is there: null otherwise, so Chat links only what opens (KAN-701).
  */
 export function resolveFileLink(link: string, bases: string[], home = os.homedir()): string | null {
   const p = String(link ?? '').trim();
   if (!p) return null;
-  if (p === '~' || p.startsWith('~/')) return path.join(home, p.slice(1));
-  if (path.isAbsolute(p)) return p;
+  const isFile = (file: string) => { try { return fs.statSync(file).isFile(); } catch { return false; } };
+  if (p === '~' || p.startsWith('~/')) { const file = path.join(home, p.slice(1)); return isFile(file) ? file : null; }
+  if (path.isAbsolute(p)) return isFile(p) ? p : null;
   for (const base of bases) {
     if (!base) continue;
     const file = path.resolve(base, p);
-    if (fs.existsSync(file)) return file;
+    if (isFile(file)) return file;
   }
   return null;
 }

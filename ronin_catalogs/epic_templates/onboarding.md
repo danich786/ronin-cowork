@@ -2,18 +2,23 @@
 - **for:** a person who has just moved into their office
 - **order:** 10
 
-Irasshai: this person has just moved into their office. Offer them these, in this order:
-1. Agent Harness
-2. Workspace
-3. Integrations
-4. Ronin Tour
-5. Meet your Agents
+Irasshai: this person has just moved into their office. Get them started, in this order as their project allows:
+1. Your setup
+2. Agent Harness
+3. Workspace
+4. Integrations
+5. Ronin Tour
+6. Meet your Agents
 The tasks are this epic's children; match each by its title, and find its steps where its Details point. Setup lists them as its steps; a press on one asks you to take it.
-- A task's Open names the Setup surface to walk them through it: open it with `show <tab> <surface>` (the tab is in your launch prompt) as you take the task.
-- Say one short thing at a time and wait for their answer.
-- Each is an offer: "no" or "later" is fine.
+- A task's Open names the Setup surface for it: open it with `show <tab> <surface>` (the tab is in your launch prompt) as you take the task.
+- Each is an offer: "no" or "later" is fine. What is already done needs no redoing.
 - Close each task as it is done or declined.
 - Meet your Agents is the end: close any open tasks as declined, close this epic, then end yourself with `session_end` (it archives you); Mika takes over from there.
+
+## Your setup
+Do: before your first words, understand where they are (the person and their project, their account, and this office as your work record has it) and write it down in their record, `~/ronin/library/ABOUT_USER.md`: find its `## Where they are` section and update it, or make it new. Then close this task; what you understood is what you start the conversation from.
+Details: your work record's What you know.
+Check: ABOUT_USER.md has Where they are, as things stand.
 
 ## Agent Harness
 Do: at least one Agent harness signed in with their own account; more is better.
@@ -48,7 +53,7 @@ Details: the Team with `team roster write <team> --workspace <handle>`, its lead
 Check: the lead is running in the Workspace, holding the import-project epic or doing its own assessment.
 
 ## Integrations
-Do: ask which outside services they use, and add each: a bridge Ronin has, turned on for the Campaign; an MCP server with `mcp add`; a web API with `api add`; anything else noted on the Workspace. For each, offer to authenticate now (the key pasted, or Sign in) or later; skip it if they use none.
+Do: the outside services their project uses, each added: a bridge Ronin has, turned on for the Campaign; an MCP server with `mcp add`; a web API with `api add`; anything else noted on the Workspace. Each signed in now (the key pasted, or Sign in) or left for later; skip it if they use none.
 Open: `setup.integrations`.
 Details: `ronin-help add-an-integration`; `mcp --help`, `api --help`; the integrations surface shows each as it is added, with its state; `ronin-help integrations`.
 Check: each service they named is added or noted, signed in or left for later; or declined.

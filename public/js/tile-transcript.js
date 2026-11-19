@@ -1,12 +1,13 @@
 /* The journal view is independent of the terminal socket and old Output selector. */
 import { request } from './request.js';
-import { transcriptHandlers, transcriptWatch } from './events.js';
+import { transcriptHandlers, transcriptWatch, openSessionSomewhere } from './events.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 import { openDocOver } from './tile-doc-view.js';
 import { fileLinkPath } from './document-links.js';
 import { answerable, buildQuestion } from './chat-question.js';
+import { commitPagePath, linkChat } from './chat-item-links.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -40,7 +41,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  *               left out is still held by seq, so paging and catch-up run as if it were drawn
  *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onClose = null, onDoc = null, onItem = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -59,6 +60,15 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       .then((r) => { if (r.ok && r.data?.path) openDoc(r.data.path); });
     return true;
   };
+  // An item id pressed opens the item overlay (KAN-698): the caller's (a tile's), else the same
+  // overlay over this chat's own body (Setup's Helpful Assistant).
+  const openItem = onItem || ((item) => import('./tilehead.js').then(({ openItemOver }) =>
+    openItemOver({ body: el.parentElement, session, tegami: null, openDoc }, item)));
+  // An Agent's name pressed opens that Agent (KAN-701) as an item's Agent stone does: its tile
+  // over this work surface, Close gives it back (work-items-surface.js openAgentOver); where
+  // there is no work surface (a phone), wherever Ronin puts a session on screen.
+  const openAgent = (name) => import('./work-items-surface.js').then(({ openAgentOver }) =>
+    openAgentOver(el, name) || openSessionSomewhere(name));
   let active = false;
   let generation = 0;
   /*
@@ -202,6 +212,13 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
             label: t('transcript.resume', 'Resume'), kind: 'primary', size: 'compact', className: 'tile-transcript-answer', action: () => onResume(),
           }).el);
         }
+        // Close Tile (owner, 19 Nov, KAN-700): the tile's own close, its head's −. The Agent stays
+        // stopped, its card keeps Resume.
+        if (onClose) {
+          stanceNode.append(WorkspacePrimitives.createAction({
+            label: t('transcript.close_tile', 'Close Tile'), size: 'compact', className: 'tile-transcript-answer', action: () => onClose(),
+          }).el);
+        }
       } else if (flagged) {
         // A question Chat cannot answer (free text, one no hook names): one press takes the
         // tile to Terminal, and nothing switches without it. The tile owns the switch.
@@ -250,6 +267,9 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     paintStance();
   }
 
+  /** A record drawn, its item ids made links to the item overlay (chat-item-links.js). */
+  const openCommit = (hash) => commitPagePath(session, hash).then((path) => { if (path) openDoc(path); });
+  const linkItems = (rec) => linkChat(entryFor(rec), { item: openItem, agent: openAgent, doc: openDoc, commit: openCommit, session: () => session });
   function entryFor(rec) {
     const entry = document.createElement('div');
     entry.className = 'tile-transcript-entry';
@@ -290,7 +310,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     for (const entry of [...el.children]) {
       const seq = Number(entry.getAttribute?.('data-seq'));
       if (!Number.isFinite(seq) || entry.rawText === undefined) continue;
-      const next = entryFor({ seq, role: entry.getAttribute('data-role'), kind: entry.getAttribute('data-kind'), text: entry.rawText,
+      const next = linkItems({ seq, role: entry.getAttribute('data-role'), kind: entry.getAttribute('data-kind'), text: entry.rawText,
         narration: entry.getAttribute('data-narration') === 'true' });
       el.insertBefore(next, entry);
       entry.remove();
@@ -389,7 +409,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       }
       const shown = admit ? admit(rec) : rec;
       if (!shown) continue;
-      insertInOrder(entryFor(shown), shown.seq);
+      insertInOrder(linkItems(shown), shown.seq);
       landed(shown);
     }
     // What is still on its way stays after everything that has landed.

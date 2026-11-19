@@ -16,7 +16,7 @@ needs changing.
     Details: where the steps are: `ronin-help <topic>`, a screen, a tool's `--help`.
     Check: how the Agent knows it is done.
     Open: `setup.providers` (optional): the surface the Agent opens with `show <tab> <surface>` to walk
-    the person through it.
+    the person through it; on Setup, dragging the task's step pill opens it too.
 
     ### A subtask of that task
     Do: … Details: … Check: …

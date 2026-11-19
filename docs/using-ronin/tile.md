@@ -146,6 +146,20 @@ A link in Chat to a file on the Ronin machine opens that file in Docs, on a desk
 in the Helpful Assistant's chat (Irasshai) too, however the Agent wrote it: a full path, `~/…`, `file:///…`, a path relative
 to where it works, or `path:line` (the file opens; the line is not jumped to). Web links open in the browser.
 
+What a message names is a link when Ronin knows it, and plain text otherwise:
+
+- **A work item's id** (KAN-680, w806): the item opens over the tile, as from the tile's item
+  pills; Close returns to the chat where you were.
+- **An Agent's name** (@system_lead, or the bare name): that Agent's tile opens over the work
+  surface, as from an item's Agent; Close gives it back. On a phone, that Agent's screen.
+- **A document** (`~/ronin/library/ABOUT_USER.md`, `docs/a.md`, `samurai_lab/ronin_cloud/X.md`, or
+  just `ABOUT_USER.md`): it opens in Docs, when it is a file in the Agent's folders, its drop, the
+  Workspace folders (or the folder holding them) or the library.
+- **A commit** (`db709a8`, or `dev@7e2b28b` as a hand-in says it): when it is a commit in one of the
+  Agent's repos, `git show --stat -p` of it opens in Docs, to read.
+
+The Helpful Assistant's chat does the same over her chat.
+
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in
 italic, set apart from its replies.
 
@@ -200,7 +214,9 @@ and the tile stays on Chat.
 
 **Stopped.** If an Agent's CLI exits on its own (a crash, a killed process), Chat ends with
 *Stopped: exit N at HH:MM* and a **Resume** button, which starts it again on the same
-conversation. Its Team's lead is told once, with the items it holds.
+conversation. Its Team's lead is told once, with the items it holds. **Close Tile** beside it
+closes the tile, as its − does: the Agent stays stopped and its card keeps Resume. On a phone it
+goes back to the Team.
 
 An Agent that reads *working…* with nothing new in its conversation for 12 minutes is flagged
 *no progress for 12 min*, the same way: Chat ends with that sentence and an **Open in

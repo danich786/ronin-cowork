@@ -279,6 +279,9 @@ async function openWorkRecord(tile) {
 /** One held item over the tile, as the Work Items reader draws it (work-items-surface.js):
  *  its title, kind, status and flag, its description, its facts, comments and attachments. */
 const openItemLayer = (tile, id) => [...tile.body.querySelectorAll(':scope > .work-overlay')].find((layer) => layer.dataset.item === id) || null;
+/** The same overlay for an item id pressed in Chat (chat-item-links.js, KAN-698): over a tile, or
+ *  over any chat's body given as { body, session, tegami, openDoc }. */
+export { openItem as openItemOver };
 async function openItem(tile, item) {
   const { renderItemDetail, holderOf } = await import('./work-items-surface.js');
   // Who holds it, every holder (w299): one read of the item as it opens, not a watch.

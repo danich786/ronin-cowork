@@ -1625,6 +1625,15 @@ body {
   font-size: var(--text-small);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+  flex-wrap: wrap;
+  gap: var(--space-inline);
+}
+.home-archived-head > span { margin-right: auto; }
+.home-archive-sort {
+  display: flex;
+  gap: var(--space-inline);
+  letter-spacing: normal;
+  text-transform: none;
 }
 .home-archive-list {
   display: flex;
@@ -3507,6 +3516,9 @@ body {
 :is(.tile-transcript-entry, .chat-question) .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
 :is(.tile-transcript-entry, .chat-question) .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
 :is(.tile-transcript-entry, .chat-question) .markdown-reader a { color: var(--accent); }
+/* An item id in Chat opens the item over the tile (js/chat-item-links.js, KAN-698). */
+.tile-transcript-entry a.chat-item-link { color: var(--accent); }
+.tile-transcript-entry a.chat-item-link[aria-busy='true'] { cursor: progress; opacity: 0.6; }
 /* Sent, and not yet written down by the CLI: the person's words in a lighter shade until they land. */
 .tile-transcript-entry[data-role='user'][data-pending='true'] { color: var(--muted); }
 /* A pipe table, wherever markdown is read (Chat, Docs, Help): a heavier rule under the header
