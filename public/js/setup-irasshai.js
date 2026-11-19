@@ -56,17 +56,24 @@ export const irasshaiSetup = () => irasshaiLive() || !onboardingDone(get('epics'
 /** Her session's birth key, as the pushed session list says; '' when she is not live. */
 export const irasshaiKey = () => (irasshaiIn(S.sessions) ? String(S.sessions.find((one) => one.name === IRASSHAI)?.key || IRASSHAI) : '');
 
-/** The onboarding template's task titles, read once: the steps' order. */
+/** The onboarding template's task titles, read once: the steps' order; and the surface each task's Open line names. */
 let order = null;
+const opens = new Map();
 export function irasshaiOrder(onRead) {
   if (order) return order;
   order = [];
   void request('/api/epic-templates').then((result) => {
     const onboarding = result.ok ? (result.data.templates || []).find((one) => one.name === 'onboarding') : null;
-    if (onboarding) { order = onboarding.tasks.slice(); onRead?.(); }
+    if (onboarding) {
+      order = onboarding.tasks.slice();
+      order.forEach((title, at) => { if (onboarding.opens?.[at]) opens.set(title, onboarding.opens[at]); });
+      onRead?.();
+    }
   });
   return order;
 }
+/** The Setup surface a step's task names in its Open line, '' none: what a dragged step pill opens (KAN-696). */
+export const stepOpens = (step) => opens.get(step?.title) || '';
 
 /** Ask for her: one POST, answered at once, with this tab (what her `show` addresses); her chat follows the session push. */
 export const askIrasshai = () => request('/api/irasshai/open', { method: 'POST', json: { tab: mikaTab() } });
@@ -97,6 +104,7 @@ export function createIrasshaiOpener({ refresh, showChat }) {
   const summary = () => (state === 'failed' && why ? why
     : irasshaiLive() ? t('setup.irasshai_here', 'Here, in Assist') : t('setup.irasshai_open_title', 'Your welcome Agent: start here'));
   return {
+    press,
     offer: () => ({ key: 'open', label: label(), summary: summary(), title: summary(), className: 'setup-irasshai-card', action: press }),
     arrived: () => { if (state === 'opening') { state = ''; showChat(); } refresh(); },
   };
@@ -110,6 +118,8 @@ export function registerIrasshaiOpen() {
     header: 'surface',
     label: IRASSHAI_NAME,
     discover: (_tenant, environment) => (environment?.irasshaiOpen ? [environment.irasshaiOpen()] : []),
+    // A drag does what a press does: her chat, or her made fresh; nothing is placed (KAN-696).
+    redirect: (_detail, environment) => { environment?.irasshaiPress?.(); return null; },
     create: () => WorkspaceKit.primitives.createBlankSurface(),
   });
 }
@@ -177,10 +187,11 @@ export function registerIrasshaiSteps() {
     header: 'surface',
     label: 'Step',
     discover: (_tenant, environment) => (environment?.irasshaiSteps?.() || []).map((step) => ({
-      key: step.id, label: step.title, summary: '', mark: step.done ? '✓' : null,
+      key: step.id, label: step.title, summary: '', mark: step.done ? '✓' : null, opens: stepOpens(step),
       action: () => environment.takeIrasshaiStep(step),
     })),
-    // Never placed: a press asks her. A drag lands the blank Tilespace.
+    // A press asks her; a drag opens the surface its task's Open line names, or nothing (KAN-696).
+    redirect: (detail) => (detail?.opens ? { type: detail.opens } : null),
     create: () => WorkspaceKit.primitives.createBlankSurface(),
   });
 }

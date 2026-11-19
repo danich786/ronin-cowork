@@ -62,6 +62,8 @@ test('She opens a step’s surface with show; the integrations panel is one, emb
   assert.match(view, /m\.tab !== mikaTab\(\)/, 'show places only for this tab');
   assert.match(view, /selected: 'workspace1'/, 'her chat is never the target');
   assert.match(chat, /json: \{ tab: mikaTab\(\) \}/, 'the tab goes with each ask for her');
+  assert.match(chat, /redirect: \(detail\) => \(detail\?\.opens \? \{ type: detail\.opens \} : null\)/, 'a dragged step opens what its Open line names, else nothing (KAN-696)');
+  assert.match(chat, /redirect: \(_detail, environment\) => \{ environment\?\.irasshaiPress\?\.\(\); return null; \}/, 'a dragged Helpful Assistant pill does what a press does');
 });
 
 test('Opening a hosted Setup opens her; her selector entry opens her anywhere; a new birth gets a new chat (KAN-676, KAN-694)', async () => {

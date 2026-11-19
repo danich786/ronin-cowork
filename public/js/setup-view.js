@@ -175,6 +175,7 @@ export function createSetupView() {
     },
     irasshaiSteps: () => steps(),
     irasshaiOpen: () => opener.offer(),
+    irasshaiPress: () => opener.press(),
     takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
     onGardenCanvas: (next) => {
       garden = next;

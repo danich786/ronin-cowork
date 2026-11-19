@@ -30,6 +30,8 @@ import { createItem, WorkItemBadInput, WorkItemMissing, type Holder } from './wo
 import { enqueueMessage } from './message-queue.js';
 
 export interface TemplateTask { title: string; objective: string; subtasks: Array<{ title: string; objective: string }> }
+/** A task's `Open:` line: the surface the Agent opens with `show` for it, '' when it names none (KAN-692, KAN-696). */
+export const taskOpens = (task: Pick<TemplateTask, 'objective'>): string => /^Open:\s*`([^`]+)`/m.exec(task.objective)?.[1] ?? '';
 export interface EpicTemplate { name: string; title: string; for: string; order: number; objective: string; tasks: TemplateTask[]; origin: 'stock' | 'user' }
 
 export const stockTemplatesDir = (): string => path.join(STOCK_DIR, 'epic_templates');
