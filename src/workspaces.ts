@@ -22,6 +22,7 @@ import { holdsWritten, workspaceListKey } from './holds-hook.js';
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { storeDir } from './resources.js';
+import { ensureWorkspaceDoc } from './workspace-doc.js';
 import type { LaunchMode } from './agent-defaults.js';
 
 export interface WorkspaceRepo { name: string; note: string }
@@ -121,6 +122,7 @@ export async function saveWorkspace(w: Workspace): Promise<Workspace> {
   const { name: _n, campaign_id: _c, ...body } = clean;
   await writeFile(`${file}.tmp`, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
   await rename(`${file}.tmp`, file);
+  await ensureWorkspaceDoc(clean.name, clean.title); // its Workspace doc (KAN-713), made once
   return clean;
 }
 

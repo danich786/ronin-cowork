@@ -6,6 +6,7 @@ import { listTeamRosters } from '../team-rosters.js';
 import { deleteWorkspace, isValidWorkspaceName, listWorkspaces, normalizeWorkspace, readWorkspace, saveWorkspace, type Workspace } from '../workspaces.js';
 import { PlanBadInput, PlanMissing, PlanRefused, movePlans, plansPlace } from '../plans.js';
 import { listCanvases } from '../canvases.js';
+import { addWorkspaceNote, ensureWorkspaceDoc, readWorkspaceSummary, summaryOf, workspaceDocPath, writeWorkspaceSummary } from '../workspace-doc.js';
 
 const errMsg = (e: unknown): string => String((e as Error)?.message ?? e);
 const campaignOf = async (stated: unknown): Promise<string> => (typeof stated === 'string' && stated.trim()) || initialCampaignId();
@@ -51,6 +52,35 @@ export function registerWorkspaces(app: express.Express): void {
       res.status(e instanceof PlanRefused ? 409 : e instanceof PlanMissing ? 404 : 400).json({ error: errMsg(e) });
     }
   });
+
+  // THE WORKSPACE DOC (KAN-713, src/workspace-doc.ts): read (made on the first ask), its Summary
+  // replaced, a note added. `workspace-doc` is the tool.
+  const docOf = async (req: express.Request, res: express.Response, write?: (name: string, body: Record<string, unknown>) => Promise<string>) => {
+    const { name } = req.params;
+    try {
+      const w = await readWorkspace(await campaignOf(req.query.campaign_id ?? req.body?.campaign_id), name);
+      if (!w) return res.status(404).json({ error: `No Workspace "${name}". workspace-doc list names them.` });
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      if (write && !String(body.text ?? '').trim()) return res.status(400).json({ error: 'Give the text.' });
+      const text = write ? await write(w.name, body) : await ensureWorkspaceDoc(w.name, w.title);
+      // Where its repositories and folders are, from the Workspace Folder registry: what an Agent reads.
+      const { peekProjectRoots } = await import('../project-roots.js');
+      const roots = await peekProjectRoots().catch(() => []);
+      const at = (kind: string) => (row: { name: string; note: string }) => ({ kind, name: row.name, note: row.note, dir: roots.find((root) => root.name === row.name)?.dir ?? '' });
+      res.json({ ok: true, name: w.name, title: w.title, objective: w.objective, locations: [...w.repos.map(at('repository')), ...w.folders.map(at('folder'))],
+        path: workspaceDocPath(w.name), text, summary: summaryOf(text) });
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  };
+  // Every Workspace with its Summary ('' = none yet): `workspace-doc list`.
+  app.get('/api/workspace-docs', async (req, res) => {
+    try {
+      const all = await listWorkspaces(await campaignOf(req.query.campaign_id));
+      res.json({ ok: true, workspaces: await Promise.all(all.map(async (w) => ({ name: w.name, title: w.title, summary: await readWorkspaceSummary(w.name) }))) });
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+  app.get('/api/workspaces/:name/doc', (req, res) => void docOf(req, res));
+  app.put('/api/workspaces/:name/doc/summary', (req, res) => void docOf(req, res, (name, b) => writeWorkspaceSummary(name, String(b.text))));
+  app.post('/api/workspaces/:name/doc/note', (req, res) => void docOf(req, res, (name, b) => addWorkspaceNote(name, String(b.text), String(b.by ?? '').trim().slice(0, 64))));
 
   app.delete('/api/workspaces/:name', async (req, res) => {
     const { name } = req.params;
