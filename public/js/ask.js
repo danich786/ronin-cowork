@@ -156,6 +156,7 @@ export function ask(groups = [], { value = {}, onChange = null, className = '', 
     opt.type = 'button';
     opt.setAttribute('role', row.action ? 'button' : 'option');
     opt.dataset.askValue = String(row.v);
+    opt.dataset.askField = field.key;
     const on = field.many ? state[field.key].includes(row.v) : String(state[field.key]) === String(row.v);
     if (!row.action) opt.setAttribute('aria-selected', String(on));
     else opt.dataset.askAction = 'true';

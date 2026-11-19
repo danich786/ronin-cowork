@@ -103,6 +103,8 @@
   .ask-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; font-size: var(--form-input); font-weight: var(--weight-strong); line-height: var(--leading-tight); }
   .ask-square .ask-name { font-size: var(--form-note); }
   .ask-word { overflow: hidden; color: var(--accent); font-size: var(--form-note); text-overflow: ellipsis; white-space: nowrap; }
+  /* A model's tier and strengths wrap in full: they are how you tell the models apart (KAN-726). */
+  .ask-opt[data-ask-field='model'] .ask-word { overflow: visible; white-space: normal; }
   .ask-opt:hover { border-color: var(--kaki); }
   .ask-opt[aria-selected='true'] { border-color: var(--kaki); border-left-color: var(--kaki); background: var(--selected); /* the one you are on, have chosen, or are dropping onto */ color: var(--kaki-lift); box-shadow: inset var(--edge-2) 0 var(--kaki); }
   .ask-opt[aria-disabled='true'] { opacity: .45; cursor: default; }

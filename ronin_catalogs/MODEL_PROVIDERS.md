@@ -21,7 +21,27 @@ One `### <Vendor label>` section per provider. Its fields:
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, …) — the join between this catalog and what the machine measures |
 | `transcript_source` | dated descriptive journal location and write discipline; availability requires a supported adapter and verified launch identity, not merely a file at that path |
 | `maturity` | optional display status: `beta` or `comingSoon`; a `comingSoon` provider is shown and never launched |
-| `families` | space-separated `word=tier` pairs, tier **light** · **standard** · **frontier**: a model the CLI lists takes the tier of the longest word standing whole in its id, so a new generation keeps its band the day it is listed |
+| `families` | space-separated `word=tier` pairs, tier **light** · **standard** · **frontier**: a model the CLI lists takes the tier of the longest word standing whole in its id, so a new generation keeps its band the day it is listed. Order matters: see [One model per tier](#one-model-per-tier) |
+
+## One model per tier
+
+Every provider's picker offers Native and at most one model per tier, Frontier, then
+Standard, then Light. A tier's model is the **newest id of the first family listed for that
+tier** that the CLI lists (newest: the numbers in the id compared in order, `gpt-6.2` over
+`gpt-6.1`; a tie goes to the CLI's own order). Older versions, a later family of the same
+tier and ids no family word fits are not offered and do not launch. To offer a different
+family in a tier, list its word first. A provider with no `families` keeps its CLI's list
+whole. Mika's cascade (Light → Standard → Frontier) reads the same tiers.
+
+## Tiers
+
+What each tier is good at, shown beside every model in the pickers, for every provider:
+
+| Tier | Strengths |
+|---|---|
+| frontier | deepest reasoning, slower |
+| standard | strong, everyday work |
+| light | fastest, simple tasks |
 
 Transcript-source observations above were recorded by the transcript investigation on
 2026-09-22. Mint/claim capability belongs only to `docs/agents/<cli>.md` and is not
@@ -30,8 +50,8 @@ duplicated in this catalog.
 Adding a provider is a section, never a code path. The matching `docs/agents/<cli>.md`
 page owns bare, model, dangerous and resume commands. Model: Native is always offered, is
 every provider's default, and means no model override. A model is offered when the CLI's
-list read by Refresh all reports its id; model info enriches it, never grants
-availability.
+list read by Refresh all reports its id and it is its tier's model; model info enriches
+it, never grants availability.
 
 ### Anthropic
 
@@ -41,18 +61,22 @@ availability.
 - **families:** `haiku=light sonnet=standard opus=frontier fable=frontier`
 
 Ronin offers what Claude Code's own picker offers: its catalog's `main` section. The older
-generations it files under `overflow` are still served but not offered. Saved CLI names such
+generations it files under `overflow` are still served but not offered. Opus is listed
+before Fable, so the newest Opus is the Frontier model. Saved CLI names such
 as `sonnet` pass through unchanged and are never rewritten by Ronin.
 
 ### OpenAI
 
 - **provider:** `openai`
 - **cli:** `codex`
-- **families:** `astra=frontier sol=frontier terra=standard luna=light spark=light`
+- **families:** `astra=frontier sol=standard luna=light terra=light spark=light`
 - **transcript_source:** Observed 2026-09-22: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`; ordinal-sequenced records with a session metadata header. Journal adapter exists; fresh Ronin launches isolate the journal home; the id comes from its header.
 
-Model ids are passed unchanged to Codex's `--model` option. Sol, Terra and Luna are
-OpenAI's durable capability tiers; the generation number moves on its own cadence.
+Model ids are passed unchanged to Codex's `--model` option. Astra, Sol, Luna and Terra are
+OpenAI's durable families; the generation number moves on its own cadence. Codex's own
+list calls Astra its most capable, Sol its go-to for everyday coding, and Terra and Luna
+its efficient ones, so Astra is Frontier, Sol Standard and Luna Light (Terra when no Luna
+is listed).
 Availability belongs to the owner's OpenAI account: a model the account cannot use is
 refused by Codex in the new tile, and Ronin never substitutes.
 

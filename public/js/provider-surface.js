@@ -550,7 +550,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       // A Ronin models tier row (model `light`, tier light) is its name already; so is an id equal to it.
       if (row.model !== 'native' && row.model !== row.tier && row.model !== modelLabel(row)) name.append(el('span', 'setup-provider-model-id', row.model));
       if (row.model === 'native') name.append(el('span', 'setup-provider-default', t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.')));
-      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)));
+      // The tier, and beneath it the catalog's strengths for that tier: which is which, at a glance.
+      const tier = el('td'); tier.append(el('span', 'setup-provider-tier', tierWord(row.tier)));
+      if (row.model !== 'native' && row.strengths) tier.append(el('span', 'setup-provider-strengths', row.strengths));
+      line.append(name, tier);
       body.append(line);
     }
     table.append(thead, body);
