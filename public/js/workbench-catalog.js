@@ -133,7 +133,8 @@ export function registerWorkbenchCatalog() {
   // The Team's archived Agents follow its Agents (KAN-702).
   // Epics follows Commons (KAN-232), Find item follows Epics (KAN-433); an Epic's record is placed by a pressed Epic stone, never a card.
   // Defined after the Epics types: a profile names only registered types.
-  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamEpics, WORKBENCH_TYPES.teamFindItem, WORKBENCH_TYPES.epicRecord, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.teamArchived, WORKBENCH_TYPES.canvas, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
+  // A document or a commit dragged from a Chat opens on a Document surface (KAN-707).
+  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamEpics, WORKBENCH_TYPES.teamFindItem, WORKBENCH_TYPES.epicRecord, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.teamArchived, WORKBENCH_TYPES.canvas, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   // THE HELP WORKBENCH (owner, 2026-10-21): the help outline and Mika in chat, both solid cards (door-workbenches.js).
   add({ type: WORKBENCH_TYPES.helpOutline, header: 'surface', className: 'wk-selector-utility', label: () => t('help_outline.title', 'Help'), summary: () => t('help_outline.summary', 'The guides, starting with the four things to know'), create: ({ environment }) => environment.helpOutline() });
   add({ type: WORKBENCH_TYPES.helpMika, header: 'terminal', className: 'wk-selector-utility', label: () => 'Mika', summary: () => t('help_outline.mika_summary', 'Ask in plain words'), create: ({ environment }) => environment.helpMika() });

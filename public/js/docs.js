@@ -416,7 +416,8 @@ export function createDocumentWorkspaceAdapter({ root, path } = {}) {
   host.className = 'home-docs';
   surface.content.append(host);
   const docs = buildDocs(host);
-  const target = { root: String(root || ''), path: String(path || '') };
+  // A root and a path in it, or an absolute path alone (a Chat link dropped here, KAN-707).
+  const target = root ? { root: String(root), path: String(path || '') } : String(path || '');
   // The document is up first; the list under ← then hears the rows until the seat leaves.
   const show = async () => { await docs.open(target); docs.enter(); };
   const leave = () => {

@@ -158,7 +158,12 @@ What a message names is a link when Ronin knows it, and plain text otherwise:
 - **A commit** (`db709a8`, or `dev@7e2b28b` as a hand-in says it): when it is a commit in one of the
   Agent's repos, `git show --stat -p` of it opens in Docs, to read.
 
-The Helpful Assistant's chat does the same over her chat.
+The Helpful Assistant's chat does the same over her chat. A document link shows the file's name;
+its whole path is its tooltip.
+
+Any of these links can also be dragged onto a workspace of a Team's workbench, as a selector pill
+can, and it opens there: an item on Find item, an Agent's tile, a document or a commit on a
+Document surface.
 
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in
 italic, set apart from its replies.

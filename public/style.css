@@ -1777,6 +1777,11 @@ body {
 .tw-archives .home-archives {
   display: block;
 }
+/* A Document surface's editor or page fills its workspace (KAN-707). */
+.workspace-document > .wk-surface-content {
+  display: flex;
+  flex-direction: column;
+}
 .workspace-document > .wk-surface-content > .home-docs {
   display: flex;
 }

@@ -67,7 +67,7 @@ import { randomUUID } from 'node:crypto';
 import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
 import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
-import { commitPage, resolveCommit } from '../commit-link.js';
+import { commitPage } from '../commit-link.js';
 import { storeDir } from '../resources.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
@@ -673,20 +673,15 @@ export function registerSessions(app: express.Express): void {
     res.json({ path: file });
   });
 
-  // A commit hash in this Agent's Chat: { sha } when it is a commit in one of its repos; with
-  // show=1, `git show --stat -p` of it written as a page in its session folder, { path } for Docs.
+  // A commit hash in this Agent's Chat: when it is a commit in one of its repos, `git show --stat -p`
+  // of it as a page in its session folder (written once), { path } for Docs to open or a drop to place.
   app.get('/api/sessions/:name/commit', async (req, res) => {
     const { name } = req.params;
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     const { own, repos } = await chatPlaces(name);
-    const ref = String(req.query.ref ?? '');
-    if (req.query.show && own) {
-      const page = await commitPage(ref, repos, path.join(own, 'commits')).catch(() => null);
-      return page ? res.json({ path: page }) : res.status(404).json({ error: 'No such commit.' });
-    }
-    const found = await resolveCommit(ref, repos);
-    if (!found) return res.status(404).json({ error: 'No such commit.' });
-    res.json({ sha: found.sha });
+    const page = own ? await commitPage(String(req.query.ref ?? ''), repos, path.join(own, 'commits')).catch(() => null) : null;
+    if (!page) return res.status(404).json({ error: 'No such commit.' });
+    res.json({ path: page });
   });
 
   app.get('/api/sessions/:name/project-root', async (req, res) => {
