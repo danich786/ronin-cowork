@@ -326,7 +326,7 @@ export function createCoworkView(options = {}) {
     }, workspace: id }),
     // Epics (KAN-232): the bench keeps one per seat across Teams, so it reads the Team entered now.
     teamEpics: () => keepTeamSurface(createTeamEpics({ team: () => team })),
-    teamFindItem: () => keepTeamSurface(createFindItem()),
+    teamFindItem: (_workspace, detail) => keepTeamSurface(createFindItem(detail?.key)),
     canvases: teamCanvases,
     canvas: (_id, detail = {}) => {
       const surface = createSurface({ label: detail.key, className: 'tw-canvas' });

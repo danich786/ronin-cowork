@@ -18,6 +18,7 @@
 import { get } from './store.js';
 import { request } from './request.js';
 import { S } from './state.js';
+import { SURFACE_DRAG } from './workbench.js';
 
 // A path with a slash or ~ ending in an extension, or a bare file name with a document's extension.
 const DOC = String.raw`(?:~|\.{1,2})?\/?[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]{1,6}`;
@@ -27,7 +28,9 @@ const AGENT = String.raw`@?[a-z][a-z0-9_-]*[a-z0-9]`;
 // A short or full commit hash, with at least one letter (not a number); alone, or after branch@
 // as hand-ins say it (dev@7e2b28b). The Agent's repos decide whether it is one.
 const COMMIT = String.raw`(?=[0-9]*[a-f])[0-9a-f]{7,40}`;
-const TOKEN = new RegExp(String.raw`(?:(?<=\w@)(?<atcommit>${COMMIT})(?![\w.])|(?<![\w/.~@-])(?:(?<item>${ITEM})|(?<commit>${COMMIT})(?![\w.])|(?<doc>${DOC})|(?<agent>${AGENT})))(?![\w/-])`, 'g');
+// A hash ends where a sentence may (f12cf12.), never before a file's extension (abc1234.md).
+const HASH_END = String.raw`(?!\w|\.\w)`;
+const TOKEN = new RegExp(String.raw`(?:(?<=\w@)(?<atcommit>${COMMIT})${HASH_END}|(?<![\w/.~@-])(?:(?<item>${ITEM})|(?<commit>${COMMIT})${HASH_END}|(?<doc>${DOC})|(?<agent>${AGENT})))(?![\w/-])`, 'g');
 const HAS_TOKEN = new RegExp(TOKEN.source); // a stateless test: the /g one carries lastIndex into matchAll
 const BARE_DOC = /^[\w.@+-]+\.(?:md|html?|txt|json|ya?ml|csv|pdf|png|jpe?g)$/i;
 
@@ -68,28 +71,41 @@ export function knownDoc(session, written) {
   return docs.get(key);
 }
 
-/** The hash, when it is a commit in one of `session`'s repos (its desks, working folder, Workspace folders), else null. */
+/** When the hash is a commit in one of `session`'s repos (its desks, working folder, Workspace
+ *  folders): its `git show --stat -p` page, the path Docs opens (read-only); else null. */
 export function knownCommit(session, hash) {
   if (!session) return null;
   const key = `${session}\u0000${hash}`;
   if (!commits.has(key)) {
     commits.set(key, request(`/api/sessions/${encodeURIComponent(session)}/commit?ref=${encodeURIComponent(hash)}`, { cache: 'no-store' })
-      .then((r) => (r.ok && r.data?.sha ? hash : null), () => null));
+      .then((r) => (r.ok && r.data?.path ? r.data.path : null), () => null));
   }
   return commits.get(key);
 }
 
-/** `git show --stat -p` of a commit in `session`'s repos, as the page Docs opens (read-only), or null. */
-export const commitPagePath = (session, hash) => request(`/api/sessions/${encodeURIComponent(session)}/commit?ref=${encodeURIComponent(hash)}&show=1`, { cache: 'no-store' })
-  .then((r) => (r.ok && r.data?.path ? r.data.path : null), () => null);
+/** What a link carries when dragged (KAN-707): the workbench's own surface payload, as a selector
+ *  pill's, so a workspace it is dropped on opens it there: an item on its Find item surface, an
+ *  Agent's tile, a document or a commit's page on a Document surface. */
+const SESSION_DRAG = 'text/x-ronin-session'; // team-drag.js: a Team's roster takes an Agent dropped on it
+const dropAs = (kind, target) => (kind === 'item' ? { type: 'team.find-item', detail: { key: target.id } }
+  : kind === 'agent' ? { type: 'session.terminal', detail: { key: target } }
+    : { type: 'document', detail: { key: target } });
 
 function link(doc, words, kind, target, open, title) {
   const a = doc.createElement('a');
   a.className = `chat-item-link chat-${kind}-link`;
   a.href = '#';
   a.dataset[kind] = typeof target === 'string' ? target : target.id;
-  a.textContent = words;
+  // A document shows its file name; the whole path is its tooltip (owner, 19 Nov, KAN-707).
+  a.textContent = kind === 'doc' ? words.split('/').pop() : words;
   if (title) a.title = title;
+  a.draggable = true;
+  a.addEventListener('dragstart', (event) => {
+    event.dataTransfer.setData(SURFACE_DRAG, JSON.stringify(dropAs(kind, target)));
+    if (kind === 'agent') event.dataTransfer.setData(SESSION_DRAG, target);
+    event.dataTransfer.setData('text/plain', words);
+    event.dataTransfer.effectAllowed = 'copy';
+  });
   a.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
