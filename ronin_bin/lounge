@@ -12,7 +12,7 @@ Usage:
                   this office's rental and limit, default models, people, other offices, About you
   lounge --json   the record as the park wrote it
 The park keeps it current within 30 seconds of a change at HQ. Read-only: the person makes
-account changes in the Business Lounge (https://hq.roninhosted.com/). Hosted offices only.
+account changes in the Business Lounge (hq.roninhosted.com). Hosted offices only.
 EOF_USAGE
 }
 json=''

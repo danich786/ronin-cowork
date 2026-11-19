@@ -38,11 +38,11 @@ test('Irasshai’s steps: her epic’s tasks in the template’s order, done one
 
 test('Setup while Irasshai runs: Assist seats her chat, the selector offers only her steps, a press goes to her through the message queue (KAN-573)', async () => {
   const [view, chat, garden, css] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js'), source('js/garden-canvas.js'), source('css/garden-canvas.css')]);
-  assert.match(view, /selectorFilter: \(type\) => \(irasshai \? type === IRASSHAI_STEP_TYPE : ORDER\.includes\(type\)\)/, 'her steps replace the scenes; with no Irasshai, Setup is as it was');
+  assert.match(view, /selectorFilter: \(type\) => type === IRASSHAI_OPEN_TYPE \|\| \(irasshai \? type === IRASSHAI_STEP_TYPE : ORDER\.includes\(type\)\)/, 'her entry, then her steps in place of the scenes; with no Irasshai, Setup is as it was');
   assert.match(view, /hear\('sessions', followIrasshai\)/, 'her session is followed on the push, never a timer');
   assert.match(view, /hear\('epicItems'/, 'her steps move with the pushed items');
-  assert.match(view, /garden\.chat\(chat\.el\)/, 'Assist seats her chat in place of the scene');
-  assert.match(view, /takeIrasshaiStep: \(step\) => \{[^}]*\}\s*void chat\?\.say\(takeStepLine\(step\)\);/, 'a press is one line to her, shown in her chat at once');
+  assert.match(view, /garden\.chat\(chat\.el, IRASSHAI_NAME\)/, 'Assist seats her chat in place of the scene, headed with her name');
+  assert.match(view, /takeIrasshaiStep: \(step\) => \{ void chat\?\.say\(takeStepLine\(step\)\); \}/, 'a press is one line to her, shown in her chat at once; she opens its surface (KAN-692)');
   assert.match(chat, /makeTileTranscript\(\{ admit:/, 'her conversation is Chat’s own drawing');
   assert.match(chat, /sendComposerMessage\(IRASSHAI, text\)/, 'the box and the steps send through the message queue');
   assert.doesNotMatch(chat, /makeTile\(|new Tile\b|tilehead/, 'no Agent tile, no terminal, no tile head');
@@ -67,7 +67,7 @@ test('She opens a step’s surface with show; the integrations panel is one, emb
 test('Opening a hosted Setup opens her; her selector entry opens her anywhere; a new birth gets a new chat (KAN-676, KAN-694)', async () => {
   const [view, chat] = await Promise.all([source('js/setup-view.js'), source('js/setup-irasshai.js')]);
   assert.match(view, /if \(HOSTED\) void askIrasshai\(\);/, 'hosted, on opening Setup');
-  assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST' \}\)/, 'one request; Services shows her or makes her fresh');
+  assert.match(chat, /request\('\/api\/irasshai\/open', \{ method: 'POST', json: \{ tab: mikaTab\(\) \} \}\)/, 'one request; Services shows her or makes her fresh');
   assert.match(view, /profiles\.define\(PROFILE, \[IRASSHAI_OPEN_TYPE,/, 'her entry tops the selector');
   assert.match(view, /selectorFilter: \(type\) => type === IRASSHAI_OPEN_TYPE \|\|/, 'always there, on any install');
   assert.match(chat, /if \(state === 'opening'\) return;/, 'repeats are ignored while a press runs');
@@ -79,7 +79,7 @@ test('Irasshai’s chat reads as a conversation: the Chat reading, the person’
   const chat = await source('js/setup-irasshai.js');
   assert.match(chat, /transcript\.show\(IRASSHAI, CHAT_READING\)/, 'her chat asks for the Chat reading, which drops Codex startup and injected context');
   assert.match(chat, /export const CHAT_READING = 'chat';/);
-  assert.match(chat, /makeTileTranscript\(\{ admit: irasshaiShown \}\)/);
+  assert.match(chat, /makeTileTranscript\(\{ admit: \(record\) => \(afterReady\(record, irasshaiReady\(\)\) \? irasshaiShown\(record\) : null\) \}\)/, 'drawn by irasshaiShown, from her ready mark on (KAN-694)');
   const shown = irasshaiShown;
   const user = (text) => ({ seq: 1, role: 'user', kind: 'say', text });
   assert.equal(shown(user('Read first: /home/ronin/.ronin/sessions/irasshai-1/AGENT_BIRTH_BRIEF.md — 90 lines, 6 KB, one read')), null, 'no birth packet');
