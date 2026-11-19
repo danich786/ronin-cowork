@@ -230,13 +230,15 @@ export function createCoworkView(options = {}) {
   const cronBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => { const surface = createSurface({ label: t('workspace.tab_cron_jobs', 'Cron jobs'), className: 'tw-cron' }); const room = createTeamJikan({ universal: true, teams: () => teamsFromState().filter((item) => !item.holding).map((item) => item.name) }); surface.content.append(room.el); return [id, { el: surface.el, room }]; })) : {};
   // seated in a workspace, grouped by Team of record, each row's act a labelled button.
   // A rehydrated session lands in the workspace whose surface woke it, like a birth.
-  const archivesBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
-    const surface = createSurface({ label: t('archives.card', 'Rehydrate Archived'), className: 'tw-archives' });
+  // A Team's workbench has the same surface behind its Rehydrate Agents pill, holding only the
+  // archives whose Team of record is the Team entered now (KAN-706).
+  const archivesBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
+    const surface = createSurface({ label: campaign ? t('archives.card', 'Rehydrate Archived') : t('archives.team_card', 'Rehydrate Agents'), className: 'tw-archives' });
     const host = el('div');
     surface.content.append(host);
-    const room = buildArchives({ connect: (name) => connectSession(name, id) }, host);
+    const room = buildArchives({ connect: (name) => connectSession(name, id) }, host, campaign ? null : () => team);
     return [id, { el: surface.el, room }];
-  })) : {};
+  }));
   // An Agent stone in an item's reading borrows that Agent's tile from the workspace the item sits
   // in, a non-member riding the pool as an extra (work-items-surface.js openAgentOver; KAN-435).
   const stopLending = addAgentLender({
@@ -324,7 +326,7 @@ export function createCoworkView(options = {}) {
     }, workspace: id }),
     // Epics (KAN-232): the bench keeps one per seat across Teams, so it reads the Team entered now.
     teamEpics: () => keepTeamSurface(createTeamEpics({ team: () => team })),
-    teamFindItem: () => keepTeamSurface(createFindItem()),
+    teamFindItem: (_workspace, detail) => keepTeamSurface(createFindItem(detail?.key)),
     canvases: teamCanvases,
     canvas: (_id, detail = {}) => {
       const surface = createSurface({ label: detail.key, className: 'tw-canvas' });

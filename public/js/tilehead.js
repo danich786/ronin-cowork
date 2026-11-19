@@ -12,7 +12,6 @@ import { isPlanRef, planName } from './plan-attachment.js';
 import { isLinkDoc, openLinkDoc } from './docs.js';
 import { chatMarkdown, setChatMarkdown } from './tile-transcript.js';
 import { createItemIsland, statusKey } from './tile-island.js';
-
 /**
  * THE HEADER, left to right. One row per control; see the file header for the columns.
  *
@@ -50,6 +49,12 @@ const HEADER = () => {
     read: (tile) => { const row = tile.homeRow?.(); tile.island?.update?.(tile.session, islandItems(tile.tegami), { stance: row?.stance, reports: row?.stance_reports }); tile.itemsBoard?.paint(); return ''; } },
 
   { grow: true },
+
+  // THE FLAG (owner, 2026-11-19, KAN-709): ⚑ beside Chat while an item this Agent holds is
+  // flagged, read off the same work record as its pill; one press unflags them all.
+  { key: 'flagBtn', cls: 'tile-flag', text: '⚑', needs: 'session',
+    read: (tile, el) => paintFlag(tile, el),
+    on: (tile, el) => void unflagHeld(tile, el) },
 
   { key: 'transcriptBtn', cls: 'transcript-toggle', text: t('transcript.toggle', 'Transcript'), needs: 'session',
     help: t('transcript.toggle_help', 'Each press shows more of the record; past the last one it returns to the terminal'),
@@ -97,6 +102,38 @@ const HEADER = () => {
   ];
   return rows;
 };
+
+/** The held items flagged now; the reasons ("Flagged: …" comments) read once per new set, then the
+ *  help is redrawn. A press hides the ⚑ at once and ignores repeats until the unflags answer. */
+const flaggedHeld = (tile) => (tile.tegami?.items || []).filter((item) => item.flagged);
+async function readReasons(tile, el, ids) {
+  const { request } = await import('./request.js');
+  const reads = await Promise.all(ids.map((id) => request(`/api/work-items/${encodeURIComponent(id)}`, { cache: 'no-store' })));
+  if (el.dataset.ids !== ids.join(' ')) return;
+  tile.flagReasons = reads.map((read, n) => {
+    const said = (read.ok ? read.data?.item?.comments || [] : []).filter((c) => String(c.text || '').startsWith('Flagged: ')).at(-1);
+    return `${ids[n]} ${said ? said.text : t('head.flagged', 'Flagged')}`;
+  });
+  syncTileHead(tile);
+}
+function paintFlag(tile, el) {
+  const ids = flaggedHeld(tile).map((item) => item.id);
+  el.hidden = !ids.length || el.getAttribute('aria-busy') === 'true';
+  if (el.dataset.ids !== ids.join(' ')) { el.dataset.ids = ids.join(' '); tile.flagReasons = null; if (ids.length) void readReasons(tile, el, ids); }
+  const help = `${(tile.flagReasons || ids.map((id) => `${id} ${t('head.flagged', 'Flagged')}`)).join('\n')}\n${t('head.unflag_help', 'Press to unflag')}`;
+  el.setAttribute('aria-label', help);
+  return help;
+}
+async function unflagHeld(tile, el) {
+  if (el.getAttribute('aria-busy') === 'true') return;
+  const ids = flaggedHeld(tile).map((item) => item.id);
+  el.setAttribute('aria-busy', 'true'); el.hidden = true;
+  const { request } = await import('./request.js');
+  const done = await Promise.all(ids.map((id) => request(`/api/work-items/${encodeURIComponent(id)}/unflag`, { method: 'POST', json: { comment: t('head.unflagged', 'unflagged by owner') } })));
+  for (const [n, read] of done.entries()) { const item = read.ok && tile.tegami?.items?.find((one) => one.id === ids[n]); if (item) item.flagged = false; }
+  el.removeAttribute('aria-busy');
+  syncTileHead(tile);
+}
 
 /** What the island shows: the items the Agent holds (a hand-in keeps the hold, KAN-269, so what
  *  it handed in is among them, marked from its own hand_ins), then, on a lead, the Epics and Tasks
@@ -279,6 +316,9 @@ async function openWorkRecord(tile) {
 /** One held item over the tile, as the Work Items reader draws it (work-items-surface.js):
  *  its title, kind, status and flag, its description, its facts, comments and attachments. */
 const openItemLayer = (tile, id) => [...tile.body.querySelectorAll(':scope > .work-overlay')].find((layer) => layer.dataset.item === id) || null;
+/** The same overlay for an item id pressed in Chat (chat-item-links.js, KAN-698): over a tile, or
+ *  over any chat's body given as { body, session, tegami, openDoc }. */
+export { openItem as openItemOver };
 async function openItem(tile, item) {
   const { renderItemDetail, holderOf } = await import('./work-items-surface.js');
   // Who holds it, every holder (w299): one read of the item as it opens, not a watch.

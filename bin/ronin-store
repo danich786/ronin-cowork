@@ -12,10 +12,9 @@
 #
 # NEVER write a Ronin path by hand in a script. Call this.
 #
-# Two bindings of one table is a drift risk, so it is gated rather than trusted:
-# scripts/check-stores.mjs resolves every store both ways under several environments
-# and fails `npm run verify` on any disagreement. Change the table here, change it
-# there, in the same commit — the gate will tell you if you did not.
+# Two bindings of one table is a drift risk: change the table here, change it there,
+# in the same commit. tests/stores.test.ts writes through the server and reads back through
+# the tools that use this.
 #
 # ONE LAYOUT, NO FALLBACKS. No legacy path, no legacy variable, no migration branch.
 set -euo pipefail

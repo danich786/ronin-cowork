@@ -23,13 +23,20 @@
  * (never the store), each born held by the receiving Agent, and tells it one line: walk this
  * epic through. With no receiver (the hosted front door, before Mika is born) they are made
  * unheld and the caller hands them on.
+ *
+ * Refreshing a started epic (KAN-699) brings the template's text to it: the epic's and each
+ * task's objective rewritten where they differ, a task or subtask the template adds made by its
+ * title. Status is untouched, so what is done stays done; nothing is removed. Its Workspace line
+ * stays. Run by its holder, it tells nobody (nobody hears their own change).
  */
 import path from 'node:path';
 import { STOCK_DIR, entryValue, isKeyLine, resolveFiles, rootDir } from './resources.js';
-import { createItem, WorkItemBadInput, WorkItemMissing, type Holder } from './work-items.js';
+import { createItem, editItem, listItems, readItem, WorkItemBadInput, WorkItemMissing, type Holder } from './work-items.js';
 import { enqueueMessage } from './message-queue.js';
 
 export interface TemplateTask { title: string; objective: string; subtasks: Array<{ title: string; objective: string }> }
+/** A task's `Open:` line: the surface the Agent opens with `show` for it, '' when it names none (KAN-692, KAN-696). */
+export const taskOpens = (task: Pick<TemplateTask, 'objective'>): string => /^Open:\s*`([^`]+)`/m.exec(task.objective)?.[1] ?? '';
 export interface EpicTemplate { name: string; title: string; for: string; order: number; objective: string; tasks: TemplateTask[]; origin: 'stock' | 'user' }
 
 export const stockTemplatesDir = (): string => path.join(STOCK_DIR, 'epic_templates');
@@ -102,4 +109,26 @@ export async function startTemplate(name: string, opts: StartOptions): Promise<S
   const told = walkLine(epic.id, epic.title, opts.workspace);
   if (opts.to !== opts.by) await enqueueMessage(opts.to, told, 'house', 'Epic templates', null, { when: 'ready' });
   return { epic: epic.id, tasks, told };
+}
+
+/** The template's text brought to an epic started from it: objectives rewritten where they
+ * differ, missing tasks and subtasks made by title (held as `to`); status kept (KAN-699). */
+export async function refreshTemplate(name: string, epicId: string, opts: Pick<StartOptions, 'by' | 'to'>): Promise<void> {
+  const template = await readTemplate(name);
+  const epic = await readItem(epicId);
+  if (!epic) return;
+  const holder: Holder | undefined = opts.to ? { kind: 'agent', name: opts.to } : undefined;
+  const items = await listItems();
+  const sync = async (parent: string, title: string, objective: string, kind: 'Task' | 'Subtask'): Promise<string> => {
+    const found = items.find((one) => one.parent === parent && one.title === title);
+    if (!found) return (await createItem({ title, objective, kind, parent, ...(holder ? { holder } : {}) }, opts.by)).item.id;
+    if (found.objective !== objective) await editItem(found.id, { objective }, opts.by);
+    return found.id;
+  };
+  const objective = template.objective + (/\nWorkspace: .*$/.exec(epic.objective)?.[0] ?? '');
+  if (epic.objective !== objective) await editItem(epic.id, { objective }, opts.by);
+  for (const task of template.tasks) {
+    const id = await sync(epic.id, task.title, task.objective, 'Task');
+    for (const sub of task.subtasks) await sync(id, sub.title, sub.objective, 'Subtask');
+  }
 }

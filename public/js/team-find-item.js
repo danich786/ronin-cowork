@@ -32,7 +32,8 @@ export function candidateIds(typed, knownIds = []) {
   return [given];
 }
 
-export function createFindItem() {
+/** `id`: an item to load at once (a Chat link dropped here, KAN-707). */
+export function createFindItem(id = '') {
   const { createSurface, createAction } = WorkspaceKit.primitives;
   const out = createSurface({ label: t('find_item.title', 'Find item'), className: 'setup-surface find-item' });
   // An Erabi reading stone (ask.css): its label over what is typed, the Find action beside it.
@@ -83,6 +84,7 @@ export function createFindItem() {
     said.textContent = t('find_item.none', 'No work item {id}.', { id: String(typed).trim() });
   }
 
+  if (id) { field.control.value = id; void load(id); }
   return {
     el: out.el,
     show: () => { if (!host.childElementCount) field.control.focus(); },

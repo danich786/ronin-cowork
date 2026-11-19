@@ -76,9 +76,8 @@
 
   --kaki-fill-hover: var(--kaki-lift);
 
-  /* THE TERMINAL'S COLOURS ARE THE DESIGNER'S, the 16 ANSI slots included. What keeps agent
-     CLIs readable is the contrast floor in scripts/check-css.mjs, which measures whatever
-     values are chosen; ui.md "Theme" says what each slot must stay. */
+  /* THE TERMINAL'S COLOURS ARE THE DESIGNER'S, the 16 ANSI slots included. ui.md "Theme"
+     says what each slot must stay for agent CLIs to stay readable. */
   --term-cube: standard;
   --term-size: 13px; /* xterm, the tape and the composer: one size, glyph for glyph (js/theme.js) */
   --term-bg: var(--tile-bg);
@@ -1626,6 +1625,15 @@ body {
   font-size: var(--text-small);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+  flex-wrap: wrap;
+  gap: var(--space-inline);
+}
+.home-archived-head > span { margin-right: auto; }
+.home-archive-sort {
+  display: flex;
+  gap: var(--space-inline);
+  letter-spacing: normal;
+  text-transform: none;
 }
 .home-archive-list {
   display: flex;
@@ -1767,6 +1775,11 @@ body {
 
 .tw-archives .home-archives {
   display: block;
+}
+/* A Document surface's editor or page fills its workspace (KAN-707). */
+.workspace-document > .wk-surface-content {
+  display: flex;
+  flex-direction: column;
 }
 .workspace-document > .wk-surface-content > .home-docs {
   display: flex;
@@ -3432,6 +3445,19 @@ body {
 /* Opaque: the route said this Agent has nothing to show. Still a button — pressing it
    opens the view, which says why in full. */
 .tile-head button.transcript-toggle.off { opacity: 0.4; }
+/* The flag (KAN-709): the pill's amber ⚑ beside Chat, only while a held item is flagged. */
+.tile-flag[hidden] { display: none !important; }
+.tile-head button.tile-flag, #phone .ph-bar .tile-flag { color: var(--warn); }
+#phone .ph-bar .tile-flag {
+  flex: 0 0 auto;
+  height: 40px;
+  min-width: 44px;
+  border: var(--edge) solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  font: var(--weight-strong) var(--text-body)/var(--leading-none) var(--font-ui);
+  cursor: pointer;
+}
 .tile-transcript-entry[data-kind='note'] { color: var(--muted); font-style: italic; }
 /* Tool lines and code read in the terminal's own face and size, so commands and paths line up
    as they do there (KAN-147). */
@@ -3508,6 +3534,9 @@ body {
 :is(.tile-transcript-entry, .chat-question) .markdown-reader :not(pre) > code { padding: 0 var(--space-row); border-radius: var(--radius-small); background: var(--inset); }
 :is(.tile-transcript-entry, .chat-question) .markdown-reader pre { overflow: auto; padding: var(--space-inline); border-radius: var(--radius-small); background: var(--inset); white-space: pre; }
 :is(.tile-transcript-entry, .chat-question) .markdown-reader a { color: var(--accent); }
+/* An item id in Chat opens the item over the tile (js/chat-item-links.js, KAN-698). */
+.tile-transcript-entry a.chat-item-link { color: var(--accent); }
+.tile-transcript-entry a.chat-item-link[aria-busy='true'] { cursor: progress; opacity: 0.6; }
 /* Sent, and not yet written down by the CLI: the person's words in a lighter shade until they land. */
 .tile-transcript-entry[data-role='user'][data-pending='true'] { color: var(--muted); }
 /* A pipe table, wherever markdown is read (Chat, Docs, Help): a heavier rule under the header
@@ -4814,6 +4843,14 @@ button.wk-card { cursor: pointer; }
   background: var(--kaki); /* kaki: the action, or what needs you */
   border-color: var(--kaki);
   color: var(--on-strong);
+}
+/* Read aloud (KAN-705, js/read-aloud.js): Stop's size on a desk, a key's in the keys row;
+   lit while fetching or playing. */
+/* The speed's face is a number ("1.25×"): Stop's height and look, as wide as its words. */
+.tile:is(.tape-on, .keys-on, .transcript-on) .composer .cctl.speak-speed { width: auto; min-width: 38px; padding: 0 var(--space-inline); }
+.tile:is(.tape-on, .keys-on, .transcript-on) .composer .speak-toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .tile.transcript-on .composer .keysrow [data-terminal-action='copy'] {
   display: none;

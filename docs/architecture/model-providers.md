@@ -374,8 +374,6 @@ The implementation seam is deliberately small:
   hook tells, because a dialog writes no journal line in any CLI.
 - `src/send.ts` reads the active prompt, types the brief, submits it, and verifies it left.
 - `src/routes/launch.ts` builds the brief and runs that handshake after the CLI starts.
-- `tests/agent-prompts.test.ts` holds terminal fixtures for every supported prompt/dialog
-  form.
 
 Pattern order is safety-critical: a selected dialog row must be recognized before a
 generic prompt marker. Claude uses `❯`; Codex uses `›` for both its prompt and its selected
@@ -463,9 +461,7 @@ the shipped catalog.
 5. Add one provider section with its `provider`, `cli` and `families` fields; then
    Refresh all.
 6. Update the Agent page's complete command permutations and unsupported forms.
-7. Run `npm run check:catalogs` and the focused provider tests affected by the change.
-   Leave full `npm run verify` to the lead's combined gate unless an earlier run is
-   explicitly requested ([verification guidance](../development/verification.md)).
+7. Run `npm run verify` ([verification guidance](../development/verification.md)).
 8. Launch every new model through New Agent. Confirm the receipt's command, the agent
    and model visible in the tile, and the complete startup request received by the agent.
 

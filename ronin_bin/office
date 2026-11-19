@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# office — the office as it is now: the rig an Agent is sitting on (KAN-712). Core's GET /api/office/read
+# assembles it live (src/office-read.ts); the lounge account, when Ronin Services' account part has
+# one, is added after it. This tool only prints.
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/tool-count.sh" office "$@"
+set -u -o pipefail
+. "$(dirname "$(readlink "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")")/tool-path.sh"
+TOOL_DIR=$(dirname "$SELF")
+usage() { cat <<'EOF_USAGE'
+Usage:
+  office read     this office as it is now: the people (About You) and the notes on them, model
+                  providers signed in, each Workspace with its Summary and the Teams and Agents
+                  running in it, Agents on their own, services connected, the defaults new Agents
+                  get, and the account from the Business Lounge
+Assembled each time from Ronin's own records; nothing is kept. Read-only.
+The people's notes: ~/ronin/library/ABOUT_USER.md. A Workspace's doc:
+~/ronin/library/workspaces/<handle>.md (grep the folder to search them all).
+EOF_USAGE
+}
+case "${1:-}" in
+  read) [ "$#" -eq 1 ] || { echo "office: read takes no arguments (office --help)" >&2; exit 2; } ;;
+  -h|--help) usage; exit 0 ;;
+  '') usage >&2; exit 2 ;;
+  *) echo "office: unknown command $1 (office --help)" >&2; exit 2 ;;
+esac
+
+. "$TOOL_DIR/ronin-http.sh"
+ronin_connect || exit $?
+out=$(curl -sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -w '\n%{http_code}' "$url/api/office/read") || { echo "UNREACHABLE: Ronin did not answer at $url" >&2; exit 5; }
+acct=$(curl -sS -m 30 "${RONIN_CURL[@]+"${RONIN_CURL[@]}"}" -w '\n%{http_code}' "$url/api/account/record" 2>/dev/null || printf '\n000')
+OFFICE=$out ACCOUNT=$acct python3 -c '
+import json, os, sys
+def split(raw):
+    body, _, status = raw.rpartition("\n")
+    try: return json.loads(body), status
+    except Exception: return None, status
+d, status = split(os.environ["OFFICE"])
+if not d or not d.get("ok"): print((d or {}).get("error") or "HTTP %s: Ronin answered without the office record" % status, file=sys.stderr); sys.exit(3)
+print(d["text"].rstrip())
+a, _ = split(os.environ["ACCOUNT"])
+if a and a.get("ok") and a.get("state") in ("current", "not_arrived"):
+    print("\n## The account (Business Lounge)")
+    print("\n".join(a.get("lines", [])))
+'

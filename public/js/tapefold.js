@@ -9,9 +9,7 @@
  *
  * This decides the GROUPING only; `tapeview.js` turns the ops into <details> elements.
  * Pure because the rule is fiddly and load-bearing — a tool's output settles across
- * several ticks and must not shatter into one fold per tick — and because a rule this
- * shape is worth pinning with tests (tests/tape-fold.test.js) rather than eyeballing
- * on a phone.
+ * several ticks and must not shatter into one fold per tick.
  *
  * OPS, in render order:
  *   { t: 'text',   s }               plain transcript text

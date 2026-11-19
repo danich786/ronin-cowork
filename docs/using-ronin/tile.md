@@ -9,6 +9,7 @@ column, or drag its card into the workspace where you want to see it.
 |---|---|
 | Title / ⛩ | Edit the Agent's displayed title; its session name remains its identity |
 | Item island | A pill for every work item the Agent holds (below) |
+| ⚑ | Only while an item the Agent holds is flagged; hover for each flag's reason. One press unflags every flagged item it holds (comment "unflagged by owner") and the ⚑ goes. Also on the phone's bar |
 | Term / Chat | When Terminal transcript is active, switch between the terminal and the Agent's conversation |
 | メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
@@ -96,6 +97,14 @@ has no Agent for session-specific actions to operate on.
 
 New Agents start read/write. There is no Control choice in the current tile header.
 
+## Read aloud
+
+In a hosted office, 🔊 reads the Agent's last reply aloud. On a desk it sits beside the
+message box, between Stop and Enter; on a phone it is in the keys row, right after Tab. It
+shows … while fetching and ■ while playing; press it again to stop. A failure shows in one line.
+The button after it shows the playback speed (1×, 1.25×, 1.5×, 2×): each press moves to the
+next and changes what is playing at once. This device remembers the choice.
+
 ## Type, copy, and paste
 
 Use the terminal to interact directly with the provider CLI, or write a message in the
@@ -145,6 +154,25 @@ marks and all, in the terminal's type; the choice is for that Agent and kept in 
 A link in Chat to a file on the Ronin machine opens that file in Docs, on a desk as on a phone and
 in the Helpful Assistant's chat (Irasshai) too, however the Agent wrote it: a full path, `~/…`, `file:///…`, a path relative
 to where it works, or `path:line` (the file opens; the line is not jumped to). Web links open in the browser.
+
+What a message names is a link when Ronin knows it, and plain text otherwise:
+
+- **A work item's id** (KAN-680, w806): the item opens over the tile, as from the tile's item
+  pills; Close returns to the chat where you were.
+- **An Agent's name** (@system_lead, or the bare name): that Agent's tile opens over the work
+  surface, as from an item's Agent; Close gives it back. On a phone, that Agent's screen.
+- **A document** (`~/ronin/library/ABOUT_USER.md`, `docs/a.md`, `samurai_lab/ronin_cloud/X.md`, or
+  just `ABOUT_USER.md`): it opens in Docs, when it is a file in the Agent's folders, its drop, the
+  Workspace folders (or the folder holding them) or the library.
+- **A commit** (`db709a8`, or `dev@7e2b28b` as a hand-in says it): when it is a commit in one of the
+  Agent's repos, `git show --stat -p` of it opens in Docs, to read.
+
+The Helpful Assistant's chat does the same over her chat. A document link shows the file's name;
+its whole path is its tooltip.
+
+Any of these links can also be dragged onto a workspace of a Team's workbench, as a selector pill
+can, and it opens there: an item on Find item, an Agent's tile, a document or a commit on a
+Document surface.
 
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in
 italic, set apart from its replies.
@@ -200,7 +228,9 @@ and the tile stays on Chat.
 
 **Stopped.** If an Agent's CLI exits on its own (a crash, a killed process), Chat ends with
 *Stopped: exit N at HH:MM* and a **Resume** button, which starts it again on the same
-conversation. Its Team's lead is told once, with the items it holds.
+conversation. Its Team's lead is told once, with the items it holds. **Close Tile** beside it
+closes the tile, as its − does: the Agent stays stopped and its card keeps Resume. On a phone it
+goes back to the Team.
 
 An Agent that reads *working…* with nothing new in its conversation for 12 minutes is flagged
 *no progress for 12 min*, the same way: Chat ends with that sentence and an **Open in

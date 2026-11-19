@@ -21,6 +21,16 @@ where to work: the Team already knows.
 An Agent with no Team has no Workspace. That is meant for helpers like Mika, which carry
 everything they need.
 
+## Its doc
+
+Every Workspace has a doc for Agents: `~/ronin/library/workspaces/<name>.md`, made with the
+Workspace (an older one gets its doc the first time it is read). It starts with a **Summary**, a
+few lines on what the Workspace is for and what is in it, then notes. `office read` shows each
+Summary. Agents read and write it with `workspace-doc` (`workspace-doc --help`); it is a plain
+file, so you can open or edit it too. A Workspace without a Summary gets one from the
+`assess-workspace` [epic template](epic-templates.md): a fresh Agent reads its folders and
+repositories, writes the Summary, and ends.
+
 ## Make or change a Workspace
 
 Open the **Workspaces** door on Ronin Home and press a Workspace, or place **New Workspace** from

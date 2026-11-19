@@ -28,7 +28,7 @@ This replaced the tmux server option `@ronin-operator` on 2026-09-05. That optio
 memory of a tmux server that could be replaced under the operator, writable by any process
 of the user, and erased on exit by every process that ever ran the entry point; five
 outages in four days wore the one sentence *"Ronin may not be running"* while the page
-answered 200. No tool may read or write it again; `tests/ronin-url.test.ts` pins that.
+answered 200. No tool may read or write it again.
 
 ## How a tool finds the door
 
@@ -90,10 +90,7 @@ birth environment; recreate that Agent to give it the newly enabled tools.
 
 ## For a test
 
-A test that needs an operator to answer gives it its own `RONIN_DATA_ROOT` and, when it
-runs the entry point, `NODE_ENV=production` without `RONIN_TEST_RUNNER`; its tools then get
-that root, or `RONIN_SOCKET` pointing into it. A test that only needs a door to knock on
-listens on `<scratch>/run/ronin.sock` itself (`tests/cli-http.test.ts`,
-`tests/ronin-url.test.ts`). Nothing in `tests/` reaches `~/.ronin`;
-`tests/test-runner-isolation.test.ts` pins that the runner and a scratch entry point bind
-no socket. The tmux side of the same rule is `tests/helpers/testserver.ts`.
+A test that needs an operator boots one through `tests/helpers/ronin.ts`: its own
+`RONIN_DATA_ROOT`, and its tools get `RONIN_SOCKET` pointing into it
+(`tests/tools.test.ts`). Nothing in `tests/` reaches `~/.ronin`; the runner clears the
+caller's `RONIN_SOCKET`. The tmux side of the same rule is `tests/helpers/testserver.ts`.

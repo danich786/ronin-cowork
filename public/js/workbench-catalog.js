@@ -21,7 +21,7 @@ export const WORKBENCH_TYPES = Object.freeze({
   launchTeam: 'launch.team', launchAgent: 'launch.agent', launchHelp: 'launch.help',
   commons: 'team.commons', workItems: WORK_ITEMS_TYPE, cron: 'cowork.cron-jobs',
   roster: 'cowork.team-roster', sessionRoster: 'cowork.session-roster', newTeamForm: 'cowork.new-team-form', newAgent: 'session.new-agent',
-  team: 'team.profile', archives: 'cowork.archives', teamEpics: 'team.epics', teamFindItem: 'team.find-item',
+  team: 'team.profile', archives: 'cowork.archives', teamArchived: 'team.archived', teamEpics: 'team.epics', teamFindItem: 'team.find-item',
   agentDocuments: 'agent.documents', agentTeams: 'agent.team-membership', agentComposition: AGENT_COMPOSITION_TYPE,
   campaignMachine: 'campaign.machine', campaignCloudAccount: 'campaign.cloud-account', campaignDefaults: 'campaign.defaults', campaignRoots: 'campaign.project-roots',
   campaignIdentity: 'campaign.identity', campaignInstallations: 'campaign.installations', campaignCreate: 'campaign.new', campaignIntegrations: 'campaign.integrations', campaignJira: 'campaign.jira', campaignJiraItems: 'campaign.jira-items', campaignJiraPairs: 'campaign.jira-pairs',
@@ -63,6 +63,9 @@ export function registerWorkbenchCatalog() {
   add({ type: WORKBENCH_TYPES.newTeamForm, header: 'surface', className: 'wk-selector-utility wk-selector-group-after', label: () => t('new_team.title', 'New Team'), summary: () => t('new_team.card_summary', 'Template · kit · lead — the drawn form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newTeamForm(workspace, consumed) });
   add({ type: WORKBENCH_TYPES.newAgent, header: 'surface', className: 'wk-selector-utility', label: () => t('new_agent.title', 'New Agent'), summary: () => t('new_agent.card_summary', 'Session type first — the drawn launch form.'), variant: 'dotted', create: ({ workspace, environment, consumed }) => environment.newAgent(workspace, consumed) });
   via(WORKBENCH_TYPES.archives, 'surface', 'archives', { className: 'wk-selector-utility', label: () => t('archives.card', 'Rehydrate Archived'), variant: 'dotted' });
+  // REHYDRATE AGENTS (owner, 2026-11-19, KAN-706): one pill on a Team's selector; it places the same
+  // archived sessions surface, holding only this Team's archives (cowork-view.js archivesBySeat).
+  via(WORKBENCH_TYPES.teamArchived, 'surface', 'archives', { className: 'wk-selector-utility', label: () => t('archives.team_card', 'Rehydrate Agents'), variant: 'dotted' });
   // The Teams Phalanx is the discovery; a dragged stone places the Team profile.
   add({ type: WORKBENCH_TYPES.team, header: 'surface', discover: () => [], create: ({ workspace, detail, environment }) => environment.team(workspace, detail) });
   add({ type: WORKBENCH_TYPES.agentDocuments, header: 'surface', className: 'wk-selector-utility', label: () => t('workspace.tab_docs', 'Documents'), summary: () => t('agent.documents_summary', 'Documents tracked by this Agent'), discover: (_t, e) => [{ key: e.agent() }], create: ({ workspace, detail, environment }) => environment.documents(workspace, detail) });
@@ -127,9 +130,11 @@ export function registerWorkbenchCatalog() {
   // THE TEAM PAGE (owner, 2026-10-18): the selector holds Commons, the Agents, New Agent and the
   // hints (Agent vocabulary, Session controls — the selector's own, workbench.js). The composition
   // reader, Behaviors and Feedback stay placeable: the roster, New Agent and the bar place them.
+  // Rehydrate Agents goes before New Agent (KAN-706).
   // Epics follows Commons (KAN-232), Find item follows Epics (KAN-433); an Epic's record is placed by a pressed Epic stone, never a card.
   // Defined after the Epics types: a profile names only registered types.
-  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamEpics, WORKBENCH_TYPES.teamFindItem, WORKBENCH_TYPES.epicRecord, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.canvas, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.agentComposition, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
+  // A document or a commit dragged from a Chat opens on a Document surface (KAN-707).
+  profiles.define(WORKBENCH_PROFILES.team, [WORKBENCH_TYPES.commons, WORKBENCH_TYPES.teamEpics, WORKBENCH_TYPES.teamFindItem, WORKBENCH_TYPES.epicRecord, WORKBENCH_TYPES.terminal, WORKBENCH_TYPES.canvas, WORKBENCH_TYPES.teamArchived, WORKBENCH_TYPES.newAgent, WORKBENCH_TYPES.agentComposition, WORKBENCH_TYPES.document, BEHAVIOUR_SURFACE_TYPE, FEEDBACK_TYPE]);
   // THE HELP WORKBENCH (owner, 2026-10-21): the help outline and Mika in chat, both solid cards (door-workbenches.js).
   add({ type: WORKBENCH_TYPES.helpOutline, header: 'surface', className: 'wk-selector-utility', label: () => t('help_outline.title', 'Help'), summary: () => t('help_outline.summary', 'The guides, starting with the four things to know'), create: ({ environment }) => environment.helpOutline() });
   add({ type: WORKBENCH_TYPES.helpMika, header: 'terminal', className: 'wk-selector-utility', label: () => 'Mika', summary: () => t('help_outline.mika_summary', 'Ask in plain words'), create: ({ environment }) => environment.helpMika() });

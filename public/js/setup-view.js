@@ -21,7 +21,7 @@ import { mikaShowHandlers, setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
 import { mikaTab, reportMikaView } from './mika.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, stepOpens, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -175,7 +175,13 @@ export function createSetupView() {
     },
     irasshaiSteps: () => steps(),
     irasshaiOpen: () => opener.offer(),
-    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
+    irasshaiPress: () => opener.press(),
+    // Not done: one line to her, and she opens its surface (KAN-692). Done: nothing to her; its surface opens (KAN-699).
+    takeIrasshaiStep: (step) => {
+      if (!step.done) return void chat?.say(takeStepLine(step));
+      const opens = stepOpens(step);
+      if (opens && WorkspaceKit.workbench.library.has(opens)) bench?.place(opens, 'workspace2');
+    },
     onGardenCanvas: (next) => {
       garden = next;
       seatChat();
@@ -242,6 +248,7 @@ export function createSetupView() {
   };
   const onShow = (m) => {
     if (!entered || m.tab !== mikaTab() || !WorkspaceKit.workbench.library.has(m.surface)) return;
+    if (bench.visibleIds().some((workspace) => bench.typeAt(workspace) === m.surface)) return; // on screen already: left where it is (KAN-712)
     bench.place(m.surface, m.workspace); // not selected: the person stays in her chat
   };
   mikaShowHandlers.add(onShow);

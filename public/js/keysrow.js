@@ -2,7 +2,7 @@
 import { t } from './lexicon.js';
 
 /**
- * @param {{sendRaw: (seq: string) => void, latest: () => void, controls?: HTMLElement[]}} hooks
+ * @param {{sendRaw: (seq: string) => void, latest: () => void, controls?: HTMLElement[], afterTab?: HTMLElement[]}} hooks
  *   sendRaw writes to this row's own session; latest jumps its view to the live end.
  * @returns {{el: HTMLElement}}
  */
@@ -35,6 +35,8 @@ export function buildKeysRow(hooks) {
     b.addEventListener('pointerdown', (e) => e.preventDefault());
     b.addEventListener('click', () => (seq === null ? hooks.latest() : hooks.sendRaw(seq)));
     row.append(b);
+    // Read aloud's 🔊 rides right after Tab (owner, KAN-710), when the tile has one.
+    if (seq === '\t') row.append(...(hooks.afterTab || []));
   }
   return { el: row };
 }

@@ -5,7 +5,7 @@ import { toast } from './ui.js';
 import { retireSession } from './session-retire.js';
 import { IS_TOUCH, S, isCoarse, saveState, tiles, WHEEL_DOWN } from './state.js';
 import { guard } from './errors.js';
-import { buildTileHead, syncTileHead } from './tilehead.js';
+import { buildTileHead, syncTileHead, openItemOver } from './tilehead.js';
 import { installTextDrops } from './tiledroptext.js';
 import { installFileDrops } from './tilefiles.js';
 import { dvrStep } from './dvr.js';
@@ -16,6 +16,7 @@ import { TileWire } from './tilewire.js';
 import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { buildKeysRow } from './keysrow.js';
+import { readAloudButtons } from './read-aloud.js';
 import { buildTileDocView } from './tile-doc-view.js';
 import { buildSecretAsk } from './secret-ask.js';
 import { refreshKaki, setKakiPolicy } from './output.js';
@@ -85,7 +86,9 @@ export class Tile {
       onAnswer: () => this.answerInTerminal(),
       onChoose: (answer) => this.answerQuestion(answer),
       onResume: () => this.resumeAgent(),
+      onClose: () => this.minimize(),
       onDoc: (path) => this.openDoc(path),
+      onItem: (item) => openItemOver(this, item),
     });
     this.body.append(this.transcriptView.el);
     // CONTINUE IN CHAT — at the foot of the terminal while it was reached by Answer in Terminal
@@ -606,6 +609,8 @@ export class Tile {
         sendMessage: (text) => this.sendMessage(text),
         scrollToBottom: () => this.jumpLatest(),
       });
+      // READ ALOUD (KAN-705): only in a hosted office with KOE loaded; js/read-aloud.js.
+      const voice = readAloudButtons(this);
       // Coarse pointer: the software keyboard has no Esc, Ctrl, Tab or arrows, so the
       // keys row rides the composer — always visible with it, lifting with it, and
       // acting on THIS tile's session rather than "the active tile" (keysrow.js).
@@ -614,6 +619,7 @@ export class Tile {
           // Clear and Stop belong to every touch composer, including the wide iPad
           // workbench. Copy remains Term-only through the shared transcript CSS rule.
           controls: buildMobileControlButtons(this),
+          afterTab: voice,
           sendRaw: (d) => this.sendRaw(d),
           latest: () => this.jumpLatest(),
         }).el);
@@ -622,6 +628,8 @@ export class Tile {
         // A desktop has Esc, but not always the focus to aim it: the buttons are always there.
         const send = this.composer.el.querySelector('.csend');
         for (const button of buildBoxControlButtons(this)) this.composer.el.insertBefore(button, send);
+        // Read aloud and its speed sit between Stop and Enter, Stop's size (owner, KAN-710).
+        for (const b of voice) { b.classList.add('cctl'); this.composer.el.insertBefore(b, send); }
       }
     }
     this.composer.show(on);

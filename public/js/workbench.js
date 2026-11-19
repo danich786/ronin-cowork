@@ -260,6 +260,13 @@ export function createWorkbench(options = {}) {
   const resourceAt = (id) => holding(id)?.dataset?.workbenchResource || '';
   const locations = (type, resource = '') => WORKBENCH_IDS.filter((id) => typeAt(id) === type && (!resource || resourceAt(id) === resource));
   const place = (type, id = selected, detail = {}) => {
+    // A type may name what its card places instead ({ type, detail }), or nothing (null: refused);
+    // Setup's step pills open the surface their task names (KAN-696).
+    const redirect = WorkbenchLibrary.get(type)?.redirect;
+    if (redirect) {
+      const to = redirect(detail, options.environment);
+      return to?.type && to.type !== type ? place(to.type, id, to.detail || {}) : false;
+    }
     if (fixedWorkspaces[id] && fixedWorkspaces[id] !== type) return false;
     const value = instance(type, id, detail);
     if (!value || !placeNode(id, value.el)) return false;

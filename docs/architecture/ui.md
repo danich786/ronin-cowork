@@ -51,15 +51,14 @@ Later layers win, so the cascade guarantees exactly one direction: every Ronin r
 beats xterm.css by construction. `app` being strongest is what lets a feature size and
 accent ITS OWN card (`.ns-card`, `.sp-card`) — and it means the rule "app does not
 restyle a primitive's hooks (`.ui-*`, `#toast`, `.helpbox`) or shadow a foundation
-token" is `check-css`'s to enforce (checks 4–5), not the cascade's. Splitting layers
+token" is review's to keep, not the cascade's. Splitting layers
 into files is a mechanical move for the day a layer earns one.
 
 ## The look is spelled once — all of it
 
 **Editing `@layer foundations` re-skins the whole app.** That is the promise,
-and it only holds while nothing carrying look is spelled anywhere else — so
-`scripts/check-css.mjs` gates every family, not just colour. A raw `8px` radius in a
-feature rule is the same defect as a raw `#131826`.
+and it only holds while nothing carrying look is spelled anywhere else, in every family,
+not just colour. A raw `8px` radius in a feature rule is the same defect as a raw `#131826`.
 
 font-sizes including 10.5/11.5/12.5px, spacing on nearly every integer from 1 to 18, and
 **seven** font stacks doing the work of three roles. An agent could not get a colour wrong
@@ -130,9 +129,7 @@ Only the colour roles are redefined under `:root[data-theme='light']`.
 really just the first two skins") is already satisfied rather than pending. Stock is spelled
 in the stylesheet because it is the **floor**: the page must paint correctly with no JS
 having run, on a first visit or a flaky link, and a floor that has to be fetched is not one.
-Moving it into `SKINS.md` would also put one palette in two places — and `check-css` reads
-its contrast floor out of the stylesheet by selector and has never heard of `SKINS.md`, so
-the copy that renders would go unmeasured while the copy that does not stayed green.
+Moving it into `SKINS.md` would also put one palette in two places.
 
 **The honest limit: a skin's colours are checked by nothing.** The gate measures
 `@layer foundations`. Shipped skins are written to stay clear of the floor — `paper` moves
@@ -165,11 +162,9 @@ holds only tokens a designer may change. `0` is always legal: the absence of a v
 
 ## Colour
 
-Colour is spelled once, in tokens, and `scripts/check-css.mjs` fails the build on a raw
-colour anywhere but a `--token:` definition (the allowlist is empty and stays empty).
-The same gate holds a **contrast floor** for the named role pairs in both themes —
-floors set from the measured palette, so a token edit that dims text fails the build.
-The roles, defined in `public/style.css`:
+Colour is spelled once, in tokens: no raw colour anywhere but a `--token:` definition.
+The named role pairs keep readable contrast in both themes. The roles, defined in
+`public/style.css`:
 
 - surfaces: **two, and nothing else neutral paints a background** (owner, cut 13: "if we
   can't explain why a colour is there, don't do it"). `--surface` is the one base: the top
@@ -208,8 +203,7 @@ The roles, defined in `public/style.css`:
   read back into JS by `termTheme()` (`public/js/theme.js`), never restated. **Every
   `--term-*` token is the designer's, the 16 ANSI slots and `--term-cube` included**; the
   rules below (bright white is the strongest mark; on paper every slot clears 3:1) are what a
-  new value must keep, and `check-css` holds the terminal's text pairs to the floor in both
-  themes. **The terminal's surfaces are the UI's, not copies** (owner, cut 11): `--term-bg`
+  new value must keep, in both themes. **The terminal's surfaces are the UI's, not copies** (owner, cut 11): `--term-bg`
   is `--surface` (xterm reads it), the composer's input is `--inset`, and the tape's lines,
   ink and muted read `--line`/`--line-2`, `--fg`/`--fg-strong` and `--muted` in both shells, so a retuned neutral moves the terminal with it. Only true
   terminal values keep a hex: the ANSI hues, the cursor, the selection, and bright black,
@@ -237,8 +231,7 @@ flipping away from the device's mode pins the shell; flipping
 back to match re-arms following — no third control exists (`theme.js setTheme`).
 Per device (localStorage `tmuxgrid.theme`); `index.html` resolves the choice inline
 before first paint. One resolved palette feeds CSS, xterm and the browser's
-`theme-color`; `check-css` holds `theme.js`'s token reads and the stylesheet to the
-same list. The browser gates pin `colorScheme: 'dark'` so the baselines are a choice,
+`theme-color`; `theme.js`'s token reads and the stylesheet keep the same list. The browser gates pin `colorScheme: 'dark'` so the baselines are a choice,
 not the headless engine's default.
 
 purpose — a terminal is read against a dark ground by convention and every TUI palette
@@ -260,8 +253,7 @@ scheme, two grounds. Two departures from stock, both forced by the paper:
   bright white stays the strongest mark, which is the role the emitting code means.
   Bright black (8) is the exception to 3:1: agent CLIs paint it as a BACKGROUND band, so
   in both shells it is a neutral near the surface (light grey on paper, a dark band near
-  `--surface` on the dark shell) that `--term-fg` reads on at the 7:1 floor, which `check-css`
-  holds. The cost is `\e[90m` dim text, which fades in both shells.
+  `--surface` on the dark shell) that `--term-fg` reads on at the 7:1 floor. The cost is `\e[90m` dim text, which fades in both shells.
 
 half a terminal palette; the other 240 are the xterm cube, and a program that addresses
 those was left painting for a ground that had gone. `theme.js` generates all 240
@@ -511,8 +503,7 @@ reserving a gutter.
   `aria-disabled`, the reason in the help text. `disabled` is for controls whose
   explanation is unnecessary.
 - Every `title` is seized by `tips.js`, which supplies `aria-label` to icon-only buttons.
-  The house help box and native browser title bubbles are disabled system-wide; `check-tips`
-  drives hover and focus to hold that absence.
+  The house help box and native browser title bubbles are disabled system-wide.
 - **A control that names itself on its face gets no pop-up.** The Commons room tabs and the
   `blurb:` in two always-visible lines, so the box repeated the answer and laid 300px of it
   over the cards underneath (owner: *"its dumb to have the hover description covering the
@@ -536,13 +527,10 @@ reserving a gutter.
 ## Structure gates
 
 `check-modules` (cycles across the whole graph, orphans, resolution, top-level import
-use, the 700-line ceiling) · `check-css` (colour spelled once; app patches no
-primitive and shadows no token; the contrast floor, both themes) · `check-tips` (hover/focus help stays absent) · `smoke-ui` (the desktop
-Team page renders its tiles, seats and paints the gate's own probe session, and opens
-Configuration; the phone gets the mobile document's bar on its first paint) · `visual-ui` (the composition fingerprint: chrome geometry and
-resolved colours against a checked-in baseline, both themes; `--update` is the
-reviewed way to accept an intended change) · `tests/` (the pure contracts:
-`request-shape.test.js`, `auth.test.ts`, `dvr.test.js`, `tape-fold.test.js`).
+use, the 700-line ceiling) · `smoke-ui` (the desktop Team page renders its tiles, seats
+and paints the gate's own probe session, and opens Configuration; the phone gets the
+mobile document's bar on its first paint) · `tests/` (behaviour, through the real server:
+[verification](../development/verification.md)).
 
 ## Agents are data, not branches
 
@@ -586,14 +574,14 @@ can only use one. There is deliberately no unauthenticated registration route.
 code, valid 30 minutes, for the case where a
 passkey will not offer itself and changing the password — which would log every other
 device out — is too big a hammer. `src/passkey.ts` holds the verification and
-`src/routes/passkey-api.ts` the routes; `tests/passkey.test.ts` signs real assertions
+`src/routes/passkey-api.ts` the routes; `tests/sign-in.test.ts` signs real assertions
 with a real P-256 key so the byte layout and the signature check are actually held.
 
 No WebAuthn library was added: the browser hands back an already-decoded public key
 (`getPublicKey()`), which is the only part that would have wanted a CBOR parser.
 
-server half is held by tests: 14 of them, signing real P-256 assertions, so tampered,
-wrong-origin, cross-site, replayed and unverified assertions are each proven to fail.
+server half is held by a test signing real P-256 assertions, so tampered, wrong-origin,
+cross-site, replayed and unverified assertions are each proven to fail.
 **The browser ceremony has never run.** No line of this has met a real
 `navigator.credentials` call, a real Touch ID prompt or a real device; it landed against
 a server that was never restarted to pick it up. Two things are settled only by the owner
@@ -701,7 +689,5 @@ providers, Templates — and stays. Tabs, the Presets kind filter, and the
 2 ⇄ 4 button are not selections from a list. The tile head owns its current Output and
 mention controls; proposed migrations belong in the creators’ Lab.
 
-**What enforces it.** `tests/ask.test.js` is the unit floor. The consumer guard — failing a
-hand-drawn `select`, `Option`, checkbox or `aria-pressed` row outside `ask.js`, the tile head
-and the stone work surface — lands with the launch-form migration, once those forms no
-longer draw their own (the first consumer is New Agent).
+**What keeps it.** Review: no hand-drawn `select`, `Option`, checkbox or `aria-pressed` row
+outside `ask.js`, the tile head and the stone work surface.
