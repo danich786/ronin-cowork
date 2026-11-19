@@ -28,6 +28,7 @@ class Node {
     if (key.startsWith('data-')) this.dataset[key.slice(5).replace(/-(\w)/g, (_, c) => c.toUpperCase())] = String(value);
   }
   getAttribute(key) { return this.attributes[key]; }
+  removeAttribute(key) { delete this.attributes[key]; }
   // The two selector shapes the transcript asks: '.class' and '.class[attr="value"]'.
   querySelectorAll(selector) {
     const [, cls, attr, value] = selector.match(/^\.([\w-]+)(?:\[([\w-]+)="([^"]*)"\])?$/) || [];
@@ -1017,6 +1018,19 @@ test('KAN-618: no progress for 12 min takes the dots\' place, with Open in Termi
   assert.equal(end.children.length, 2, 'a sentence and a button: no dots');
   end.children[1].dispatchEvent({ type: 'click' });
   assert.deepEqual(pressed, ['open']);
+});
+
+test('KAN-700: a stopped Agent\'s chat has Resume and Close Tile; each press is its own', () => {
+  const pressed = [];
+  const view = makeTileTranscript({ read: async () => ({ ok: true, data: { available: true, records: [] } }), watch: () => () => {},
+    onResume: () => pressed.push('resume'), onClose: () => pressed.push('close') });
+  view.show('agent');
+  view.setStance('stopped');
+  const end = view.el.children.at(-1);
+  assert.deepEqual(end.children.slice(1).map((b) => b.textContent), ['Resume', 'Close Tile']);
+  end.children[2].dispatchEvent({ type: 'click' });
+  end.children[1].dispatchEvent({ type: 'click' });
+  assert.deepEqual(pressed, ['close', 'resume']);
 });
 
 test('Answer in Terminal: the press switches through the tile, and only that press comes back', () => {

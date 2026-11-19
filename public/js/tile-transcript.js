@@ -41,7 +41,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  *               left out is still held by seq, so paging and catch-up run as if it were drawn
  *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, onItem = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onClose = null, onDoc = null, onItem = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -205,6 +205,13 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
         if (onResume) {
           stanceNode.append(WorkspacePrimitives.createAction({
             label: t('transcript.resume', 'Resume'), kind: 'primary', size: 'compact', className: 'tile-transcript-answer', action: () => onResume(),
+          }).el);
+        }
+        // Close Tile (owner, 19 Nov, KAN-700): the tile's own close, its head's −. The Agent stays
+        // stopped, its card keeps Resume.
+        if (onClose) {
+          stanceNode.append(WorkspacePrimitives.createAction({
+            label: t('transcript.close_tile', 'Close Tile'), size: 'compact', className: 'tile-transcript-answer', action: () => onClose(),
           }).el);
         }
       } else if (flagged) {
