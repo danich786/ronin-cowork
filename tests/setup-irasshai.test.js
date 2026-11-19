@@ -28,7 +28,7 @@ test('Irasshai’s steps: her epic’s tasks in the template’s order, done one
     { id: 'KAN-9', title: 'Meet your Agents', done: false },
   ]);
   assert.deepEqual(irasshaiSteps(epics.slice(0, 1), items, ORDER), [], 'no epic of hers, no steps');
-  assert.equal(takeStepLine({ id: 'KAN-3', title: 'Workspace' }), "Let's do Workspace (KAN-3).", 'a press is one line');
+  assert.equal(takeStepLine({ id: 'KAN-3', title: 'Workspace' }), "Let's do Workspace.", 'a press is one line, with no item id (KAN-699)');
   assert.equal(irasshaiIn([{ name: 'mika_agent' }, { name: 'irasshai' }]), true);
   assert.equal(irasshaiIn([{ name: 'mika_agent' }]), false);
   assert.equal(onboardingDone([]), false, 'before her epic exists, onboarding is not over (KAN-676)');
@@ -42,7 +42,8 @@ test('Setup while Irasshai runs: Assist seats her chat, the selector offers only
   assert.match(view, /hear\('sessions', followIrasshai\)/, 'her session is followed on the push, never a timer');
   assert.match(view, /hear\('epicItems'/, 'her steps move with the pushed items');
   assert.match(view, /garden\.chat\(chat\.el, IRASSHAI_NAME\)/, 'Assist seats her chat in place of the scene, headed with her name');
-  assert.match(view, /takeIrasshaiStep: \(step\) => \{ void chat\?\.say\(takeStepLine\(step\)\); \}/, 'a press is one line to her, shown in her chat at once; she opens its surface (KAN-692)');
+  assert.match(view, /if \(!step\.done\) return void chat\?\.say\(takeStepLine\(step\)\);/, 'a press on a step not done is one line to her, shown in her chat at once; she opens its surface (KAN-692)');
+  assert.match(view, /const opens = stepOpens\(step\);\n\s*if \(opens && WorkspaceKit\.workbench\.library\.has\(opens\)\) bench\?\.place\(opens, 'workspace2'\);/, 'a press on a done step tells her nothing and opens its surface (KAN-699)');
   assert.match(chat, /makeTileTranscript\(\{ admit:/, 'her conversation is Chat’s own drawing');
   assert.match(chat, /sendComposerMessage\(IRASSHAI, text\)/, 'the box and the steps send through the message queue');
   assert.doesNotMatch(chat, /makeTile\(|new Tile\b|tilehead/, 'no Agent tile, no terminal, no tile head');

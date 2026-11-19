@@ -40,8 +40,8 @@ export function irasshaiSteps(epics, items, order = []) {
     .map(({ id, title, done }) => ({ id, title, done }));
 }
 
-/** The line a press sends her. */
-export const takeStepLine = (step) => `Let's do ${step.title} (${step.id}).`;
+/** The line a press on a step not yet done sends her, in the person's name: the step as they see it, never an id (KAN-699). */
+export const takeStepLine = (step) => `Let's do ${step.title}.`;
 
 /** Irasshai's chat (KAN-617): a record as her chat draws it, or null. See setup-irasshai.js. */
 const HEAD = /^From [^\n]*\[([^\]\n]+)\]:\n/;
