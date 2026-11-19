@@ -12,6 +12,11 @@ steps has been answered, and **Ronin Settings**, the full configuration workbenc
 that. Teams, Epics, Workspaces and Model Providers wait for a model provider; Help
 is open from the start.
 
+Opening Ronin at its bare address, with no page named, lands on **Ronin Setup** until Setup
+is done, and on Home after that (KAN-720). Done is Setup's own record. On a hosted office it is
+the Helpful Assistant's onboarding epic reaching Done. Everywhere else it is all five steps
+being answered. A link that names a page still opens that page.
+
 ### Going back to Setup
 
 **Ronin Settings → Machine Settings** keeps a **Setup** card at the head of its column: the

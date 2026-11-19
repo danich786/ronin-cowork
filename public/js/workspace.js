@@ -457,14 +457,14 @@ export function createWorkspace(host, options = {}) {
     const route = routeFromHash();
     navigate(route?.view || safeView, { param: route?.param || '', fromHistory: true });
   };
-  const start = () => {
+  const start = (landing = '') => {
     if (started || destroyed) return;
     started = true;
     const route = routeFromHash();
-    // A bare Ronin URL is HOME, every time. Workspace recall belongs inside an explicit
-    // destination; it must not turn the product's front door into whichever room this
-    // browser happened to leave last.
-    const id = route?.view || safeView;
+    // A bare Ronin URL is HOME, or the `landing` the caller names (Setup, until Setup is
+    // done: KAN-720). Workspace recall belongs inside an explicit destination; it must not
+    // turn the product's front door into whichever room this browser happened to leave last.
+    const id = route?.view || landing || safeView;
     navigate(id, { param: route?.param || '', replace: true, initial: true });
     window.addEventListener('popstate', onPopState);
   };
