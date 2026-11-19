@@ -10,6 +10,7 @@ column, or drag its card into the workspace where you want to see it.
 | Title / ⛩ | Edit the Agent's displayed title; its session name remains its identity |
 | Item island | A pill for every work item the Agent holds (below) |
 | Term / Chat | When Terminal transcript is active, switch between the terminal and the Agent's conversation |
+| 🔊 | In a hosted office: read the Agent's last reply aloud. It shows … while fetching and ■ while playing; press again to stop. A failure shows in one line. Also on the phone's bar |
 | メ | Open the menu for this Agent (below) |
 | − | Close this view while the Agent keeps running |
 

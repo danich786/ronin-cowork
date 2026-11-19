@@ -171,14 +171,5 @@ worktrees are preserved to named recovery refs and receipts before cleanup.
 
 ## Executable coverage
 
-The focused contract is covered by:
-
-- `tests/worktrees-resolution.test.ts` for the four resolution cells, mixed assignments,
-  missing managed coordinates, edit/commit behavior, and hostile inherited Git variables;
-- `tests/arrangement-declare.test.ts` and `tests/project-root-profile-create.test.ts` for
-  profile normalization, validation, persistence, and Project Root transport;
-- `tests/launch-desks.test.ts` for the single production consumer and managed/direct launch
-  behavior;
-- `tests/desks.test.ts` and `tests/desk-state.test.ts` for worktree lifecycle, registry,
-  synchronization, recovery, and state reporting;
-- promotion tests for candidates, receipts, recovery, and atomic line movement.
+`tests/promotion.test.ts` walks a managed repository through desk open, commit, hand-in and
+promotion into `dev`, and a failed health check reverted.

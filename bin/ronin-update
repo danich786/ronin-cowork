@@ -46,7 +46,7 @@
 # If a release changes deploy/*.service, this script says so loudly: that needs
 # ./setup.sh from <home>/current, which re-copies units.
 #
-# WHERE THE HOME IS is never spelled in code (scripts/check-place.mjs): an installed
+# WHERE THE HOME IS is never spelled in code: an installed
 # copy of this script sits at <home>/releases/<v>/bin/ronin-update and derives the
 # home from its own location. Run from a checkout there is no home to derive, so
 # --home is required — the first install (cutover) names it once, explicitly.

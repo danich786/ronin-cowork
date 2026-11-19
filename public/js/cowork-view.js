@@ -11,7 +11,7 @@ import { createTeamWipeboard } from './team-wipeboard.js';
 import { createTeamJikan } from './team-jikan.js';
 import { buildMessageQueue } from './message-queue.js';
 import { buildDocs, createDocumentWorkspaceAdapter } from './docs.js';
-import { buildArchives, createTeamArchived } from './archives.js';
+import { buildArchives } from './archives.js';
 import { agentSituation, onAgeTick, onProjects, projectData, situationTitle, stanceLabel } from './home.js';
 import { request } from './request.js';
 import { paintCanvas } from './canvas-view.js';
@@ -230,13 +230,15 @@ export function createCoworkView(options = {}) {
   const cronBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => { const surface = createSurface({ label: t('workspace.tab_cron_jobs', 'Cron jobs'), className: 'tw-cron' }); const room = createTeamJikan({ universal: true, teams: () => teamsFromState().filter((item) => !item.holding).map((item) => item.name) }); surface.content.append(room.el); return [id, { el: surface.el, room }]; })) : {};
   // seated in a workspace, grouped by Team of record, each row's act a labelled button.
   // A rehydrated session lands in the workspace whose surface woke it, like a birth.
-  const archivesBySeat = campaign ? Object.fromEntries(Object.keys(seats).map((id) => {
-    const surface = createSurface({ label: t('archives.card', 'Rehydrate Archived'), className: 'tw-archives' });
+  // A Team's workbench has the same surface behind its Rehydrate Agents pill, holding only the
+  // archives whose Team of record is the Team entered now (KAN-706).
+  const archivesBySeat = Object.fromEntries(Object.keys(seats).map((id) => {
+    const surface = createSurface({ label: campaign ? t('archives.card', 'Rehydrate Archived') : t('archives.team_card', 'Rehydrate Agents'), className: 'tw-archives' });
     const host = el('div');
     surface.content.append(host);
-    const room = buildArchives({ connect: (name) => connectSession(name, id) }, host);
+    const room = buildArchives({ connect: (name) => connectSession(name, id) }, host, campaign ? null : () => team);
     return [id, { el: surface.el, room }];
-  })) : {};
+  }));
   // An Agent stone in an item's reading borrows that Agent's tile from the workspace the item sits
   // in, a non-member riding the pool as an extra (work-items-surface.js openAgentOver; KAN-435).
   const stopLending = addAgentLender({
@@ -271,14 +273,6 @@ export function createCoworkView(options = {}) {
     void loadCanvases();
     return canvasOffer.names.map((name) => ({ key: name, workspace: canvasOffer.workspace, label: name, summary: t('canvas.card_summary', 'Canvas: {workspace}, read live', { workspace: canvasOffer.workspace }) }));
   };
-  // The Team's archived Agents as selector cards (KAN-702; archives.js).
-  const teamArchived = createTeamArchived({
-    team: () => (campaign || team === UNASSIGNED ? '' : team),
-    members: () => membersOfTeam(team).map((m) => m.name),
-    refresh: () => bench.refreshSelector(),
-    selected: () => bench.selected(),
-    connect: (name, id) => connectSession(name, id),
-  });
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(campaign ? WB_TYPES.roster : WB_TYPES.commons, workspace)),
     teamCommons: (id) => ({ el: commonsFor(id).el, show: (detail = {}) => { const item = commonsFor(id); if (!detail.doc && !detail.tab) item.attendQueueOnOpen(); item.channels.enter(ctx); if (detail.doc) { item.channels.select('docs'); void item.docs.open(detail.doc); } else if (detail.tab) item.channels.select(detail.tab); } }),
@@ -345,9 +339,6 @@ export function createCoworkView(options = {}) {
     epics: () => [],
     epicRecord: (id, detail) => keepTeamSurface(createEpicRecord(detail.key, { epicsRead: createEpicsRead(() => '') })),
     archives: (id) => ({ el: archivesBySeat[id].el, show: () => void archivesBySeat[id].room.enter() }),
-    archivedAgents: teamArchived.offers,
-    // A card dropped on a workspace restores there; a remembered placement whose archive is gone does nothing.
-    archivedAgent: (id, detail = {}) => ({ el: seats[id].surface.el, show: () => void teamArchived.restore(detail.key, id) }),
     document: (detail = {}) => createDocumentWorkspaceAdapter({ root: detail.root, path: detail.path || detail.key }),
     team: (id, detail) => createLeagueTeamSurface(detail.key, id),
     sessions: () => (campaign ? unassignedSessions() : membersOfTeam(team)).map((member) => {

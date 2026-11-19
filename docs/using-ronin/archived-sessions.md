@@ -12,14 +12,13 @@ After that Ronin removes it, with its session folder, as a Hard Delete of the ar
 2. If it owns an open managed worktree, hand off or finish that worktree first; the message explains
    what prevents archiving.
 3. Restore it from either place:
-   - **On its Team's workbench.** The Team's selector shows each archived Agent of that Team as
-     a dotted card under **Archived**, after its live Agents. Press it (or drag it
-     onto a workspace) and it restores there: the card says *restoring…* at once, then the
-     Agent's terminal opens. If it can't, a message says why and the card stays.
-   - **On the Archived sessions page** (**Rehydrate Archived** on the Teams workbench), every
-     archive on this machine, with **Rehydrate** on each. Sort by **Recently archived** (the
-     default: newest first, the Team on each line) or by **Team** (grouped by Team, newest
-     first inside each).
+   - **On its Team's workbench:** press **Rehydrate Agents** in the Team's selector. It opens
+     the archived sessions list holding only that Team's archived Agents.
+   - **On the Teams workbench:** press **Rehydrate Archived** for every archive on this machine.
+
+   Each row has **Rehydrate**; the Agent's terminal opens in that workspace. Sort by **Recently
+   archived** (the default: newest first, the Team on each line) or by **Team** (grouped by
+   Team, newest first inside each).
 
 ### When the pane is stuck or dead
 

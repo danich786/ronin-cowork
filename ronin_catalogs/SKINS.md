@@ -49,10 +49,7 @@
 >    resolving to empty. Same law as stock ⊕ user in `docs/architecture/shadowing.md`: the stock layer
 >    exists to be there before anything else is.
 > 2. **Keeping a floor AND a copy here would be the same palette spelled twice** — the exact
->    drift the token rule exists to end — and `scripts/check-css.mjs` would measure the
->    wrong one. Its contrast floor reads token values out of the STYLESHEET, by selector,
->    from `@layer foundations` only; it has never heard of this file. So the CSS copy would
->    stay green while the copy that actually renders went unmeasured.
+>    drift the token rule exists to end.
 >
 > Which is the honest limit of this whole feature: **a skin's colours are checked by
 > nothing.** The shipped ones are hand-picked to stay clear of the floor; yours are yours.

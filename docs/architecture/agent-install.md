@@ -80,13 +80,4 @@ install remains on the needed list, so asking again is the retry.
 
 ## Proving a command still works
 
-    npm run check:agent-installs
-
-Runs each `get` line against a throwaway npm prefix and asks whether the agent's command
-exists **inside that prefix**, with the throwaway bin directory as the only thing on PATH —
-so a copy already on this machine can never answer for a line that does not work. It
-uninstalls nothing and writes nothing outside the temporary directory it removes.
-
-Deliberately **not in `npm run verify`**: it reaches the network and costs tens of seconds
-per agent, and a gate that needs the internet turns a broken wire into a broken build. Run
-it when a `get` line changes, and before cutting a release that carries one.
+When a `get` line changes, run it once on a box without that CLI and launch the Agent.

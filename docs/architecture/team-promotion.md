@@ -59,7 +59,6 @@ The command opens or updates the pull request from the current working line. Git
 
 ## Verification
 
-`tests/promotion.test.ts` exercises candidate construction, box-wide serialization,
-stale-lock recovery, compare-and-swap movement, interruption and resume, restart health,
-revert, and dry-run behavior against temporary repositories.
-`tests/promotion-receipts.test.ts` exercises receipt storage and state.
+`tests/promotion.test.ts` promotes a real hand-in into `dev` through `bin/ronin-promote`
+(`--no-restart`), and reverts a promotion whose health check fails, against temporary
+repositories.

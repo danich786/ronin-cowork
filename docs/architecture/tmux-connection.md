@@ -65,8 +65,7 @@ in `src/tmux-client.ts` is the server's single door to tmux:
   readings; a filtered reading reaches only the connections that want that filter.
 
 **The rule:** no `execFile('tmux', …)` or `spawn('tmux', …)` in `src/` outside the client
-and the pty attach paths (`src/ws/pty.ts`, `src/viewer.ts`). `tests/tmux.test.ts` refuses
-it. A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A,
+and the pty attach paths (`src/ws/pty.ts`, `src/viewer.ts`). A tile's Locked view is still a real `tmux attach` through a pty; that is Faucet A,
 a separate transport. Whether to replace it is an open Track A comparison, not a
 prerequisite for the proposed Unlocked recording path.
 

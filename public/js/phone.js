@@ -342,6 +342,7 @@ export async function buildPhone() {
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
       transcriptBtn,
+      tile.speakBtn.el,
       tile.menuBtn.el,
     );
   };
