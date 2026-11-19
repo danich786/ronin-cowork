@@ -786,7 +786,7 @@ test('a tile opens on Chat, on a desk as on a phone, a new Agent with nothing wr
     const shown = [];
     const tile = {
       session: 'agent', transcriptOn: false, transcriptLevel: -1, transcriptReadings: [], transcriptState: null,
-      transcriptWantChat: false, transcriptAvailable: () => true,
+      transcriptWantChat: false, transcriptAvailable: () => true, firstView: Tile.prototype.firstView,
       transcriptCycle: Tile.prototype.transcriptCycle, syncSurface: Tile.prototype.syncSurface,
       toggleTranscript: Tile.prototype.toggleTranscript, surfaceHost: { select() {} }, tapeMode: false,
       el: { classList: { toggle() {} } }, body: { contains: () => false },
@@ -797,6 +797,9 @@ test('a tile opens on Chat, on a desk as on a phone, a new Agent with nothing wr
   };
   const land = (tile, state) => Tile.prototype.onTranscriptState.call(tile, state);
   const live = { available: true, empty: false, reason: '', readings: READINGS, view: '' };
+  const row = (sessionType) => [{ name: 'agent', identity: { sessionType, cli: '', provider: '', model: '' } }];
+  const sessions = S.sessions;
+  S.sessions = row('cowork_agent');
 
   // Owner, 2026-09-24: on a phone or a tablet the default is Chat when there is one.
   const coarse = globalThis.window.matchMedia;
@@ -851,6 +854,34 @@ test('a tile opens on Chat, on a desk as on a phone, a new Agent with nothing wr
   land(d.tile, live);
   assert.equal(d.tile.transcriptOn, true);
   assert.deepEqual(d.shown, [['show', 'chat']]);
+
+  // A Bare Metal Agent or a Terminal session opens on Terminal (owner, 2026-11-18, w779);
+  // its toggle still reaches Chat.
+  try {
+    for (const sessionType of ['bare_metal_agent', 'terminal']) {
+      S.sessions = row(sessionType);
+      const m = make();
+      m.tile.transcriptWantChat = true;
+      land(m.tile, live);
+      assert.equal(m.tile.transcriptOn, false, `${sessionType} opens on Terminal`);
+      m.tile.toggleTranscript();
+      assert.equal(m.tile.transcriptOn, true, `${sessionType}: the toggle reaches Chat`);
+    }
+    // A newborn whose row, or the identity on it, lands after the route's answer: the
+    // intention waits for the identity.
+    for (const [sessionType, chat, early] of [['bare_metal_agent', false, []], ['cowork_agent', true, [{ name: 'agent' }]]]) {
+      S.sessions = early;
+      const n = make();
+      n.tile.transcriptWantChat = true;
+      land(n.tile, live);
+      assert.equal(n.tile.transcriptOn, false, 'no row yet: nothing chosen');
+      S.sessions = row(sessionType);
+      land(n.tile, n.tile.transcriptState);
+      assert.equal(n.tile.transcriptOn, chat, `${sessionType}, row arrived: ${chat ? 'Chat' : 'Terminal'}`);
+    }
+  } finally {
+    S.sessions = sessions;
+  }
 });
 
 test('the Agent\'s words are drawn as markdown, and the switch redraws them exactly as written', async () => {

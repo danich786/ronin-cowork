@@ -42,7 +42,8 @@ export function agentDefaults(value: unknown): AgentDefaults {
     reach: word(input.reach, 'plan'),
     recruit: word(input.recruit, 'propose agents'),
     output: outputs(input.output),
-    launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'configured'),
+    // Absent means Dangerously; Native is only an explicit choice (owner, 2026-11-18; KAN-676).
+    launch_mode: oneOf(input.launch_mode, ['configured', 'live_dangerously'], 'live_dangerously'),
   };
 }
 

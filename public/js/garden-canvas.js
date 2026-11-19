@@ -137,9 +137,10 @@ function createGardenCanvas({ onAction = () => {}, onMedia = () => {} } = {}) {
   };
 
   /* A chat seated in place of the scene (setup-irasshai.js), or none: the surface is then that
-     chat alone, its header without tools (garden-canvas.css). */
+     chat alone, its header without tools (garden-canvas.css), headed `label` (her name). */
   let seated = null;
-  const chat = (view) => {
+  const chat = (view, label = '') => {
+    if (surface.header) surface.header.title.textContent = view ? label || 'Assist' : 'Assist';
     if (seated === view) return;
     seated?.remove();
     seated = view || null;

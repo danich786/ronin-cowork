@@ -10,12 +10,23 @@
  * Her items are the store's pushed `epics` and `epicItems`; nothing here asks on a timer. With no
  * Irasshai, Setup is as it always was.
  *
- * OPEN IRASSHAI (KAN-615): a hosted office's Setup header carries one button. A press asks Ronin
- * Services (POST /api/irasshai/open) to open her: it goes to her if she runs, restores her from
- * her archive if she ended, launches her if she never ran. Once her session is live the pushed
- * session list seats her chat as above. Self-hosted the button is not there.
+ * OPENING SETUP OPENS HER (KAN-676): a hosted office's Setup, on opening, asks Ronin Services for her
+ * (POST /api/irasshai/open): live, she is there; not live, she is made fresh, as any Agent is made.
+ * Once her session is live the pushed session list seats her chat as above; a new birth (a new key)
+ * gets a new chat. Self-hosted Setup asks for her only on her selector entry.
  *
- * THE INTEGRATIONS STEP (KAN-601) also seats the integrations panel, embedded, in Workspace 2: each
+ * HER ENTRY (owner, 2026-11-19; KAN-691, KAN-694): Setup's selector has a Helpful Assistant entry at
+ * the top, always (her name people see, IRASSHAI_NAME), on any ronin_install,
+ * this machine included. A press asks for her as opening a hosted Setup does: it reads Opening… at
+ * once and ignores presses while it runs; a failure says so on the card. While she is live a press
+ * shows her chat.
+ *
+ * SHE OPENS THE SURFACES (owner, 2026-11-19; KAN-692): each onboarding task names the surface to open
+ * for it, and she opens it with `show <tab> <surface>`, as Mika does; Setup reports its view for this
+ * tab and places what `show` names (setup-view.js). Nothing here maps a step to a surface. The tab
+ * goes with each ask for her (`askIrasshai`), into her launch prompt.
+ *
+ * THE INTEGRATIONS PANEL (KAN-601) is one of those surfaces, `setup.integrations`, embedded: each
  * service she adds appears there with its state (key needed, key saved, sign in), with its paste
  * field or Sign in. It reads the list again each time one of her turns ends (her row's stance,
  * pushed on `home`, leaves working): no timer, no new watcher.
@@ -27,20 +38,23 @@ import { buildComposer } from './composer.js';
 import { sendComposerMessage } from './composer-rules.js';
 import { makeTileTranscript } from './tile-transcript.js';
 import { WorkspaceKit } from './workspace-kit.js';
-import { IRASSHAI, irasshaiIn, irasshaiShown } from './setup-journey.js';
+import { IRASSHAI, IRASSHAI_NAME, irasshaiIn, irasshaiShown, onboardingDone } from './setup-journey.js';
 import { createIntegrationsPanel } from './integrations-panel.js';
 import { campaigns, loadCampaigns } from './campaigns.js';
 import { subscribe } from './store.js';
 import { t } from './lexicon.js';
+import { mikaTab } from './mika.js';
 
-export { IRASSHAI, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
+export { IRASSHAI, IRASSHAI_NAME, irasshaiShown, irasshaiSteps, takeStepLine } from './setup-journey.js';
 export const IRASSHAI_STEP_TYPE = 'setup.irasshai-step';
-export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.irasshai-integrations';
-/** The onboarding task whose step seats the integrations panel. */
-export const INTEGRATIONS_STEP = 'Integrations';
-export const stepSurface = (step) => (step?.title === INTEGRATIONS_STEP ? IRASSHAI_INTEGRATIONS_TYPE : null);
+/** The integrations panel as a surface `show` names. */
+export const IRASSHAI_INTEGRATIONS_TYPE = 'setup.integrations';
 /** Whether her session is live, as the pushed session list says. */
 export const irasshaiLive = () => irasshaiIn(S.sessions);
+/** A hosted Setup is hers while she runs or her onboarding is not over: opening it is what makes her (KAN-676). */
+export const irasshaiSetup = () => irasshaiLive() || !onboardingDone(get('epics'));
+/** Her session's birth key, as the pushed session list says; '' when she is not live. */
+export const irasshaiKey = () => (irasshaiIn(S.sessions) ? String(S.sessions.find((one) => one.name === IRASSHAI)?.key || IRASSHAI) : '');
 
 /** The onboarding template's task titles, read once: the steps' order. */
 let order = null;
@@ -54,29 +68,50 @@ export function irasshaiOrder(onRead) {
   return order;
 }
 
-/** The Open Irasshai button; `onOpen` runs once she is live (to bring her chat forward). */
-export function createOpenIrasshai(onOpen) {
-  const wrap = document.createElement('span');
-  wrap.className = 'setup-open-irasshai';
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'setup-open-irasshai-button';
-  const label = t('setup.open_irasshai', 'Open Irasshai');
-  button.textContent = label;
-  const note = document.createElement('span');
-  note.className = 'setup-open-irasshai-note';
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    button.textContent = t('setup.opening_irasshai', 'Opening Irasshai…');
-    note.textContent = '';
-    const result = await request('/api/irasshai/open', { method: 'POST' });
-    button.disabled = false;
-    button.textContent = label;
-    if (result.ok) onOpen?.();
-    else note.textContent = result.data?.error || result.message || '';
+/** Ask for her: one POST, answered at once, with this tab (what her `show` addresses); her chat follows the session push. */
+export const askIrasshai = () => request('/api/irasshai/open', { method: 'POST', json: { tab: mikaTab() } });
+
+export const IRASSHAI_OPEN_TYPE = 'setup.irasshai';
+
+/**
+ * Her entry at the top of Setup's selector: its card's words and its press. Live, a press shows her
+ * chat (Assist, Workspace 1: the one a phone shows); not live, it asks for her, reads Opening… at
+ * once, ignores presses while it runs, and says so on the card if she couldn't be opened.
+ */
+export function createIrasshaiOpener({ refresh, showChat }) {
+  let state = '';
+  let why = '';
+  const press = () => {
+    if (irasshaiLive()) { showChat(); return; }
+    if (state === 'opening') return;
+    state = 'opening'; why = ''; refresh();
+    void askIrasshai().then((result) => {
+      if (!result.ok || result.data?.ok === false) { state = 'failed'; why = String(result.message || result.data?.error || ''); }
+      else if (irasshaiLive()) { state = ''; showChat(); }
+      refresh(); // made: she arrives on the session push, and arrived() shows her
+    });
+  };
+  // The selector draws cards by name (their summary line is folded away), so the name carries the state.
+  const label = () => (state === 'opening' ? t('setup.irasshai_opening', 'Opening…')
+    : state === 'failed' ? t('setup.irasshai_failed', 'Couldn’t open the Helpful Assistant') : t('setup.irasshai_open', IRASSHAI_NAME));
+  const summary = () => (state === 'failed' && why ? why
+    : irasshaiLive() ? t('setup.irasshai_here', 'Here, in Assist') : t('setup.irasshai_open_title', 'Your welcome Agent: start here'));
+  return {
+    offer: () => ({ key: 'open', label: label(), summary: summary(), title: summary(), className: 'setup-irasshai-card', action: press }),
+    arrived: () => { if (state === 'opening') { state = ''; showChat(); } refresh(); },
+  };
+}
+
+/** Her entry as a selector type: one card, never placed (a press is her opener's). */
+export function registerIrasshaiOpen() {
+  if (WorkspaceKit.workbench.library.has(IRASSHAI_OPEN_TYPE)) return IRASSHAI_OPEN_TYPE;
+  return WorkspaceKit.workbench.library.register({
+    type: IRASSHAI_OPEN_TYPE,
+    header: 'surface',
+    label: IRASSHAI_NAME,
+    discover: (_tenant, environment) => (environment?.irasshaiOpen ? [environment.irasshaiOpen()] : []),
+    create: () => WorkspaceKit.primitives.createBlankSurface(),
   });
-  wrap.append(button, note);
-  return wrap;
 }
 
 /**
@@ -90,6 +125,14 @@ export function createOpenIrasshai(onOpen) {
  */
 export const CHAT_READING = 'chat';
 
+/**
+ * HER CHAT STARTS AT HER GREETING (owner, 2026-11-19; KAN-694): she runs `ready` right before she
+ * speaks, and Core keeps that moment on her session (`ready`, pushed in the session list). Her chat
+ * draws only records from that moment on; with no mark it draws everything. A new mark reads again.
+ */
+export const irasshaiReady = () => String(S.sessions.find((one) => one.name === IRASSHAI)?.ready || '');
+export const afterReady = (record, at) => !at || Date.parse(record?.ts || '') >= Date.parse(at);
+
 /** Her chat: the conversation and the message box, nothing else. */
 export function createIrasshaiChat() {
   const el = document.createElement('div');
@@ -98,7 +141,7 @@ export function createIrasshaiChat() {
   body.className = 'tile-body';
   body.dataset.surface = 'chat';
   el.append(body);
-  const transcript = makeTileTranscript({ admit: irasshaiShown });
+  const transcript = makeTileTranscript({ admit: (record) => (afterReady(record, irasshaiReady()) ? irasshaiShown(record) : null) });
   body.append(transcript.el);
   const say = (text) => {
     const drop = transcript.pending(text);
@@ -118,6 +161,8 @@ export function createIrasshaiChat() {
     el,
     say,
     show: () => { transcript.show(IRASSHAI, CHAT_READING); stance(); },
+    /** Her ready mark moved: read the chat again from it. */
+    reread: () => { transcript.hide(); transcript.show(IRASSHAI, CHAT_READING); stance(); },
     stance,
     hide: () => transcript.hide(),
     dispose: () => { transcript.dispose(); composer.dispose(); },

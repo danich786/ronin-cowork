@@ -287,6 +287,11 @@ nothing paints exactly this.
 - **setup.provider_gate_hosted:** Activate one model provider in Agent Harness to use this.
 - **setup.open_settings:** Open Ronin Settings
 - **setup.open_setup:** Open Ronin Setup
+- **setup.irasshai_open:** Helpful Assistant
+- **setup.irasshai_open_title:** Your welcome Agent: start here
+- **setup.irasshai_here:** Here, in Assist
+- **setup.irasshai_opening:** Opening…
+- **setup.irasshai_failed:** Couldn’t open the Helpful Assistant
 
 ## harness — models-surface.js, workbench-catalog.js (the Agent Harness workbench's stones and Refresh; KAN-236)
 
@@ -878,8 +883,8 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_connect:** Connect GitHub
 - **roots.github_connect_guided:** Use GitHub CLI with Mika
 - **roots.github_connect_mika:** Let Mika connect GitHub
-- **roots.github_connect_guided_irasshai:** Use GitHub CLI with Irasshai
-- **roots.github_connect_irasshai:** Let Irasshai connect GitHub
+- **roots.github_connect_guided_irasshai:** Use GitHub CLI with the Helpful Assistant
+- **roots.github_connect_irasshai:** Let the Helpful Assistant connect GitHub
 - **roots.git_other_method:** Use another method
 - **roots.git_other_open:** Use your preferred Git or SSH setup here, then return to the Workspace Folder and check Git access.
 - **roots.github_remove_auth:** Remove authentication
@@ -1539,8 +1544,8 @@ The catalog entry goes. {dir} is not touched.
 - **setup_surface.providers:** Model providers
 - **setup_surface.authenticate_mika:** Let Mika authenticate
 - **setup_surface.authenticate_guided:** Use the CLI with Mika
-- **setup_surface.authenticate_irasshai:** Let Irasshai authenticate
-- **setup_surface.authenticate_guided_irasshai:** Use the CLI with Irasshai
+- **setup_surface.authenticate_irasshai:** Let the Helpful Assistant authenticate
+- **setup_surface.authenticate_guided_irasshai:** Use the CLI with the Helpful Assistant
 - **setup_surface.providers_summary_unread:** Every provider and model Ronin offers, and what this machine has.
 - **setup_surface.providers_summary:** {providers} providers · {models} models · {activated} activated here
 - **setup_surface.section_yours:** Yours

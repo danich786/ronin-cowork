@@ -17,10 +17,11 @@ import { createThemeToggle } from './theme-toggle.js';
 import { PASSWORD_SURFACE_TYPE, registerPasswordSurface } from './password-surface.js';
 import { firstUnansweredSetupStep } from './setup-progress.js';
 import { createSetupStepsBar, setupStepMarks } from './setup-steps-bar.js';
-import { setupProgressHandlers } from './events.js';
+import { mikaShowHandlers, setupProgressHandlers } from './events.js';
 import { subscribe as hear } from './store.js';
 import { HOSTED } from './hosted.js';
-import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_STEP_TYPE, createIrasshaiChat, createOpenIrasshai, irasshaiLive, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiSteps, stepSurface, takeStepLine } from './setup-irasshai.js';
+import { mikaTab, reportMikaView } from './mika.js';
+import { IRASSHAI_INTEGRATIONS_TYPE, IRASSHAI_NAME, IRASSHAI_STEP_TYPE, IRASSHAI_OPEN_TYPE, askIrasshai, createIrasshaiChat, createIrasshaiOpener, irasshaiKey, irasshaiReady, irasshaiOrder, irasshaiSteps, registerIrasshaiIntegrations, registerIrasshaiOpen, registerIrasshaiSteps, takeStepLine } from './setup-irasshai.js';
 
 const PROFILE = 'setup';
 // Release toggles: unfinished programs stay out of Setup without changing the workbench.
@@ -45,9 +46,10 @@ function registerSetupWorkbench() {
   registerPasswordSurface();
   registerGardenCanvas();
   registerPresetsSurface();
+  registerIrasshaiOpen();
   registerIrasshaiSteps();
   registerIrasshaiIntegrations();
-  return WorkspaceKit.workbench.profiles.define(PROFILE, [GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, IRASSHAI_INTEGRATIONS_TYPE, ...ORDER]);
+  return WorkspaceKit.workbench.profiles.define(PROFILE, [IRASSHAI_OPEN_TYPE, GARDEN_CANVAS_TYPE, PRESETS_TYPE, IRASSHAI_STEP_TYPE, IRASSHAI_INTEGRATIONS_TYPE, ...ORDER]);
 }
 
 export function createSetupView() {
@@ -67,30 +69,34 @@ export function createSetupView() {
   const providerSessions = createProviderSetupSessionMount();
   const kinds = createKindsPreference(globalThis.localStorage, (next) => request('/api/setup/preferences', { method: 'PATCH', json: { kinds: next } }));
   const themeToggle = createThemeToggle();
-  // Hosted only (KAN-615): open, restore or launch Irasshai; her chat is Workspace 1's.
-  const openIrasshai = HOSTED ? createOpenIrasshai(() => bench?.select('workspace1')) : null;
+  const opener = createIrasshaiOpener({ refresh: () => bench?.refreshSelector(), showChat: () => { bench?.select('workspace1'); garden?.el.scrollIntoView?.({ block: 'start' }); } }); // a phone stacks the workspaces
   // IRASSHAI (setup-irasshai.js): while her session is live, Assist is her chat and the selector
-  // her epic's steps. `irasshai` is whether she was live at the last look.
-  let irasshai = false;
+  // her epic's steps. `irasshai` is her session's birth key at the last look ('' not live): a new
+  // birth gets a new chat, never the last one's records (KAN-676).
+  let irasshai = '';
   let chat = null;
   let epics = [];
   let epicItems = [];
-  const started = new Set(); // her steps last seen In Progress
   const steps = () => irasshaiSteps(epics, epicItems, irasshaiOrder(() => bench?.refreshSelector()));
   const seatChat = () => {
     if (!garden) return;
     if (irasshai) {
-      chat ||= createIrasshaiChat();
-      garden.chat(chat.el);
+      if (chat && chat.key !== irasshai) { garden.chat(null); chat.dispose(); chat = null; }
+      chat ||= Object.assign(createIrasshaiChat(), { key: irasshai });
+      garden.chat(chat.el, IRASSHAI_NAME);
       chat.show();
     } else if (chat) {
       garden.chat(null);
       chat.hide();
     }
   };
+  let ready = '';
   const followIrasshai = () => {
-    const live = irasshaiLive();
+    const live = irasshaiKey();
+    const mark = irasshaiReady();
+    if (mark !== ready) { ready = mark; if (chat && live === irasshai) chat.reread(); }
     if (live !== irasshai) {
+      if (live && !irasshai) opener.arrived();
       irasshai = live;
       seatChat();
       refreshSetupStepsHeader();
@@ -120,7 +126,7 @@ export function createSetupView() {
     word.textContent = progress.scanning ? 'Looking at this machine…' : progress.reason || '';
     scan.append(scanButton, word);
     setupStepsHeader.replaceChildren(createSetupStepsBar(progress), scan, reading);
-    setupStepsHeader.hidden = irasshai; // her steps are the selector's; the five marks are not hers
+    setupStepsHeader.hidden = Boolean(irasshai); // her steps are the selector's; the five marks are not hers
   };
   const blank = (id) => WorkspaceKit.primitives.createBlankSurface(id.replace('workspace', 'Workspace ')).el;
   const environment = {
@@ -168,11 +174,8 @@ export function createSetupView() {
       if (url) location.assign(url);
     },
     irasshaiSteps: () => steps(),
-    takeIrasshaiStep: (step) => {
-      const type = stepSurface(step);
-      if (type) { bench.place(type, 'workspace2'); bench.select('workspace2'); }
-      void chat?.say(takeStepLine(step));
-    },
+    irasshaiOpen: () => opener.offer(),
+    takeIrasshaiStep: (step) => { void chat?.say(takeStepLine(step)); }, // she opens its surface (KAN-692)
     onGardenCanvas: (next) => {
       garden = next;
       seatChat();
@@ -228,7 +231,21 @@ export function createSetupView() {
     const result = await request('/api/setup/progress/scan', { method: 'POST' });
     return result.ok && acceptProgress(result.data);
   };
-  const save = () => ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride });
+  /* SHOW (KAN-692): Setup reports this tab's view, as the door workbenches do, and places what
+     `show <tab> <surface>` names. Workspace 1 is reported selected: it holds Assist, her chat, which
+     a `show` must never replace, so what she opens lands in Workspace 2. */
+  let entered = false;
+  const report = () => {
+    if (!entered || !bench) return;
+    const shown = (workspace) => bench.typeAt(workspace) || 'empty';
+    void reportMikaView({ workbench: 'setup', team: '', selected: 'workspace1', reading: '', workspaces: Object.fromEntries(bench.visibleIds().map((workspace) => [workspace, shown(workspace)])) });
+  };
+  const onShow = (m) => {
+    if (!entered || m.tab !== mikaTab() || !WorkspaceKit.workbench.library.has(m.surface)) return;
+    bench.place(m.surface, m.workspace); // not selected: the person stays in her chat
+  };
+  mikaShowHandlers.add(onShow);
+  const save = () => { ctx?.patchViewState('setup', { ...bench.snapshot(), sceneOverride }); report(); };
   const defaultScene = () => SCENES.find((scene) => !sceneComplete(scene)) || SCENES[SCENES.length - 1];
   const sceneAt = (number) => SCENES[Number(number) - 1] || defaultScene();
   const activeScene = () => sceneAt(sceneOverride);
@@ -302,19 +319,8 @@ export function createSetupView() {
   const unhear = [
     hear('sessions', followIrasshai),
     hear('epics', (next) => { epics = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
-    hear('epicItems', (next) => {
-      epicItems = Array.isArray(next) ? next : [];
-      if (!irasshai) return;
-      bench?.refreshSelector();
-      // A step she starts herself seats its surface too, once, as it moves In Progress.
-      for (const step of steps()) {
-        const type = stepSurface(step);
-        const now = epicItems.find((item) => item.id === step.id)?.status === 'In Progress';
-        if (type && now && !started.has(step.id)) bench?.place(type, 'workspace2');
-        if (now) started.add(step.id); else started.delete(step.id);
-      }
-    }),
-    hear('home', () => { if (irasshai) chat?.stance(); }),
+    hear('epicItems', (next) => { epicItems = Array.isArray(next) ? next : []; if (irasshai) bench?.refreshSelector(); }),
+    hear('home', () => { if (irasshai) { chat?.stance(); report(); } }), // each of her turns keeps the view fresh for `show`
   ];
 
   bench = WorkspaceKit.workbench.create({
@@ -328,7 +334,7 @@ export function createSetupView() {
     selectorCurrent: true,
     hintsCollapsed: true,
     hintsPreferenceScope: 'setup',
-    selectorFilter: (type) => (irasshai ? type === IRASSHAI_STEP_TYPE : ORDER.includes(type)),
+    selectorFilter: (type) => type === IRASSHAI_OPEN_TYPE || (irasshai ? type === IRASSHAI_STEP_TYPE : ORDER.includes(type)),
     onSelectorRefresh: paint,
     onStateChange: save,
     onPlacement: (snapshot) => {
@@ -342,13 +348,13 @@ export function createSetupView() {
       save();
     },
   });
-  bench.host.querySelector('.wk-workbench-selector-cards')?.addEventListener('click', () => queueMicrotask(() => bench.select('workspace2')));
+  bench.host.querySelector('.wk-workbench-selector-cards')?.addEventListener('click', (event) => { if (!event.target.closest?.('.setup-irasshai-card')) queueMicrotask(() => bench.select('workspace2')); });
   followIrasshai();
 
   return {
     el: bench.host,
     glyph: '人',
-    ...workbenchView('setup', { header: { ram: false, feedback: false, leading: [setupStepsHeader], actions: [...(openIrasshai ? [openIrasshai] : []), themeToggle] } }),
+    ...workbenchView('setup', { header: { ram: false, feedback: false, leading: [setupStepsHeader], actions: [themeToggle] } }),
     title: () => 'Ronin Setup',
     place: () => t('setup.short_title', 'Setup'), // the crumb: Home • Setup (owner, 2026-10-24)
     mount: (_host, context) => { ctx = context; },
@@ -365,6 +371,10 @@ export function createSetupView() {
       paint();
       open(sceneOverride);
       seatChat();
+      entered = true; report();
+      // A hosted office's Setup is Irasshai's: opening it asks for her (shown live, else a fresh launch).
+      // Elsewhere she comes on her selector entry (KAN-694).
+      if (HOSTED) void askIrasshai();
       void request('/api/setup/progress', { cache: 'no-store' }).then((result) => {
         if (generation !== enterGeneration || !result.ok || !acceptProgress(result.data)) return;
         const first = firstUnansweredSetupStep(progress);
@@ -386,7 +396,7 @@ export function createSetupView() {
         });
       }
     },
-    leave: () => { enterGeneration += 1; chat?.hide(); bench.leave(); },
-    destroy: () => { enterGeneration += 1; setupProgressHandlers.delete(onProgress); for (const stop of unhear) stop(); chat?.dispose(); providerSessions.destroyAll(); bench.leave(); ctx = null; },
+    leave: () => { entered = false; enterGeneration += 1; chat?.hide(); bench.leave(); },
+    destroy: () => { entered = false; mikaShowHandlers.delete(onShow); enterGeneration += 1; setupProgressHandlers.delete(onProgress); for (const stop of unhear) stop(); chat?.dispose(); providerSessions.destroyAll(); bench.leave(); ctx = null; },
   };
 }

@@ -9,6 +9,7 @@ Irasshai: this person has just moved into their office. Offer them these, in thi
 4. Ronin Tour
 5. Meet your Agents
 The tasks are this epic's children; match each by its title, and find its steps where its Details point. Setup lists them as its steps; a press on one asks you to take it.
+- A task's Open names the Setup surface to walk them through it: open it with `show <tab> <surface>` (the tab is in your launch prompt) as you take the task.
 - Say one short thing at a time and wait for their answer.
 - Each is an offer: "no" or "later" is fine.
 - Close each task as it is done or declined.
@@ -16,11 +17,13 @@ The tasks are this epic's children; match each by its title, and find its steps 
 
 ## Agent Harness
 Do: at least one Agent harness signed in with their own account; more is better.
-Details: Setup → Model providers (Let Irasshai authenticate, Use the CLI with Irasshai); `ronin-help provider-sign-in`.
+Open: `setup.providers`.
+Details: Setup → Model providers (Let the Helpful Assistant authenticate, Use the CLI with the Helpful Assistant); `ronin-help provider-sign-in`.
 Check: at least one reads Activated.
 
 ## Workspace
 Do: their first Workspace, on a folder or on one or more repositories; done when its subtasks are done or skipped.
+Open: `setup.roots`.
 Details: `ronin-help new-workspace`.
 Check: the Workspace exists with its folder or repositories.
 
@@ -31,7 +34,7 @@ Check: the Workspace's objective says what they plan, and its WORKSPACE.md names
 
 ### Sign in GitHub, if they use it
 Do: the GitHub CLI signed in to their account, if they use GitHub; skip it if not.
-Details: the GitHub CLI stone on the Workspaces door (Let Irasshai connect GitHub, Use GitHub CLI with Irasshai); `ronin-help workspace-folders`.
+Details: the GitHub CLI stone on the Workspaces door (Let the Helpful Assistant connect GitHub, Use GitHub CLI with the Helpful Assistant); `ronin-help workspace-folders`.
 Check: the stone shows their account.
 
 ### Bring in their folders or repositories
@@ -46,7 +49,8 @@ Check: the lead is running in the Workspace, holding the import-project epic or 
 
 ## Integrations
 Do: ask which outside services they use, and add each: a bridge Ronin has, turned on for the Campaign; an MCP server with `mcp add`; a web API with `api add`; anything else noted on the Workspace. For each, offer to authenticate now (the key pasted, or Sign in) or later; skip it if they use none.
-Details: `ronin-help add-an-integration`; `mcp --help`, `api --help`; Setup → Integrations shows each as it is added, with its state; `ronin-help integrations`.
+Open: `setup.integrations`.
+Details: `ronin-help add-an-integration`; `mcp --help`, `api --help`; the integrations surface shows each as it is added, with its state; `ronin-help integrations`.
 Check: each service they named is added or noted, signed in or left for later; or declined.
 
 ## Ronin Tour

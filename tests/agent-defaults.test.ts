@@ -4,9 +4,9 @@ import { agentDefaults, mandate } from '../src/agent-defaults.js';
 
 test('agent_defaults validates every field in the complete record shape', () => {
   const cases = [
-    ['blank gets the ruled stock values', undefined, {
+    ['blank gets the ruled stock values: Dangerously unless Native is chosen (KAN-676)', undefined, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      launch_mode: 'configured',
+      launch_mode: 'live_dangerously',
     }],
     ['every valid value survives', {
       provider: ' anthropic ', model: ' opus ', reach: 'execute', recruit: 'staff agents', output: ['code', 'no code'],
@@ -21,11 +21,11 @@ test('agent_defaults validates every field in the complete record shape', () => 
       launch_mode: 'unsafe', stray_mode: 'maybe',
     }, {
       provider: '', model: '', reach: 'review', recruit: 'propose', output: ['report'],
-      launch_mode: 'configured',
+      launch_mode: 'live_dangerously',
     }],
     ['a blank axis falls back', { reach: ' ', recruit: 7, output: [] }, {
       provider: '', model: '', reach: 'plan', recruit: 'propose agents', output: ['open'],
-      launch_mode: 'configured',
+      launch_mode: 'live_dangerously',
     }],
   ] as const;
 

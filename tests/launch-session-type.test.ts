@@ -157,8 +157,7 @@ test('the Mika door accepts words only and fixes every public birth input', () =
     tags: ['steerco'],
     mandate: { reach: 'discuss', recruit: 'nobody', output: ['ideas'] },
     prompt: 'Help me with Ronin.',
-    launch_mode: 'configured',
-  });
+  }, 'no launch mode in the body: Mika\'s is Dangerously, set in spawn');
 });
 
 test('both Mika callers use the dedicated door and state no session_role', async () => {

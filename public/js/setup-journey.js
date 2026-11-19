@@ -12,12 +12,17 @@ export const SETUP_SCENES = Object.freeze([
 /* IRASSHAI'S STEPS (KAN-573; setup-irasshai.js): while she runs, Setup's steps are her onboarding
    epic's tasks instead of the scenes above. */
 export const IRASSHAI = 'irasshai';
+/** The name people see (owner, 2026-11-19; KAN-691): "irasshai is cute but not legible". Code, route and session stay irasshai. */
+export const IRASSHAI_NAME = 'Helpful Assistant';
 const HELD = `agent:${IRASSHAI}`;
 
 /** Whether her session is in a session list (setup-irasshai.js reads the pushed one). */
 export const irasshaiIn = (sessions) => (sessions || []).some((session) => session?.name === IRASSHAI);
 
 const holds = (item) => item?.holder === HELD || (Array.isArray(item?.holders) && item.holders.includes(HELD));
+
+/** Whether her onboarding is over: an epic she holds is Done (KAN-676). Before it exists, it is not. */
+export const onboardingDone = (epics) => (epics || []).some((one) => one?.level === 1 && holds(one) && one.status === 'Done');
 
 /**
  * Her epic's tasks as Setup's steps: the epic she holds, its level-0 children, in `order` (the

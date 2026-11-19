@@ -30,9 +30,13 @@ export interface SessionInfo {
   activity: number;
   /** RIREKI's dial: false when the session was born with Ronin Services off — no tape, no unlocked views. */
   rireki: boolean;
+  /** READY (KAN-694): when the Agent last ran `ready`, saying it is about to speak to the person (ISO, '' never).
+   *  A chat that honours it draws only what follows; nothing is refused without it. */
+  ready: string;
 }
 
 const TITLE_OPT = '@ronin-title';
+const READY_OPT = '@ronin-ready';
 
 const TAGS_OPT = '@ronin-tags';
 
@@ -77,13 +81,13 @@ export async function listSessions(): Promise<SessionInfo[]> {
     const stdout = await tmux.run([
       'list-sessions',
       '-F',
-      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}`,
+      `#{session_name}\t#{${TITLE_OPT}}\t#{session_windows}\t#{?session_attached,1,0}\t#{session_created}\t#{${TAGS_OPT}}\t#{${LEAD_OPT}}\t#{@ronin-key}\t#{${AGENT_OPT}}\t#{${CAMPAIGN_OPT}}\t#{${RIREKI_OPT}}\t#{window_activity}\t#{@ronin-identity}\t#{${READY_OPT}}`,
     ]);
     return stdout
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [name, title, windows, attached, created, tags, leads, key, agent, campaign, rireki, activity, identity] = line.split('\t');
+        const [name, title, windows, attached, created, tags, leads, key, agent, campaign, rireki, activity, identity, ready] = line.split('\t');
         return {
           name,
           title: title?.trim() || '',
@@ -98,6 +102,7 @@ export async function listSessions(): Promise<SessionInfo[]> {
           campaign_id: campaign?.trim() || '',
           rireki: rireki?.trim() !== 'off',
           activity: Number(activity) || 0,
+          ready: ready?.trim() || '',
         };
       })
       .filter((s) => !s.name.startsWith(config.viewerPrefix))
@@ -122,6 +127,12 @@ export async function setSessionTitle(name: string, title: string): Promise<void
   if (clean.length > 80 || /[\r\n\t]/.test(clean)) throw new Error('Agent title must be one line of 80 characters or fewer.');
   if (clean) await tmux.run(['set-option', '-t', exactPane(name), TITLE_OPT, clean]);
   else await tmux.run(['set-option', '-t', exactPane(name), '-u', TITLE_OPT]).catch(() => {});
+}
+
+/** The ready mark (KAN-694): this moment, on the session, the way its title is kept. */
+export async function setSessionReady(name: string, at = new Date().toISOString()): Promise<string> {
+  await tmux.run(['set-option', '-t', exactPane(name), READY_OPT, at]);
+  return at;
 }
 
 export interface CreateOpts {

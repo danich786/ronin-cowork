@@ -33,7 +33,7 @@ export async function readAgentComposition(name: string) {
       objective: work.objective, title, project_root: projectRoot,
       session_type: session?.identity?.sessionType || 'cowork_agent',
       provider: session?.identity?.provider || '', model: session?.identity?.model || '',
-      launch_mode: receipt.launch_mode || 'configured',
+      launch_mode: receipt.launch_mode || 'live_dangerously',
       role, team: tags[0] ?? '', mandate: work.mandate,
       // The Agent's own layer (docs/architecture/brief.md, Layers and brief settings).
       brief: agent.brief, integrations: agent.integrations, ...(agent.pm !== undefined ? { pm: agent.pm } : {}),

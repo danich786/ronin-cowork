@@ -27,6 +27,7 @@ import {
   setProviderSessionId,
   setSessionKey,
   setSessionTitle,
+  setSessionReady,
   stopSessionTree,
 } from '../tmux.js';
 import { enqueueMessage } from '../message-queue.js';
@@ -36,7 +37,7 @@ import { sessionKey } from '../session-dir.js';
 import { isValidRootName, listProjectRoots } from '../project-roots.js';
 import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
-import { broadcastEvent, pushTeams } from '../ws/events.js';
+import { broadcastEvent, changed, pushTeams } from '../ws/events.js';
 import { announceTeamChanges } from './wipeboards-api.js';
 import { memberEnded, readBriefRecord, teamChanged, writeConfiguration, writeTeams } from '../tegami.js';
 import { readAgentComposition } from '../agent-composition.js';
@@ -301,20 +302,6 @@ async function prepareSessionEnding(
 const moved = (before: string[], after: string[]): string[] =>
   [...after.filter((t) => !before.includes(t)), ...before.filter((t) => !after.includes(t))];
 
-type WrapArgv = (argv: string[]) => string[];
-const resumeWraps = new Map<string, WrapArgv>();
-/**
- * A part's own restore for one session name, as launchSession's wrapArgv is its own launch: the
- * resume argv Core built is handed to `wrap` just before the session starts again, on every
- * restore of that name (this route, session_restore, the Archived sessions page).
- */
-export function wrapResumeArgv(name: string, wrap: WrapArgv): void { resumeWraps.set(name, wrap); }
-
-/** POST /api/archived-sessions/:id/rehydrate from inside the server: the same restore, its answer returned. */
-export function rehydrateSession(id: string): Promise<{ status: number; body: Record<string, unknown> }> {
-  return rehydrate(id, '');
-}
-
 async function rehydrate(id: string, caller: string): Promise<{ status: number; body: Record<string, unknown> }> {
   try {
     const archived = await readArchive(id);
@@ -325,12 +312,10 @@ async function rehydrate(id: string, caller: string): Promise<{ status: number; 
     const receipt = JSON.parse(await readFile(path.join(sessionRecordDir(archived.key), 'birth-receipt.json'), 'utf8').catch(() => '{}')) as { cmd?: unknown; user_email?: unknown };
     let argv = await resumeAgentArgv(archived.agent, archived.provider_session_id, typeof receipt.cmd === 'string' ? receipt.cmd : '');
     if (!argv.length) return { status: 409, body: { error: `${archived.agent} cannot be resumed on this machine.` } };
-    const wrap = resumeWraps.get(archived.name);
     const part = providerPart(archived.identity?.provider ?? '');
-    if (wrap) argv = wrap([...argv]);
     // An Agent born on a part's provider (src/provider-parts.ts) is restored on it, for the
     // person it was born for, so its house calls stay theirs (KAN-659).
-    else if (part?.wrapResume) {
+    if (part?.wrapResume) {
       argv = part.wrapResume([...argv], archived.identity?.model ?? '', typeof receipt.user_email === 'string' ? receipt.user_email : '');
     }
     await createSession(archived.name, archived.cwd, { agent: true, argv, cli: archived.agent, key: archived.key, resume: true });
@@ -606,6 +591,22 @@ export function registerSessions(app: express.Express): void {
         shutdownOperations.delete(id);
       }, 5 * 60_000).unref();
     })());
+  });
+
+  // READY (KAN-694): `ready` from inside an Agent's pane marks this moment on its session; a chat
+  // that honours it (Setup's Helpful Assistant) draws only what follows. It acknowledges, never refuses.
+  app.post('/api/ready', async (req, res) => {
+    const pane = String(req.body?.pane ?? '').trim();
+    if (!/^%\d+$/.test(pane)) return res.status(400).json({ error: 'Expected a tmux pane id like %7.' });
+    const name = await sessionOfPane(pane);
+    if (!name) return res.status(404).json({ error: `No session owns pane ${pane}.` });
+    try {
+      const at = await setSessionReady(name);
+      changed();
+      res.json({ ok: true, name, at });
+    } catch (e) {
+      res.status(500).json({ error: String((e as Error)?.message ?? e) });
+    }
   });
 
   app.put('/api/sessions/:name/title', async (req, res) => {

@@ -242,8 +242,9 @@ async function resolveLaunch(form: SpawnForm, facts: LaunchFacts) {
       throw new Error(`${label} is turned off on this machine — Ronin is not using it. Turn it on under Model providers; your sign-in is kept.`);
     }
   }
-  // Mode is the Workspace's; Dangerously where the provider declares it, Native otherwise.
-  const wanted = agent ? (parentSeed?.seeds.launch_mode.value ?? 'configured') as LaunchMode : 'configured';
+  // Mode is the Workspace's, Mika's always Dangerously (owner, 2026-11-18: "this is a stupid check on
+  // an empty VM"); Dangerously where the provider declares it, Native otherwise.
+  const wanted = agent ? (form.house_seat === 'mika' ? 'live_dangerously' : parentSeed?.seeds.launch_mode.value ?? 'configured') as LaunchMode : 'configured';
   const launchMode: LaunchMode = wanted === 'live_dangerously' && spec?.dangerousCmd ? 'live_dangerously' : 'configured';
   if (launchMode === 'live_dangerously' && spec?.dangerousCmd) cmd = spec.dangerousCmd;
   return { cmd, spec, chosen, launchMode };

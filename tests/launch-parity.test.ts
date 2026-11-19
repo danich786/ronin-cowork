@@ -246,10 +246,14 @@ test('the model cascade is the mechanism\'s: blank inherits, explicit wins, iden
 
 
 test('the Workspace\'s Mode selects the Agent document\'s Native or Dangerously command', async () => {
-  const configured = await resolveForm(commonsForm({ provider: 'anthropic', model: 'claude-opus-5' }), new Set());
-  assert.equal(configured.cmd, 'claude --model claude-opus-5');
+  const campaign = await resolveForm(commonsForm({ provider: 'anthropic', model: 'claude-opus-5' }), new Set());
+  assert.equal(campaign.cmd, 'claude --model claude-opus-5 --dangerously-skip-permissions', 'a Campaign that sets no Mode is Dangerously (KAN-676)');
+  assert.equal(campaign.launch_mode, 'live_dangerously');
+  assert.equal(campaign.stated_by.launch_mode[0]?.layer, 'campaign', 'an Agent without a Workspace takes the Campaign default');
+
+  const configured = await resolveForm(commonsForm({ team: 'wsteam', provider: 'anthropic', model: 'claude-opus-5' }), new Set());
+  assert.equal(configured.cmd, 'claude --model claude-opus-5', 'Native only as a Workspace\'s explicit choice');
   assert.equal(configured.launch_mode, 'configured');
-  assert.equal(configured.stated_by.launch_mode[0]?.layer, 'campaign', 'an Agent without a Workspace takes the Campaign default');
 
   const dangerous = await resolveForm(commonsForm({ team: 'wildteam', provider: 'anthropic', model: 'claude-opus-5' }), new Set());
   assert.equal(dangerous.cmd, 'claude --model claude-opus-5 --dangerously-skip-permissions');
@@ -307,7 +311,7 @@ test('stated_by carries the settled launch, Team, and Campaign layers', async ()
 
 test('server resolution returns profile and durable Team context without browser reconstruction', async () => {
   const resolved = await resolveForm(forkitForm(), new Set());
-  assert.equal(resolved.launch_mode, 'configured');
+  assert.equal(resolved.launch_mode, 'live_dangerously');
   assert.equal(resolved.team_objective, 'prove the parity');
   assert.equal(resolved.team_branch, '');
   assert.equal(resolved.team_wipeboard, 'scratchteam');
@@ -376,6 +380,14 @@ test('Mika house mechanics resolve explicitly', async () => {
   assert.equal(mika.stated_by.capExempt[0]?.layer, 'house');
   const door = mikaLaunchBody({});
   assert.deepEqual(door.mandate, { reach: 'discuss', recruit: 'nobody', output: ['ideas'] }, 'she discusses, recruits nobody, hands back ideas');
+});
+
+test('Mika launches Dangerously, even where the Workspace chose Native (owner, 2026-11-18; KAN-676)', async () => {
+  const mika = await resolveForm({ house_seat: 'mika', name: 'mika_agent', team: 'wsteam', provider: 'anthropic', prompt: 'Help me with Ronin.' }, new Set());
+  assert.equal(mika.launch_mode, 'live_dangerously');
+  assert.match(mika.cmd, /--dangerously-skip-permissions/);
+  const ordinary = await resolveForm(commonsForm({ team: 'wsteam', provider: 'anthropic' }), new Set());
+  assert.equal(ordinary.launch_mode, 'configured', 'an ordinary Agent keeps its Workspace\'s Native');
 });
 
 test('a name alone resolves the ordinary Cowork Agent birth', async () => {

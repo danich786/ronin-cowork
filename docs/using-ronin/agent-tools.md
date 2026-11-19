@@ -19,10 +19,12 @@ Tools do jobs and report what happened. A Cowork Agent is told:
 - `machine-settings`: read or change Campaign defaults, providers and Workspace folders
 - `team`: create or read a Team's roster and what it holds
 - `ronin-host`: measure the machine: what it is, its space, its account, which secrets exist
+- `lounge`: the person's Business Lounge record: subscription, balance, this office's rental, office limit, default models
 - `mika`: ask Mika, Ronin's help assistant
 - `lookup`: print a Ronin document by its `mika-source:` id
 - `show`: open a Ronin page in another visible workspace of the owner's tab, never the one they are on
 - `owner_view`: what the owner is looking at in a browser tab
+- `ready`: mark that you are about to speak to the person; a chat that honours it shows only what follows
 - `secret`: get a password or key from the owner without it passing through chat
 - `netlify`: Netlify sites, deploys, previews, traffic, forms and variables for the Workspace's site
 - `mcp`: list the MCP servers available to your Campaign, fetch one's tools, call one

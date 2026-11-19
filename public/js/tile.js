@@ -215,6 +215,8 @@ export class Tile {
     this.refreshTegami();
     this.refreshStance();
     this.secretAsk.sync(this.homeRow());
+    // The first view waited for this session's identity (onTranscriptState).
+    if (this.transcriptWantChat && this.transcriptState) this.onTranscriptState(this.transcriptState);
   }
 
   /** Point the gauge at the session's context reading (null = no reading, gauge hides). */
@@ -272,6 +274,15 @@ export class Tile {
 
   transcriptAvailable() {
     return Array.isArray(S.services) && S.services.includes('rireki');
+  }
+
+  /** A tile's first view, by its session's type (owner, 2026-11-18, w779): Terminal for a Bare
+   *  Metal Agent or a Terminal session, Chat for the rest; null until the session's row carries
+   *  its launch identity (a newborn's row can arrive before it). */
+  firstView() {
+    const type = S.sessions.find((r) => r.name === this.session)?.identity?.sessionType;
+    if (!type) return null;
+    return type === 'bare_metal_agent' || type === 'terminal' ? 'terminal' : 'chat';
   }
 
   /**
@@ -378,9 +389,12 @@ export class Tile {
     // (owner, 2026-11-13, KAN-453); it fills as the first records arrive (tile-transcript.js
     // asks again while pending), and unnamed readings open on the route's default, Chat.
     // A press by hand before the answer lands spends the intention (toggleTranscript).
-    if (this.transcriptWantChat) {
+    // Which view is the session's type (firstView): a newborn's identity can land after this
+    // answer, so the intention waits for it and refreshSessionName offers it again.
+    const first = this.transcriptWantChat ? this.firstView() : null;
+    if (first) {
       this.transcriptWantChat = false;
-      if (!this.transcriptOn) {
+      if (!this.transcriptOn && first === 'chat') {
         this.toggleTranscript();
         return;
       }
@@ -698,7 +712,8 @@ export class Tile {
     // every tile). Someone coming to an Agent wants to see what it said; Term is one press
     // away. Held as an intention rather than acted on here, because only the route can say
     // whether THIS Agent has a record — the probe above is already on its way, and
-    // onTranscriptState spends the intention when the answer lands.
+    // onTranscriptState spends the intention when the answer lands. A Bare Metal Agent or a
+    // Terminal session opens on Term instead (firstView, w779).
     if (changed) this.transcriptWantChat = this.transcriptAvailable();
     this.sessionKey = S.sessions.find((row) => row.name === session)?.key;
     this.syncEmpty();

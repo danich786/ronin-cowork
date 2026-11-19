@@ -70,7 +70,7 @@ export function normalizeWorkspace(campaign_id: string, name: string, v: Record<
     instructions: text(v.instructions, 8000),
     repos: rows(v.repos, (r) => (text(r.name, 64) ? { name: text(r.name, 64), note: text(r.note, 300) } : null)),
     folders: rows(v.folders, (r) => (text(r.name, 64) ? { name: text(r.name, 64), note: text(r.note, 300) } : null)),
-    launch_mode: v.launch_mode === 'live_dangerously' ? 'live_dangerously' : 'configured',
+    launch_mode: v.launch_mode === 'configured' ? 'configured' : 'live_dangerously', // absent: Dangerously
     ...plansOf(v.plans),
     integrations: integrationsOf(v.integrations),
     brief: briefSettings(v.brief),

@@ -6,7 +6,8 @@
 - **order:** 82
 
 **Surfaces `show` can name.** On Ronin Setup: `setup.providers` (Model providers), `setup.register`,
-`setup.roots` (Workspace folders), `setup.services` (Ronin Services),
+`setup.roots` (Workspace folders), `setup.services` (Ronin Services), `setup.integrations`
+(Integrations),
 `campaign.templates`. On a Team or Coworks page: `team.commons` (Docs · Wipeboard · Messages ·
 Configuration), `cowork.team-roster`, `session.new-agent`, `ronin.desk` (⚙ cowork commons),
 `cowork.archives`, `cowork.cron-jobs`.
