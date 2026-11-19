@@ -4,8 +4,8 @@
  *
  * Its own module rather than a constant in `state.js`, because `state.js` reads
  * `window` at module top level (IS_TOUCH) and so cannot be imported outside a browser.
- * The tape's pure logic is unit-tested under node (tests/tape-fold.test.js), and a
- * regex that only loads inside a browser cannot be tested there.
+ * The tape's pure logic runs under node, and a regex that only loads inside a browser
+ * could not.
  */
 
 /** Any escape sequence — the tape view renders text, so anything else is dropped. */

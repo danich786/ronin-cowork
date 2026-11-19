@@ -1,49 +1,50 @@
 # Verification: focused work, one combined verdict
 
-Individual contributors and Agents normally run only the checks relevant to their change.
-They do not need to run `npm run verify` before committing or handing in. The full suite
-can take many minutes; repeating it on each private worktree spends that time without proving
-the combined Team change.
+`npm run verify` is the whole gate: `tsc --noEmit`, then the behaviour suite in `tests/`,
+about half a minute. Individual Agents build, typecheck and hand in; the Team lead or
+release maintainer runs the gate once on the combined candidate and owns its verdict.
 
-## During implementation and hand-in
+## What the suite checks
 
-- Use the smallest meaningful syntax, type, behavior, or rendered check for the affected
-  surface. The [contributor map](../contributor-map.md) names the owning tests.
-- For selected behavior tests, use the normal fixture teardown, for example:
-  `node --import tsx --import ./tests/fixture-teardown.mjs --test tests/banner.test.ts`.
-  Tests that need tmux obtain their servers through `tests/helpers/testserver.ts`.
-- Use `npx tsc --noEmit` when a TypeScript verdict is relevant. Use explicit browser
-  diagnostics when the change needs rendered or interaction evidence.
-- Documentation-only changes usually need review and link checks, not the full suite.
-- Report the commands and results in the hand-in, along with known failures and what
-  remains untested. “Full verification deferred to the lead's final gate” is a normal
-  hand-in status, not a missing contributor task.
-- After changing an installed box or its user stores, run `npm run byoin` against those
-  surfaces. It answers a different question from repository verification.
+Only what a user would hit when it breaks, one file each:
 
-## At the integration and release gate
+| File | What breaks for a user |
+|---|---|
+| `tests/agents.test.ts` | launching an Agent (Claude, Codex, a terminal), archive and restore |
+| `tests/tools.test.ts` | an Agent's tools reaching Ronin: `item`, `work-record`, `edges`, `ronin-url` |
+| `tests/stores.test.ts` | Teams, Workspaces, plans, items and secrets reading back, also after a restart |
+| `tests/promotion.test.ts` | desk open, hand-in, promotion into `dev`; a failed health check reverted |
+| `tests/setup.test.ts` | a fresh box: health, the page, Setup's providers and sign-in, Help (Mika) |
+| `tests/sign-in.test.ts` | the password gate on the page and the API, login and logout |
+| `tests/terminal.test.ts` | typing in a tile, the Message box, a foreign socket refused |
 
-The Team lead or release maintainer owns the full `npm run verify` verdict for the
-combined candidate. The normal point is the final gate before publishing global `dev`
-to remote `dev` and opening or updating the `dev → master` release PR. A lead may choose
-to run it at Team promotion into global `dev` when shared changes, conflict resolution,
-or integration risk make an earlier combined verdict useful.
+Every file boots a real Ronin (`src/index.ts`) through `tests/helpers/ronin.ts`:
+- a private tmux server (`tests/helpers/testserver.ts`), free port and scratch roots;
+- stub `claude` and `codex` that record how they were started;
+- stub `systemctl`, `systemd-run` and `loginctl`, because Ronin stops an Agent pane's scope
+  and a test server's panes share the scope of whoever started the run.
 
-An individual Agent almost never needs a full run. An explicit owner or lead request
-can assign one to that Agent for a specific candidate or integration investigation.
-This is working guidance, not a command restriction or a new approval mechanism.
+Tests drive routes, tools and the tmux server and check the result. They never read source
+or document text. A test that is ever flaky is deleted, not retried.
 
-Record the tested commit and results so the Team can use that evidence without each
-member repeating the suite. A changed candidate may need a new verdict; the lead decides
-when the changes or outstanding failures justify it. Do not describe a failed or partial
-run as green. Promotion's restart and health checks do not replace this repository verdict.
+## Running it
 
-GitHub also runs verification on pull-request heads. CI evidence should be reported as
-CI evidence; contributors do not need to duplicate that full run on their private worktrees.
+- `npm run verify`: the gate. `scripts/check-tests.mjs` clears `TMUX`, `RONIN_SOCKET` and
+  the other live addresses, runs the files four at a time, and fails if the live tmux
+  server changed.
+- One file: `env -u TMUX -u TMUX_PANE -u RONIN_SOCKET node --import tsx --test
+  tests/agents.test.ts`.
+- From an Agent's own pane, run it under `systemd-run --user --scope -q npm run verify` as
+  a second wall around the Agent's scope.
 
-## What the commands do
+CI (`.github/workflows/verify.yml`) runs `npm run verify` on every pull request.
 
-`npm run verify` runs TypeScript checking and the full behavior suite.
-`npm run check:tests` and `node scripts/check-tests.mjs` run the full behavior suite too;
-they are not focused alternatives. Playwright commands are explicit diagnostics.
-The scripts remain callable, and this guidance adds no prompts, role checks, or locks.
+## Outside the gate
+
+- `npm run smoke:ui` is the rendered-page check. `ronin-gate`, `ronin-update` and
+  `ronin-deploy` run it; it needs Playwright and a browser.
+- `npm run byoin` checks a real box's user stores. `ronin-doctor` runs it; run it after
+  changing an installed box or its stores.
+
+Report the commands and results in a hand-in, with known failures and what was not run.
+Do not describe a failed or partial run as green.

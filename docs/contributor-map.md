@@ -37,8 +37,7 @@ The brief uses these facts to resolve what one Agent is told.
 - Code: [campaign-scope.ts](../src/campaign-scope.ts),
   [instruction-cascade.ts](../src/instruction-cascade.ts), [resources.ts](../src/resources.ts),
   [agent-defaults.ts](../src/agent-defaults.ts).
-- Tests: [campaign-scope.test.ts](../tests/campaign-scope.test.ts),
-  [agent-defaults.test.ts](../tests/agent-defaults.test.ts), [capabilities.test.ts](../tests/capabilities.test.ts).
+- Tests: [agents.test.ts](../tests/agents.test.ts), [stores.test.ts](../tests/stores.test.ts).
 
 ## User interface
 
@@ -53,8 +52,8 @@ writer of server truth. Desktop and phone share feature modules but have separat
   [state.js](../public/js/state.js), and [store.js](../public/js/store.js) — the one `/events`
   socket and the resources the server pushes on it; a surface subscribes rather than polls
   ([the data path](architecture/data-path.md)). Entries: [main.js](../public/js/main.js), [phone.js](../public/js/phone.js).
-- Tests: the index names a focused test for each visible surface. Browser diagnostics are
-  explicit when rendered behavior needs checking; a server test alone does not verify UI.
+- Tests: [terminal.test.ts](../tests/terminal.test.ts) for the tile's socket; the rendered page
+  is `npm run smoke:ui`. A server test alone does not verify UI.
 
 ## Runtime and state
 
@@ -66,9 +65,8 @@ Separate live runtime facts, durable authorities, and projections. Start with th
 - Code: [tmux-client.ts](../src/tmux-client.ts), [spawn-broker.ts](../src/spawn-broker.ts),
   [session-archive.ts](../src/session-archive.ts), [machine-settings.ts](../src/machine-settings.ts),
   [worktree lifecycle](../src/desks/lifecycle-ledger.ts).
-- Tests: [tmux-client.test.ts](../tests/tmux-client.test.ts),
-  [spawn-broker.test.ts](../tests/spawn-broker.test.ts), [session-archive.test.ts](../tests/session-archive.test.ts),
-  [desks.test.ts](../tests/desks.test.ts).
+- Tests: [agents.test.ts](../tests/agents.test.ts), [stores.test.ts](../tests/stores.test.ts),
+  [promotion.test.ts](../tests/promotion.test.ts).
 
 ## Services and connections
 
@@ -87,9 +85,7 @@ A Services capability selects parts; an Agent tool capability teaches tools. Kee
   registers it; [sockets.ts](../src/sockets.ts) hosts hooks;
   [installed-api.ts](../src/routes/installed-api.ts) reports present, loaded, parked, and desired facts.
   [credential-store.ts](../src/credential-store.ts) owns connector credentials.
-- Tests: [parts.test.ts](../tests/parts.test.ts),
-  [service-capability-runtime.test.ts](../tests/service-capability-runtime.test.ts),
-  [services-activation.test.ts](../tests/services-activation.test.ts), plus Services `bin/verify`.
+- Tests: Services `bin/verify`.
 
 ## Agent composition
 
@@ -104,8 +100,7 @@ provides the input rules; this surface owns the resulting brief and birth receip
   [brief-settings.ts](../src/brief-settings.ts), [brief.ts](../src/brief.ts),
   [brief-build.ts](../src/brief-build.ts), [agent-configuration.ts](../src/agent-configuration.ts),
   [birth-brief.ts](../src/birth-brief.ts).
-- Tests: [brief-model.test.ts](../tests/brief-model.test.ts), [brief-budget.test.ts](../tests/brief-budget.test.ts),
-  [brief-api.test.ts](../tests/brief-api.test.ts), [birth-receipt.test.ts](../tests/birth-receipt.test.ts).
+- Tests: [agents.test.ts](../tests/agents.test.ts) (the brief an Agent is started with).
 
 ## Tools
 
@@ -119,9 +114,7 @@ these contracts without creating another authority.
   uses [cli-api.ts](../src/routes/cli-api.ts) and [commands/desk.ts](../src/commands/desk.ts);
   [work-record](../ronin_bin/work-record) dispatches to [work-record-write](../libexec/work-record-write).
   Tools do not all share one transport.
-- Tests: [routine-tools.test.ts](../tests/routine-tools.test.ts),
-  [tool-bundle-dispatchers.test.ts](../tests/tool-bundle-dispatchers.test.ts),
-  [work-record.test.ts](../tests/work-record.test.ts).
+- Tests: [tools.test.ts](../tests/tools.test.ts).
 
 ## Work Record
 
@@ -144,10 +137,7 @@ its name or become another work-record store.
   wipeboards, schedules, desks, hand-in, and promotion. Work Items
   ([work-items-surface.js](../public/js/work-items-surface.js)) reads the work items a Team
   and its members hold.
-- Tests: [work-record.test.ts](../tests/work-record.test.ts),
-  [tegami-read.test.ts](../tests/tegami-read.test.ts),
-  [work-items.test.ts](../tests/work-items.test.ts), [work-item-holders.test.ts](../tests/work-item-holders.test.ts),
-  [work-item-tools.test.ts](../tests/work-item-tools.test.ts).
+- Tests: [tools.test.ts](../tests/tools.test.ts), [stores.test.ts](../tests/stores.test.ts).
 
 ## Trace a visible behavior change
 

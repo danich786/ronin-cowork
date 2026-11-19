@@ -114,10 +114,5 @@ must not be presented as proof of seven days of activity.
 
 ## Verification
 
-`tests/office-record.test.ts` checks the three readings of the office record;
-`tests/services-activation.test.ts` checks the local state with isolated dependencies;
-`tests/self-hosted-install.test.ts` drives Submit → install start and failure reporting with
-a fake launcher.
-`tests/integration/two-leg.test.ts` is the explicit cross-system diagnostic; it is not an
-ordinary unit-test gate. Use the Services verification wrapper for part registration and
-runtime placement. A passing test proves its fixture, not a deployment to the live operator.
+Use the Services verification wrapper (`bin/verify`) for part registration and runtime
+placement. A passing test proves its fixture, not a deployment to the live operator.

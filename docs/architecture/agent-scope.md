@@ -130,4 +130,6 @@ pane. That is the Codex daemon's shape. Old code (w624): the helper outlives bot
 end and its pane dying. New code: it is gone in both cases, and the start sweep stops the
 helpers the old code left.
 
-The unit floor for this is `tests/agent-scope.test.ts`.
+`tests/agents.test.ts` checks that archiving an Agent stops its scope, through a stub
+`systemctl`: a test Ronin's panes share the scope of whoever runs the tests, so the real one
+would stop the caller.

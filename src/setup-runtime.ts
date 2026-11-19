@@ -662,7 +662,15 @@ async function ensureRepository(dir: string, label: string, managed: boolean): P
   }
 }
 
-export async function ensureInstalledRoots(): Promise<Array<{ name: string; label: string; dir: string }>> {
+// Start-up and the first Setup read both call this; one run at a time, or both commit the
+// first README and the second fails Setup's read.
+let rootsInFlight: Promise<Array<{ name: string; label: string; dir: string }>> | null = null;
+export function ensureInstalledRoots(): Promise<Array<{ name: string; label: string; dir: string }>> {
+  rootsInFlight ??= placeInstalledRoots().finally(() => { rootsInFlight = null; });
+  return rootsInFlight;
+}
+
+async function placeInstalledRoots(): Promise<Array<{ name: string; label: string; dir: string }>> {
   const installed = [];
   const known = await peekProjectRoots();
   for (const root of INSTALLED_ROOTS) {

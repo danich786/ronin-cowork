@@ -45,7 +45,7 @@ was not told about can use it.
 
 One flat folder per object. The file name (no `.md`, kebab-case) is the id that `when:`,
 `serves:`, brief settings and `ronin-help` use. Ids are one namespace across the three folders:
-no two files share a name (`tests/tool-list.test.ts` checks it), so a tool whose command is a
+no two files share a name, so a tool whose command is a
 behaviour's name takes another id (`ask-mika` is the `mika` command). Every file starts the same:
 
 ```
@@ -80,8 +80,7 @@ whose placeholders all come out empty is not printed.
   brief lists, under each behaviour, the tools whose `serves:` names it. It may name a tool in
   its guidance ("hand in with `worktree-desk hand-in`").
 - **No other list of tools is kept by hand.** The [Tools help page](../using-ronin/agent-tools.md)
-  list is generated from the headers (`node scripts/tool-list.mjs`, checked by
-  `tests/tool-list.test.ts`).
+  list is generated from the headers (`node scripts/tool-list.mjs`).
 - **A hand-in that adds a tool adds its file**, as it adds its docs.
 
 **The user's store.** `~/ronin/facts/`, `~/ronin/behaviours/` and `~/ronin/tools/` (beside the
@@ -302,8 +301,7 @@ Every tool is a command on your PATH; `<tool> --help` gives its syntax.
 
 There is no backward compatibility: the model is for new installs, and no old store or record
 shape is read. A test or rig that starts the server sets `RONIN_USER_ROOT`, `RONIN_DATA_ROOT`
-and `HOME` to its own folders (`tests/test-runner-isolation.test.ts`), so it never writes the
-real stores.
+and `HOME` to its own folders (`tests/helpers/ronin.ts`), so it never writes the real stores.
 
 ## Where it is set in the UI
 

@@ -17,8 +17,7 @@ contracts or make a contributor follow the installation journey.
   are explicit diagnostic commands.
 - Talking to tmux from the server: every call goes through the control-mode client
   (`src/tmux-client.ts`); programs that are not tmux start through the spawn broker
-  (`src/spawn-broker.ts`). [`docs/architecture/tmux-connection.md`](docs/architecture/tmux-connection.md) says why
-  and what the tests refuse.
+  (`src/spawn-broker.ts`). [`docs/architecture/tmux-connection.md`](docs/architecture/tmux-connection.md) says why.
 - Need a tmux server that is not the live one? `ronin-testserver open <name>`, use the
   `tmux` path it prints for every command, `ronin-testserver close <name>` when done —
   nothing else; in a test, `tests/helpers/testserver.ts` does the same. A server you did

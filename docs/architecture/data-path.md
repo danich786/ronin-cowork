@@ -148,19 +148,11 @@ when its context gauge and its terminal read are looked at again.
 4. **In the store,** add the message to `receive` (held) or the key to `WANTED` (asked-for).
 5. **In the surface,** subscribe on enter and unsubscribe on leave. Delete any read the
    surface used to make for it. Delete the GET route if nothing else reads it.
-6. **Prove it** in `tests/home-push.test.ts` (a change pushes once, an unchanged tick
-   pushes nothing, a fresh connection gets it) and beside the surface (opens and paints
-   from a push, makes no request, hears nothing after close).
-7. **Say what is** in [Runtime connection](tmux-connection.md)'s table and
+6. **Say what is** in [Runtime connection](tmux-connection.md)'s table and
    [UI](ui.md)'s update-paths table. No comment describes what used to happen.
 
 ## Proof
 
-- `tests/store.test.js`, `tests/home-push.test.ts`, `tests/team-push.test.js`,
-  `tests/pushed-surfaces.test.js`, `tests/tile-store.test.js`, `tests/setup-push.test.js`,
-  `tests/shutdown-push.test.ts`, `tests/session-retire-ui.test.js`,
-  `tests/unreachable-banner.test.js`, `tests/desks-session.test.ts` — each proves a push
-  reaches its surface, an unchanged tick is silent, and no request is made after open.
 - `grep -rn setInterval public/js` is empty. Every `setTimeout` left is a debounce, a UI
   delay, the tile wire's reconnect, or the store's silence check (put off by every message).
 - A browser on Home for 40 idle seconds makes no request to any data route, and one idle
