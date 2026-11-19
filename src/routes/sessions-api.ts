@@ -681,7 +681,7 @@ export function registerSessions(app: express.Express): void {
     const { own, repos } = await chatPlaces(name);
     const page = own ? await commitPage(String(req.query.ref ?? ''), repos, path.join(own, 'commits')).catch(() => null) : null;
     if (!page) return res.status(404).json({ error: 'No such commit.' });
-    res.json({ path: page });
+    res.json({ sha: path.basename(page, '.html'), path: page });
   });
 
   app.get('/api/sessions/:name/project-root', async (req, res) => {
