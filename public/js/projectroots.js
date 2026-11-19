@@ -6,6 +6,7 @@ import { t } from './lexicon.js';
 import { WorkspaceKit } from './workspace-kit.js';
 import { createFolderPicker } from './folder-picker.js';
 import { createPhalanx } from './phalanx.js';
+import { createMenuButton } from './menu.js';
 import { ask } from './ask.js';
 import { finalizeTeamName, sanitizeTeamName } from './new-team-draft.js';
 
@@ -22,11 +23,10 @@ const notReady = (r) => ({
 const stoneState = (r) => {
   if (r.archived) return t('roots.chip_archived', 'Archived');
   if (notReady(r)) return notReady(r);
-  if (!r.facts.repo) return t('roots.stone_plain_folder', 'Plain folder');
-  if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Repository · no remote');
-  return r.arrangement?.source !== 'absent' && r.repo_profile?.worktrees === 'enabled'
-    ? t('roots.stone_repo_worktrees', 'Repository · Worktrees')
-    : t('roots.stone_repo_checkout', 'Repository · checkout');
+  // A plain folder says nothing; a repository says its remote (KAN-728).
+  if (!r.facts.repo) return '';
+  if (!r.facts.repo.remote) return t('roots.stone_repo_no_remote', 'Git, no remote');
+  return r.facts.repo.remote.replace(/^.*[/:]([^/]+\/[^/]+?)(\.git)?$/, '$1');
 };
 
 /** A folder's stone: its name, the measured word under it, the classes the stone styles read.
@@ -168,8 +168,6 @@ export function createRootDrawing(deps) {
   const { createAction } = WorkspaceKit.primitives;
   const { stones, campaignId } = deps;
   let editing = null; // handle of the block whose form is open
-  const gitAccess = new Map(); // measured for this page only; credentials remain owned by Git
-  const checkingGitAccess = new Set();
 
   /* -- the form: EDIT on a block that exists, ADD inside the card at the end (`creating`),
    * where the Workspace Folder handle is the one field typed this once. -- */
@@ -221,13 +219,15 @@ export function createRootDrawing(deps) {
       });
       handleInput.addEventListener('blur', () => { handleInput.value = finalizeTeamName(handleInput.value).slice(0, 32); });
     }
-    if (stones && !creating) handleInput.closest('label').hidden = true; // the detail head already says it
+    // Nobody types a handle (KAN-728): an added folder's is made from its directory's name.
+    handleInput.closest('label').hidden = stones || creating;
     mk(t('roots.f_title', 'display title'), 'title', existing.title, t('roots.f_title_hint', 'The name shown on screen. Changing it never changes the handle or directory.'), t('roots.f_title_placeholder', 'optional'));
     const dirInput = mk(t('roots.f_directory', 'directory'), 'dir', existing.dir, t('roots.f_directory_hint', 'Where the Agent starts and discovers project instructions.'), '');
     if (creating) {
       dirInput.closest('label').hidden = true;
       const picker = createFolderPicker({ value: existing.dir, onChange: (dir) => {
         dirInput.value = dir;
+        handleInput.value = finalizeTeamName(sanitizeTeamName(dir.split('/').filter(Boolean).pop() || '')).slice(0, 32);
         dirInput.dispatchEvent(new Event('change'));
       }, ...(stones ? { words: {
         // In Setup this is a keep-or-ignore decision, not a session start (Glen, 2026-09-07).
@@ -330,7 +330,7 @@ export function createRootDrawing(deps) {
         body[i.dataset.key] = i.value.trim();
       });
       const name = creating ? body.name : existing.name;
-      if (creating && !name) { err.say(t('roots.handle_needed', 'Give this Workspace Folder a handle.'), 'bad'); handleInput.focus(); return; }
+      if (creating && !name) { err.say(t('roots.folder_needed', 'Choose a folder first.'), 'bad'); return; }
       delete body.name; // on an edit the route already carries the handle; on an add it rides the body
       let proposedProfile = null;
       if (profileFields) {
@@ -512,12 +512,12 @@ export function createRootDrawing(deps) {
       await loadProjects();
       await deps.refresh();
     });
-    const drop = createAction({ label: stones ? t('roots.exclude_folder', 'Exclude') : t('roots.exclude', 'exclude'), kind: 'danger', title: t('roots.exclude_title', 'Remove it from the catalog. Nothing on disk is touched.') }).el;
+    const drop = createAction({ label: stones ? t('roots.remove_folder', 'Remove from Ronin') : t('roots.exclude', 'exclude'), kind: 'danger', title: t('roots.exclude_title', 'Remove it from the catalog. Nothing on disk is touched.') }).el;
     drop.addEventListener('click', async () => {
       if (!await confirmDialog({
-        label: t('roots.exclude_folder', 'Exclude workspace folder'),
-        message: t('roots.exclude_confirm', 'Exclude "{name}" from your Ronin?\n\nThe catalog entry goes. {dir} is not touched.', { name: r.name, dir: r.dir }),
-        confirmLabel: t('roots.exclude_folder', 'Exclude'),
+        label: t('roots.remove_folder', 'Remove from Ronin'),
+        message: t('roots.remove_confirm', 'Remove "{name}" from Ronin?\n\nThe folder {dir} and its files are not touched.', { name: r.title || r.name, dir: r.dir }),
+        confirmLabel: t('roots.remove', 'Remove'),
         cancelLabel: t('roots.cancel_folder', 'Cancel'),
       })) return;
       drop.disabled = true;
@@ -567,20 +567,22 @@ export function createRootDrawing(deps) {
     if (!exists) d.classList.add('gone');
 
     // THE HEAD, the shape every stone detail shares (Presets: `.sp-heading`): the name and
-    // every action on one line, one measured line under it. Nothing else interacts below.
+    // its actions on one line, a line under it only when something is wrong, archived or running.
     const head = make('header', 'pr-detail-head');
     const heading = make('div', 'pr-detail-heading');
     heading.append(make('h3', 'pr-detail-name', r.title || r.name));
     const go = make('div', 'pr-detail-go');
     heading.append(go);
-    // READY only when the server's checks passed (2026-11-04): the folder exists and, where it holds
-    // a repository, Git reads it with its branch known; that branch reads beside it.
+    // A folder that works says nothing (KAN-728): no Ready badge; a failed server check says what failed.
     const ready = exists && !notReady(r);
-    const words = [r.archived ? t('roots.chip_archived', 'Archived') : !ready ? notReady(r) : r.facts.repo ? t('roots.stone_ready_on', 'Ready · on {branch}', { branch: r.facts.repo.branch }) : t('roots.stone_ready', 'Ready')];
+    const words = [r.archived ? t('roots.chip_archived', 'Archived') : !ready ? notReady(r) : ''].filter(Boolean);
     if (r.sessions) words.push(r.sessions === 1 ? t('roots.sessions_one', '{n} session', { n: r.sessions }) : t('roots.sessions_many', '{n} sessions', { n: r.sessions }));
-    const state = make('p', 'pr-detail-state', words.join(' · '));
-    state.dataset.tone = r.archived ? 'muted' : ready ? 'ok' : 'bad';
-    head.append(heading, state);
+    head.append(heading);
+    if (words.length) {
+      const state = make('p', 'pr-detail-state', words.join(' · '));
+      state.dataset.tone = r.archived ? 'muted' : ready ? 'ok' : 'bad';
+      head.append(state);
+    }
     d.append(head);
 
     if (editing === r.name) {
@@ -596,74 +598,30 @@ export function createRootDrawing(deps) {
       deps.refreshDetail();
       deps.focusForm();
     });
+    // Archive and Remove live under the menu, not in the head (KAN-728): Edit is the one button.
     const { shelve, drop } = maintenance(r);
-    go.append(edit, shelve, drop);
+    const more = createMenuButton({ glyph: '⋯', title: t('roots.more_folder', 'More'), host: () => d, groups: () => [{ items: [
+      { label: shelve.textContent, hint: shelve.title, run: () => shelve.click() },
+      { label: t('roots.remove_folder', 'Remove from Ronin'), hint: t('roots.exclude_title', 'Remove it from the catalog. Nothing on disk is touched.'), run: () => drop.click() },
+    ] }] });
+    go.append(edit, more.el);
 
-    const summary = make('p', 'pr-summary-text', r.remit || t('roots.summary_none', 'No summary yet.'));
-    if (!r.remit) summary.classList.add('empty');
-    d.append(section(t('roots.summary', 'Summary'), summary));
-
-    const folder = section(t('roots.section_folder', 'Folder'), facts([
-      [t('roots.fact_handle', 'Workspace Folder handle'), r.name],
-      [t('roots.fact_directory', 'Directory'), r.dir, { tone: exists ? '' : 'bad' }],
+    // A folder reads as its summary (when it has one), its path, and its repository's remote in a line
+    // when it is one (KAN-728); no handle, and nothing said about a folder that is not a repository.
+    if (r.remit) d.append(section(t('roots.summary', 'Summary'), make('p', 'pr-summary-text', r.remit)));
+    const repo = exists ? r.facts.repo : null;
+    const remote = repo ? (repo.remote || '').replace(/^(https?:\/\/|git@)/, '').replace(/\.git$/, '').replace(/^([^/:]+):/, '$1/') : '';
+    const folder = make('section', 'pr-section');
+    folder.append(facts([
+      [t('roots.fact_path', 'Path'), r.dir, { tone: exists ? '' : 'bad' }],
+      [t('roots.fact_repository', 'Repository'), repo ? remote || t('roots.chip_no_remote', 'Git, no remote') : ''],
       [t('roots.fact_docs', 'Docs'), (r.docs || []).join(', ')],
       [t('roots.fact_match', 'Match'), (r.match || []).join(', ')],
     ]));
     // The one maintenance job that arrives on its own: a directory moved or deleted out
     // from under the catalog. Flagged, never auto-removed.
-    if (!exists) folder.append(make('p', 'pr-fine bad', t('roots.chip_gone_title', 'Nothing on disk at this path — fix the path or exclude it')));
+    if (!exists) folder.append(make('p', 'pr-fine bad', t('roots.chip_gone_title', 'Nothing on disk at this path: fix the path or remove it')));
     d.append(folder);
-
-    if (exists && r.facts.repo) {
-      const repo = r.facts.repo;
-      const remote = (repo.remote || '').replace(/^.*[/:]([^/]+\/[^/]+?)(\.git)?$/, '$1');
-      // HOW THE REPOSITORY IS RUN, apart from the branch mounted here: read from its
-      // checked-in RONIN_REPO. No record = today's shared checkout, said plainly.
-      const a = r.arrangement;
-      const declared = !!a && a.source !== 'absent';
-      d.append(section(t('roots.section_repository', 'Repository'), facts([
-        [t('roots.fact_remote', 'Remote'), remote || t('roots.chip_no_remote', 'repo, no remote'), { title: repo.remote || t('roots.chip_no_remote_title', 'A git repo with no origin') }],
-        [t('roots.fact_branch', 'Branch'), repo.branch],
-        [t('roots.fact_publishing', 'Publishing'), declared
-          ? (a.mode === 'reviewed'
-            ? t('roots.flow_reviewed', '{working} → review → {stable}', { working: a.working || 'dev', stable: a.stable || 'main' })
-            : t('roots.flow_direct', 'commits → {stable}', { stable: a.stable || 'main' }))
-          : t('roots.profile_undeclared', 'Not declared'), { title: declared ? '' : t('roots.chip_shared_title', 'No RONIN_REPO record: sessions use this checkout. Edit this root to declare its repository workflow.') }],
-        [t('roots.fact_worktrees', 'Worktrees'), declared && r.repo_profile?.worktrees === 'enabled' ? t('roots.worktrees_enabled', 'Use Ronin Worktrees') : t('roots.worktrees_disabled', 'Use the checkout')],
-      ])));
-
-      const access = gitAccess.get(r.name) || { state: 'not_checked', message: t('roots.git_access_not_checked_detail', 'Ronin has not checked read access to this repository’s origin.') };
-      const checking = checkingGitAccess.has(r.name);
-      const labels = {
-        available: t('roots.git_access_available', 'Access available'),
-        unavailable: t('roots.git_access_unavailable', 'Access unavailable'),
-        not_checked: t('roots.git_access_not_checked', 'Not checked'),
-        check_failed: t('roots.git_access_check_failed', 'Check failed'),
-      };
-      const accessBody = make('div', 'pr-git-access');
-      const accessState = make('p', 'pr-detail-state', checking ? t('roots.git_access_checking', 'Checking…') : labels[access.state] || labels.check_failed);
-      accessState.dataset.tone = access.state === 'available' ? 'ok' : access.state === 'not_checked' ? 'muted' : 'bad';
-      const accessMessage = make('p', 'pr-fine', access.message || '');
-      accessMessage.setAttribute('role', 'status');
-      const check = createAction({ label: t('roots.git_access_check', 'Check access'), kind: 'primary' }).el;
-      check.disabled = checking;
-      check.addEventListener('click', async () => {
-        if (checkingGitAccess.has(r.name)) return;
-        checkingGitAccess.add(r.name);
-        deps.refreshDetail();
-        const result = await request(`/api/project-roots/${encodeURIComponent(r.name)}/git-access`, { method: 'POST' });
-        gitAccess.set(r.name, result.ok
-          ? { state: result.data?.state || 'check_failed', message: result.data?.message || '' }
-          : { state: 'check_failed', message: result.message });
-        checkingGitAccess.delete(r.name);
-        deps.refreshDetail();
-      });
-      accessBody.append(accessState, accessMessage, check);
-      d.append(section(t('roots.git_access', 'Git access'), accessBody));
-    } else if (exists) {
-      // A project_root need not be a project_repo. `~/lab` is one; this is a legal shape, not a warning.
-      d.append(section(t('roots.section_repository', 'Repository'), make('p', 'pr-fine', t('roots.repository_none', 'Not a Git repository. A workspace folder does not need to be one.'))));
-    }
     return d;
   }
 

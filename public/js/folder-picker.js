@@ -100,7 +100,7 @@ export function createFolderPicker({ value = '', onChange = () => {}, words = {}
       const row = el('div', 'folder-row');
       const open = el('button', 'folder-open', `▸ ${folder.name}`); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
       if (folder.registered_root) open.append(el('small', 'folder-kind', say.kept || t('folders.kind_workspace', 'workspace folder')));
-      const choose = el('button', 'folder-choose', folder.registered_root ? (say.kept || 'evaluate') : say.take); choose.type = 'button';
+      const choose = el('button', 'folder-choose', folder.registered_root ? (say.kept || say.take) : say.take); choose.type = 'button';
       if (folder.registered_root && say.kept) choose.disabled = true;
       else choose.addEventListener('click', () => void select(folder.dir, folder));
       row.append(open, choose); listing.append(row);
