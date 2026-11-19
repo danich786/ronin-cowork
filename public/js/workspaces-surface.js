@@ -476,23 +476,6 @@ export function workspacePage(w, { reading, campaignId, onSaved = () => {}, onDi
   return { el: page, action, discard };
 }
 
-/** The Workspaces of the Campaign a bench looks at: one read, every surface on the bench hears it. */
-export function createWorkspacesRead(campaignId) {
-  let workspaces = [];
-  const listeners = new Set();
-  return {
-    list: () => workspaces,
-    read: async () => {
-      const query = campaignId() ? `?campaign_id=${encodeURIComponent(campaignId())}` : '';
-      const answer = await request(`/api/workspaces${query}`, { cache: 'no-store' });
-      if (answer.ok) workspaces = answer.data?.workspaces || [];
-      for (const listener of listeners) listener(answer);
-      return answer;
-    },
-    subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
-  };
-}
-
 /** The selector's cards: one per Workspace, its name. */
 export const workspaceOffers = (workspacesRead) => workspacesRead.list().map((w) => ({ key: w.name, label: w.title || w.name }));
 
