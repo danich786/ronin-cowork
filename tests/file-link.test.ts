@@ -10,8 +10,12 @@ test('a Chat file link resolves ~ to home and a relative path in the first base 
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'ronin-link-'));
   await mkdir(path.join(cwd, 'docs'));
   await writeFile(path.join(cwd, 'docs', 'a.md'), '# a\n');
-  assert.equal(resolveFileLink('~/x/y.md', [], '/home/me'), '/home/me/x/y.md');
+  assert.equal(resolveFileLink('~/docs/a.md', [], cwd), path.join(cwd, 'docs', 'a.md'));
   assert.equal(resolveFileLink('/etc/hosts', [desk]), '/etc/hosts');
   assert.equal(resolveFileLink('docs/a.md', [desk, cwd]), path.join(cwd, 'docs', 'a.md'));
   assert.equal(resolveFileLink('docs/none.md', [desk, cwd]), null);
+  // Only a file that is there (KAN-701): a missing one, or a folder, is no link.
+  assert.equal(resolveFileLink('~/x/y.md', [], '/home/me'), null);
+  assert.equal(resolveFileLink('/no/such/file.md', []), null);
+  assert.equal(resolveFileLink(cwd, []), null);
 });

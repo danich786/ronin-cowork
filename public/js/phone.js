@@ -88,6 +88,14 @@ export async function buildPhone() {
   feedbackAction.type = 'button';
   feedbackAction.addEventListener('click', () => { location.hash = '#/feedback'; });
   const feedback = createFeedbackSurface(() => { location.hash = '#/'; });
+  // A session put on screen from elsewhere (an Agent's name pressed in Chat, KAN-701) is that
+  // Agent's own screen, as its card opens it.
+  S.connectSession = (name) => {
+    const team = teamsFromState().find((one) => membersOfTeam(one.name).some((member) => member.name === name));
+    if (!team) return false;
+    location.hash = sessionHash(team.name, name);
+    return true;
+  };
 
   const backLink = (href) => {
     const back = el('a', 'ph-back', '‹');

@@ -67,6 +67,7 @@ import { randomUUID } from 'node:crypto';
 import { hardDeleteConfirmation, liveOps, shutdownAgent, ShutdownRefused, ShutdownSlots, type ShutdownProgress } from '../desks/session-shutdown.js';
 import { listDeskRecords, listDesks } from '../desks/registry.js';
 import { resolveFileLink } from '../file-link.js';
+import { storeDir } from '../resources.js';
 import { parkCarry } from '../machine-park.js';
 import { readOfficeRecord } from '../office-record.js';
 import { clearHookRecord, readFields } from '../asking.js';
@@ -656,7 +657,10 @@ export function registerSessions(app: express.Express): void {
     const desks = await listDeskRecords({ owner: name }).catch(() => []);
     const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
     const roots = await listProjectRoots().catch(() => []);
-    const file = resolveFileLink(String(req.query.path ?? ''), [...desks.map((d) => d.worktree), cwd, ...roots.filter((r) => !r.archived).map((r) => r.dir)]);
+    // Its session folder and drop/ (a file handed to it), and the library (ABOUT_USER.md and the like).
+    const own = await sessionKey(name).then((key) => sessionRecordDir(key), () => '');
+    const file = resolveFileLink(String(req.query.path ?? ''), [...desks.map((d) => d.worktree), cwd, own, own && path.join(own, 'drop'),
+      ...roots.filter((r) => !r.archived).map((r) => r.dir), storeDir('library')]);
     if (!file) return res.status(404).json({ error: 'No such file.' });
     res.json({ path: file });
   });

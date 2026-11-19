@@ -1,13 +1,13 @@
 /* The journal view is independent of the terminal socket and old Output selector. */
 import { request } from './request.js';
-import { transcriptHandlers, transcriptWatch } from './events.js';
+import { transcriptHandlers, transcriptWatch, openSessionSomewhere } from './events.js';
 import { t } from './lexicon.js';
 import { renderMarkdownDocument } from './markdown-reader.js';
 import { WorkspacePrimitives } from './workspace-primitives.js';
 import { openDocOver } from './tile-doc-view.js';
 import { fileLinkPath } from './document-links.js';
 import { answerable, buildQuestion } from './chat-question.js';
-import { linkItemIds } from './chat-item-links.js';
+import { linkChat } from './chat-item-links.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -64,6 +64,11 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   // overlay over this chat's own body (Setup's Helpful Assistant).
   const openItem = onItem || ((item) => import('./tilehead.js').then(({ openItemOver }) =>
     openItemOver({ body: el.parentElement, session, tegami: null, openDoc }, item)));
+  // An Agent's name pressed opens that Agent (KAN-701) as an item's Agent stone does: its tile
+  // over this work surface, Close gives it back (work-items-surface.js openAgentOver); where
+  // there is no work surface (a phone), wherever Ronin puts a session on screen.
+  const openAgent = (name) => import('./work-items-surface.js').then(({ openAgentOver }) =>
+    openAgentOver(el, name) || openSessionSomewhere(name));
   let active = false;
   let generation = 0;
   /*
@@ -263,7 +268,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
   }
 
   /** A record drawn, its item ids made links to the item overlay (chat-item-links.js). */
-  const linkItems = (rec) => linkItemIds(entryFor(rec), openItem);
+  const linkItems = (rec) => linkChat(entryFor(rec), { item: openItem, agent: openAgent, doc: openDoc, session: () => session });
   function entryFor(rec) {
     const entry = document.createElement('div');
     entry.className = 'tile-transcript-entry';
