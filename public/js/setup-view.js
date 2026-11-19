@@ -248,6 +248,7 @@ export function createSetupView() {
   };
   const onShow = (m) => {
     if (!entered || m.tab !== mikaTab() || !WorkspaceKit.workbench.library.has(m.surface)) return;
+    if (bench.visibleIds().some((workspace) => bench.typeAt(workspace) === m.surface)) return; // on screen already: left where it is (KAN-712)
     bench.place(m.surface, m.workspace); // not selected: the person stays in her chat
   };
   mikaShowHandlers.add(onShow);
