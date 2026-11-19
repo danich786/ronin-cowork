@@ -48,6 +48,15 @@ test('desk open, commit, hand-in, promote: the change reaches dev and the item s
   git(desk, 'commit', '-q', '-m', 'the till adds up');
   const tip = git(desk, 'rev-parse', 'HEAD');
 
+  // What the Agent writes in Chat links only when it resolves: a file in its desk, a commit in its repos.
+  const link = (route: string) => ronin.api(`/api/sessions/builder/${route}`);
+  assert.equal((await link(`file-link?path=${encodeURIComponent(path.join(desk, 'till.txt'))}`)).body.path, path.join(desk, 'till.txt'));
+  assert.equal((await link(`file-link?path=${encodeURIComponent(path.join(desk, 'nothing.txt'))}`)).status, 404);
+  assert.equal((await link(`commit?ref=${tip.slice(0, 7)}`)).body.sha, tip);
+  assert.equal((await link('commit?ref=acceded')).status, 404, 'a hex-looking word is no commit');
+  const page = (await link(`commit?ref=${tip.slice(0, 7)}&show=1`)).body.path as string;
+  assert.match(await fs.readFile(page, 'utf8'), /the till adds up/, 'pressed, its git show opens as a page');
+
   const created = await ronin.tool('item', ['create', '--title', 'The till adds up'], { env: asBuilder });
   const id = /created (\S+)/.exec(created.stdout)![1];
   await ronin.tool('item', ['transition', id, 'In Progress'], { env: asBuilder });
