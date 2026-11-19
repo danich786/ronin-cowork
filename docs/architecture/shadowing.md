@@ -64,8 +64,7 @@ wholesale** — that is what they are for. Yours live in the **catalogs store**,
 every repo, where an upgrade cannot reach and an uninstall leaves them.
 
 **Never spell that path by hand.** Ask for it: `storeDir('catalogs')` in TypeScript,
-`$(ronin-store catalogs)` in bash. `docs/stores.md` is the rule (JUSHO) and `check-place`
-is the gate. Every store also takes a `RONIN_<ID>_DIR` override, derived mechanically —
+`$(ronin-store catalogs)` in bash. `docs/stores.md` is the rule (JUSHO). Every store also takes a `RONIN_<ID>_DIR` override, derived mechanically —
 `RONIN_CATALOGS_DIR` points the lookup somewhere else, which is how the resolver is
 tested.
 

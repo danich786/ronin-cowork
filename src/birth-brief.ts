@@ -13,8 +13,8 @@ export const AGENT_BRIEF = 'AGENT_BRIEF.md';
  * output, Claude Code 30,000 chars of shell output and 25,000 tokens per Read — and both
  * models open a file in a first window of about 250 lines. Measured 2026-09-04 (Codex
  * 0.151.0, Claude Code 2.1.260) after a 121 KB packet cost a session its instructions.
- * The compiled packet must fit the smallest of those, so one read is the whole packet;
- * `tests/session-boot.test.ts` holds the real stock shelf to it. Bytes are the hard cap.
+ * The compiled packet must fit the smallest of those, so one read is the whole packet.
+ * Bytes are the hard cap.
  * Lines are the habit: the fullest stock birth compiles to ~350 lines with the Routine
  * contracts inside the first 250, and the ceiling stops the next shelf addition from
  * quietly pushing them out again.

@@ -167,8 +167,7 @@ brief settings (docs/architecture/brief.md, Where it is set in the UI). ERABI ta
 never on a member's status tick or a session coming and going — so an edit in progress is
 not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save** PUTs the whole record to
 `/api/team-rosters/:name`; keys the tab does not draw are carried, the retired
-`agent_defaults.permissions` is not. `tests/team-configuration.test.js` is the floor;
-`scripts/smoke-ui.mjs` opens the tab and measures one stone.
+`agent_defaults.permissions` is not. `scripts/smoke-ui.mjs` opens the tab and measures one stone.
 
 ## Owned files
 
@@ -183,7 +182,6 @@ not thrown away; the Coworks page's copy of the tab keeps the same rule. **Save*
 - `src/routes/team-page-api.ts` — the page's view and drafts; `src/ws/events.ts`
   `broadcastEvent`.
 - `ronin_bin/edges page` — the agent's tool.
-- `tests/team-terminal-pool.test.js`, `tests/team-arrange.test.js`, `tests/team-configuration.test.js`.
 - `docs/architecture/team-workspace.md` — this persistent implementation and resume contract.
 
 Shared seams touched for Team, by authorization: `public/js/terminal-tile-host.js`
@@ -287,7 +285,7 @@ keyboard · `5acb840` `edges page` · `a6819eb` the roster in its view · `04120
 `7c5c619` the head row and Team Configuration finished on measurement.
 
 The surface was verified by Playwright probes against the live page (`scripts/lib/ui-host.mjs`,
-`loadPlaywright()`), plus the repo gates (`check-modules`, `check-css`, `check-tests`) and
+`loadPlaywright()`), plus the repo gates (`check-modules`, `check-tests`) and
 `scripts/smoke-ui.mjs`.
 The designated integrator runs one BYOIN mode on the release candidate; a SKIP is not a pass.
 

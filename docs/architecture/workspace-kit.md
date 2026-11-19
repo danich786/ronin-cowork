@@ -120,8 +120,8 @@ Mandatory rules:
   Kit layout/responsive geometry.
 - Skins remain token sets only. Never add feature-specific selectors or a second skin path.
 
-`scripts/check-css.mjs` enforces location, static loading, layer, raw-value, token and
-namespace rules across shipped non-vendor stylesheets. Staging browser evidence verifies
+These location, static loading, layer, raw-value, token and namespace rules hold across
+shipped non-vendor stylesheets; review keeps them. Staging browser evidence verifies
 League, Team and New Team inherit shipped square/soft radius, tight/roomy spacing/type,
 paper surface-color, and mono font tokens, then restore Stock.
 
@@ -181,8 +181,7 @@ npm run byoin             # user-customization guard-rail check
 
 Ordinary Kit legs use direct dogfood and scoped diagnostic evidence, not BYOIN. One
 designated integrator runs the check once on the exact release candidate.
-`scripts/check-css.mjs` guards CSS. Staging
-`scripts/smoke-ui.mjs` renders the desktop Team page and the phone document. `scripts/visual-ui.mjs` measures declared compositions. A
+Staging `scripts/smoke-ui.mjs` renders the desktop Team page and the phone document. A
 SKIP is unverified, never a pass.
 
 ## Known open seams

@@ -148,7 +148,7 @@ coherent (`bin/ronin-promote <team>`); a conflict is yours to resolve at your de
 record goes on the wipeboard without interrupting anyone. Promotion is not restricted to a
 designated lead — the receipt records who ran it — so nothing is ever tied up waiting for a
 人 that was never set. A lead is still the better arrangement; it is not a prerequisite.
-`src/desks/lead.ts`; `tests/desks-lead.test.ts`.
+`src/desks/lead.ts`.
 
 ## Close, park, recover, discard
 
@@ -191,8 +191,5 @@ beside the line and the ref moves by one atomic `update-ref`.
 
 ## Tests
 
-`tests/desks.test.ts` — real git in a temp directory, every store overridden: open,
-refusals, derived status, hand-in and its receipt, nothing-to-hand-in, adoption with a
-dirty overlapping sibling, a conflict and its resolution, close/park/recover/discard, a
-two-repo assignment, two hand-ins at once, a dead holder's lock, a stale expected ref, a
-candidate left by a crash.
+`tests/promotion.test.ts`: real git in a temporary repository, a real Ronin: an Agent
+opens a desk, commits, hands in with its item, and the lead promotes the line into `dev`.

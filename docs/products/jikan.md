@@ -33,5 +33,4 @@ edges schedule add --to lead --when "weekdays 09:00" --kind recurring \
 ```
 
 Bare `edges schedule` lists the current Team's jobs. `pause`, `resume`, `now`, and `remove`
-change one. The command is a thin client of the operator's HTTP JIKAN surface. The
-behavior floor is `tests/jikan.test.ts`.
+change one. The command is a thin client of the operator's HTTP JIKAN surface.
