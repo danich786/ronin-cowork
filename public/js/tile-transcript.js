@@ -7,6 +7,7 @@ import { WorkspacePrimitives } from './workspace-primitives.js';
 import { openDocOver } from './tile-doc-view.js';
 import { fileLinkPath } from './document-links.js';
 import { answerable, buildQuestion } from './chat-question.js';
+import { linkItemIds } from './chat-item-links.js';
 
 /*
  * MARKDOWN ON OR OFF, per Agent (owner, 2026-11-01: "when i select MD or not in one tile it
@@ -40,7 +41,7 @@ const said = (text) => String(text || '').replace(/\s+/g, ' ').trim();
  *               left out is still held by seq, so paging and catch-up run as if it were drawn
  *               (Irasshai's chat, KAN-617).
  */
-export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, admit = null } = {}) {
+export function makeTileTranscript({ read = request, watch = transcriptWatch(), onState = () => {}, cache = null, onAnswer = null, onChoose = null, onResume = null, onDoc = null, onItem = null, admit = null } = {}) {
   const el = document.createElement('div');
   el.className = 'tile-transcript';
   el.setAttribute('role', 'log');
@@ -59,6 +60,10 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       .then((r) => { if (r.ok && r.data?.path) openDoc(r.data.path); });
     return true;
   };
+  // An item id pressed opens the item overlay (KAN-698): the caller's (a tile's), else the same
+  // overlay over this chat's own body (Setup's Helpful Assistant).
+  const openItem = onItem || ((item) => import('./tilehead.js').then(({ openItemOver }) =>
+    openItemOver({ body: el.parentElement, session, tegami: null, openDoc }, item)));
   let active = false;
   let generation = 0;
   /*
@@ -250,6 +255,8 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     paintStance();
   }
 
+  /** A record drawn, its item ids made links to the item overlay (chat-item-links.js). */
+  const linkItems = (rec) => linkItemIds(entryFor(rec), openItem);
   function entryFor(rec) {
     const entry = document.createElement('div');
     entry.className = 'tile-transcript-entry';
@@ -290,7 +297,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
     for (const entry of [...el.children]) {
       const seq = Number(entry.getAttribute?.('data-seq'));
       if (!Number.isFinite(seq) || entry.rawText === undefined) continue;
-      const next = entryFor({ seq, role: entry.getAttribute('data-role'), kind: entry.getAttribute('data-kind'), text: entry.rawText,
+      const next = linkItems({ seq, role: entry.getAttribute('data-role'), kind: entry.getAttribute('data-kind'), text: entry.rawText,
         narration: entry.getAttribute('data-narration') === 'true' });
       el.insertBefore(next, entry);
       entry.remove();
@@ -389,7 +396,7 @@ export function makeTileTranscript({ read = request, watch = transcriptWatch(), 
       }
       const shown = admit ? admit(rec) : rec;
       if (!shown) continue;
-      insertInOrder(entryFor(shown), shown.seq);
+      insertInOrder(linkItems(shown), shown.seq);
       landed(shown);
     }
     // What is still on its way stays after everything that has landed.

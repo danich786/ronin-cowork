@@ -146,6 +146,10 @@ A link in Chat to a file on the Ronin machine opens that file in Docs, on a desk
 in the Helpful Assistant's chat (Irasshai) too, however the Agent wrote it: a full path, `~/…`, `file:///…`, a path relative
 to where it works, or `path:line` (the file opens; the line is not jumped to). Web links open in the browser.
 
+A work item's id in Chat (KAN-680, w806) is a link: press it and the item opens over the tile, as
+from the tile's item pills; Close returns to the chat where you were. The Helpful Assistant's chat
+does the same over her chat. An id that names no item stays plain text.
+
 The short lines an Agent prints between steps, its working aloud, show in a lighter shade and in
 italic, set apart from its replies.
 

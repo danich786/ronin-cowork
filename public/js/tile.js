@@ -5,7 +5,7 @@ import { toast } from './ui.js';
 import { retireSession } from './session-retire.js';
 import { IS_TOUCH, S, isCoarse, saveState, tiles, WHEEL_DOWN } from './state.js';
 import { guard } from './errors.js';
-import { buildTileHead, syncTileHead } from './tilehead.js';
+import { buildTileHead, syncTileHead, openItemOver } from './tilehead.js';
 import { installTextDrops } from './tiledroptext.js';
 import { installFileDrops } from './tilefiles.js';
 import { dvrStep } from './dvr.js';
@@ -86,6 +86,7 @@ export class Tile {
       onChoose: (answer) => this.answerQuestion(answer),
       onResume: () => this.resumeAgent(),
       onDoc: (path) => this.openDoc(path),
+      onItem: (item) => openItemOver(this, item),
     });
     this.body.append(this.transcriptView.el);
     // CONTINUE IN CHAT — at the foot of the terminal while it was reached by Answer in Terminal
