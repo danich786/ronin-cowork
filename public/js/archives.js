@@ -8,7 +8,9 @@ import { t } from './lexicon.js';
 /** A team tag said as a title, the same way the Cowork page falls back: parts, capitalized. */
 const readableTag = (tag) => tag.split(/[_-]+/).filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ');
 
-export function buildArchives(tile, host) {
+/** The archived sessions list. `onlyTeam`, when given, names the Team whose archives alone it holds
+ * (a Team workbench's Rehydrate Agents, KAN-706), read at each enter. */
+export function buildArchives(tile, host, onlyTeam = null) {
   host.className = 'home-archives';
   const head = document.createElement('div');
   head.className = 'home-archived-head';
@@ -82,65 +84,13 @@ export function buildArchives(tile, host) {
       return;
     }
     if (mine !== generation) return;
-    rows = read;
+    const only = onlyTeam?.();
+    rows = only ? read.filter((item) => item.tags?.[0] === only) : read;
     count.textContent = String(rows.length);
     paint();
   };
 
   return { enter };
-}
-
-/**
- * THE TEAM'S ARCHIVED AGENTS (owner, 2026-11-19, KAN-702): the archives whose Team of record is this
- * Team, as Team workbench selector cards after its live Agents. Read again when the Team or its live
- * members change (an Agent archived or restored moves both). Pressed, a card restores into the
- * selected workspace; every press answers: "restoring…" on the card at once, then the Agent's
- * terminal, or a toast saying why not.
- */
-export function createTeamArchived({ team, members, refresh, selected, connect }) {
-  let offer = { key: '', rows: [] };
-  const restoring = new Set();
-  const load = () => {
-    const key = JSON.stringify([team(), [...members()].sort()]);
-    if (offer.key === key) return;
-    offer = { key, rows: offer.rows };
-    const asked = team();
-    fetchArchivedSessions().then((rows) => {
-      if (offer.key !== key) return;
-      offer = { key, rows: rows.filter((row) => row.tags?.[0] === asked) };
-      refresh();
-    }, () => {});
-  };
-  const restore = async (id, workspace) => {
-    const row = offer.rows.find((one) => one.id === id);
-    if (!row || restoring.has(id)) return;
-    restoring.add(id);
-    refresh();
-    try {
-      const name = await rehydrateSession(id);
-      offer = { key: '', rows: offer.rows.filter((one) => one.id !== id) };
-      connect(name, workspace);
-    } catch (e) {
-      toast(t('archives.restore_failed', 'could not restore {name} — {why}', { name: row.name, why: e.message }), false);
-    } finally {
-      restoring.delete(id);
-      refresh();
-    }
-  };
-  const offers = () => {
-    if (!team()) return [];
-    load();
-    return offer.rows.map((row) => {
-      const ago = row.archived_at ? t('archives.ago', '{age} ago', { age: humanAge(Date.now() - Date.parse(row.archived_at)) }) : '';
-      const busy = restoring.has(row.id);
-      const summary = busy ? t('archives.restoring', 'restoring…') : t('archives.card_restore', 'Archived · press to restore');
-      // groupKey: the kit heads the run of these cards with the type's label, "Archived". Restoring
-      // rides the name too: the thin selector shows only the name.
-      return { key: row.id, label: busy ? `${row.name} · ${summary}` : row.name, groupKey: true, summary, title: [row.name, summary, ago].filter(Boolean).join(' · '),
-        metadata: [ago, row.agent].filter(Boolean), action: () => void restore(row.id, selected()) };
-    });
-  };
-  return { offers, restore };
 }
 
 /** One archived session: the reading, then its two labelled acts. Sorted by recency there is no

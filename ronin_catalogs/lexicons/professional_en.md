@@ -1133,10 +1133,7 @@ The catalog entry goes. {dir} is not touched.
 - **archives.sort:** Sort
 - **archives.sort_recent:** Recently archived
 - **archives.sort_team:** Team
-- **archives.group_team:** Archived
-- **archives.card_restore:** Archived · press to restore
-- **archives.restoring:** restoring…
-- **archives.restore_failed:** could not restore {name} — {why}
+- **archives.team_card:** Rehydrate Agents
 - **archives.delete_aria:** Permanently delete archived session {name}
 - **archives.delete_title:** Hard delete this archive
 - **archives.delete_confirm:** Hard delete archived session "{name}"? Its saved Ronin record cannot be rehydrated after this.
