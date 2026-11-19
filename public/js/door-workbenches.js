@@ -24,7 +24,8 @@ import { createModelDefaults, createModelProvider, createModelRefresh, createMod
 import { createAccountsSurface } from './accounts-surface.js';
 import { createModelsRecords } from './models-records-surface.js';
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
-import { createFolderGithub, createRootsReading, createWorkspaceNew, createWorkspaceRecord, createWorkspacesRead, createWorkspaceStones, workspaceOffers } from './workspaces-surface.js';
+import { createFolderGithub, createRootsReading, createWorkspaceNew, createWorkspaceRecord, createWorkspaceStones, workspaceOffers } from './workspaces-surface.js';
+import { createWorkspacesRead } from './workspaces-read.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createEpicBoard, createEpicRecord, createEpicsRead, epicOffers } from './epics-surface.js';
 import { createHelpOutline, createHelpPage } from './help-outline.js';
