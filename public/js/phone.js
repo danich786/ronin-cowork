@@ -341,6 +341,7 @@ export async function buildPhone() {
     paintBar(
       backLink(teamHash(team)),
       el('span', 'ph-title', agentLabel(S.sessions.find((row) => row.name === session) || { name: session })),
+      tile.flagBtn,
       transcriptBtn,
       tile.speakBtn.el,
       tile.menuBtn.el,

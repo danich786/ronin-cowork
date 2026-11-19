@@ -3447,6 +3447,19 @@ body {
 .tile-head button.transcript-toggle.off { opacity: 0.4; }
 /* Read aloud (KAN-705, js/read-aloud.js): lit while fetching or playing, gone where KOE isn't. */
 .speak-toggle[hidden] { display: none !important; }
+/* The flag (KAN-709): the pill's amber ⚑ beside Chat, only while a held item is flagged. */
+.tile-flag[hidden] { display: none !important; }
+.tile-head button.tile-flag, #phone .ph-bar .tile-flag { color: var(--warn); }
+#phone .ph-bar .tile-flag {
+  flex: 0 0 auto;
+  height: 40px;
+  min-width: 44px;
+  border: var(--edge) solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  font: var(--weight-strong) var(--text-body)/var(--leading-none) var(--font-ui);
+  cursor: pointer;
+}
 .tile-head button.speak-toggle[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
 .tile-transcript-entry[data-kind='note'] { color: var(--muted); font-style: italic; }
 /* Tool lines and code read in the terminal's own face and size, so commands and paths line up
