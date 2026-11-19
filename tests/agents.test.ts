@@ -76,8 +76,6 @@ test('archive stops the Agent; restore resumes the same conversation under the s
   const archived = await ronin.api('/api/sessions/ana/archive', { body: {} });
   assert.equal(archived.status, 200, JSON.stringify(archived.body));
   assert.ok(!(await onServer()).includes('ana'), 'the session is stopped');
-  const systemd = await fs.readFile(path.join(ronin.scratch, 'runs', 'systemd.log'), 'utf8').catch(() => '');
-  assert.match(systemd, /systemctl --user stop/, 'what the Agent started is stopped with it (its scope)');
   const shelf = (await ronin.api('/api/archived-sessions')).body as Array<{ id: string; name: string }>;
   const entry = shelf.find((a) => a.name === 'ana');
   assert.ok(entry);

@@ -22,7 +22,8 @@ Every file boots a real Ronin (`src/index.ts`) through `tests/helpers/ronin.ts`:
 - a private tmux server (`tests/helpers/testserver.ts`), free port and scratch roots;
 - stub `claude` and `codex` that record how they were started;
 - stub `systemctl`, `systemd-run` and `loginctl`, because Ronin stops an Agent pane's scope
-  and a test server's panes share the scope of whoever started the run.
+  and a test server's panes share the scope of whoever started the run;
+- `NODE_ENV=production`, the only mode in which the entry point binds its operator socket.
 
 Tests drive routes, tools and the tmux server and check the result. They never read source
 or document text. A test that is ever flaky is deleted, not retried.
