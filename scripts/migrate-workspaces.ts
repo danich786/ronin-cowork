@@ -39,7 +39,7 @@ for (const campaign of campaigns) {
     const repos = blank(field(text, 'repos')).split(',').map((r) => r.trim()).filter(Boolean);
     let defaults: Record<string, unknown> = {};
     try { defaults = JSON.parse(blank(field(text, 'agent_defaults')) || '{}'); } catch { /* unreadable defaults carry nothing */ }
-    const mode = defaults.launch_mode === 'live_dangerously' ? 'live_dangerously' : 'configured';
+    const mode = defaults.launch_mode === 'configured' ? 'configured' : 'live_dangerously'; // absent: Dangerously (KAN-718)
     delete defaults.launch_mode;
     const rest = (workspace: string) => text
       .replace(/^- \*\*project_root:\*\*.*\n/m, `- **workspace:** ${workspace || '—'}\n`)

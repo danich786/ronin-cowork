@@ -142,7 +142,7 @@ step waits.
 | Step | What it measures | The control |
 |---|---|---|
 | **Install** | whether the CLI is on this machine | **Install** opens the provider's installer and first-run setup in a tile on this surface; a provider Ronin cannot install safely gets an **Install guide** link |
-| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface; **Done** records it, **Cancel** ends the terminal session |
+| **Authenticate** | whether the provider is signed in here | **Authenticate** opens the provider's own sign-in in a tile on this surface, on its terminal; the step says how that CLI's sign-in goes (its methods and what to press: `signIn` in `src/agents.ts`, one line per provider, read off the CLI's own screens; KAN-716); **Done** records it, **Cancel** ends the terminal session |
 | **Ready** | activation, which unlocks Home's doors and the preset stones | **Turn off** stops Ronin measuring, updating and launching the provider — tiles already running are not touched and the sign-in is kept; **Turn on** brings it back, and nothing needs signing in again |
 
 The install window can continue directly into the provider's sign-in. The temporary

@@ -78,6 +78,8 @@ export interface SetupProviderState {
   blocked: string | null;
   path: string | null;
   login_open: boolean;
+  /** How its sign-in goes, in the CLI's own words (AGENTS signIn, KAN-716); '' when not read. */
+  sign_in_how: string;
   install_open: boolean;
   sign_in: ProviderSignIn | null;
   signed_in: boolean;
@@ -247,6 +249,7 @@ export async function setupRuntimeAnswer(
       blocked: agent.parked || null,
       path: isInstalled ? summary.paths[agent.id] ?? null : null,
       login_open: loginOpen,
+      sign_in_how: agent.signIn,
       install_open: installOpen,
       sign_in: section.providers?.[agent.id]?.sign_in ?? null,
       signed_in: signedIn,

@@ -46,9 +46,12 @@ export function providerPresentation(provider) {
     detail: `Turned off — Ronin is not using ${label}. Your sign-in is kept.`,
     action: 'off',
   };
+  // How to sign in, in the CLI's own words (KAN-716): one line per provider from AGENTS' signIn.
   if (provider?.login_open) return {
     inventoryState: 'Sign-in open',
-    detail: `Finish signing in to ${label} in the tile, then press Done. Cancel ends this terminal session without saving these details.`,
+    detail: provider.sign_in_how
+      ? `${provider.sign_in_how} When ${label} says you are signed in, press Done. Cancel ends this terminal session without saving these details.`
+      : `Finish signing in to ${label} in the terminal below, then press Done. Cancel ends this terminal session without saving these details.`,
     action: 'login_open',
   };
   if (provider?.install_open) return {

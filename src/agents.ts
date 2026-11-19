@@ -52,6 +52,9 @@ export const AGENTS = [
       session: { discovery: 'explicit-argv' },
     } as AgentOperations,
     parked: '',
+    // HOW ITS SIGN-IN GOES (KAN-716): Setup's Authenticate step says it above the terminal, read off
+    // the CLI's own first-run screens (2.1.x); '' where Ronin has not read them.
+    signIn: 'Press Enter to keep the text style, then pick a login method: 1 Claude account with subscription, 2 Anthropic Console account (API billing), or 3 a third-party platform. Open the link it shows, sign in, and paste the code it gives you back into the terminal.',
     credentials: ['.claude/.credentials.json'],
     // What a parked office carries besides credentials (src/machine-park.ts): the CLI's own
     // settings, without which a fresh home asks first-run questions instead of resuming.
@@ -72,6 +75,7 @@ export const AGENTS = [
       session: { discovery: 'unsupported' },
     } as AgentOperations,
     parked: '',
+    signIn: 'Pick one and press Enter: 1 Sign in with ChatGPT (a browser link to approve, on the same computer), 2 Sign in with Device Code (open auth.openai.com/codex/device and enter the code it shows: use this one in a hosted office), or 3 to paste an OpenAI API key.',
     credentials: ['.codex/auth.json'],
     carry: ['.codex/config.toml'],
     screen: { busy: ['esc to interrupt'], asking: ['›\\s*\\d+\\.\\s'], ready: ['^\\s*›(?:\\s|$)'] },
@@ -91,13 +95,14 @@ export const AGENTS = [
       session: { discovery: 'unsupported' },
     } as AgentOperations,
     parked: '',
+    signIn: 'Pick 1 Google OAuth or 2 a Google Cloud project with the arrows and Enter. For Google OAuth, open the link it shows, sign in, and paste the authorization code back if it is not picked up.',
     credentials: [],
     carry: [],
     // Its choice menu, measured on 1.5.1's sign-in screen: "> 1. Google OAuth".
     screen: { busy: [], asking: ['(?:^|\\n)\\s*>\\s*\\d+\\.\\s'], ready: [] },
   },
   // [cli] auto_update defaults true: https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/05-configuration.md
-  { id: 'grok', cmd: 'grok', label: 'Grok CLI', operations: { install: 'npm install -g @xai-official/grok', update: { shell: 'npm install -g @xai-official/grok@latest', argv: [] }, selfUpdates: true, version: ['--version'], models: { read: 'command', argv: ['models'] }, session: { discovery: 'unsupported' } } as AgentOperations, parked: '', credentials: ['.grok/auth.json'], carry: [], screen: { busy: [], asking: [], ready: [] } },
+  { id: 'grok', cmd: 'grok', label: 'Grok CLI', operations: { install: 'npm install -g @xai-official/grok', update: { shell: 'npm install -g @xai-official/grok@latest', argv: [] }, selfUpdates: true, version: ['--version'], models: { read: 'command', argv: ['models'] }, session: { discovery: 'unsupported' } } as AgentOperations, parked: '', signIn: 'It shows a browser link and a code at once: open the link, check the browser shows the same code, and approve. The terminal finishes by itself.', credentials: ['.grok/auth.json'], carry: [], screen: { busy: [], asking: [], ready: [] } },
   {
     id: 'hermes',
     cmd: 'hermes',
@@ -112,6 +117,7 @@ export const AGENTS = [
       models: { read: 'hermes-setups' },
       session: { discovery: 'unsupported' },
     } as AgentOperations,
+    signIn: 'Pick the model provider with the arrows and Enter (Nous Portal is first), then answer what it asks for that provider.',
     credentials: [],
     carry: [],
     parked: "Ronin cannot install this one yet — Nous's own installer needs system packages it has to ask you for, and does not finish without them. Install it from their site and it appears here.",
@@ -134,6 +140,7 @@ export const AGENTS = [
     parked: '',
     // Its token goes to the OS keyring, or into ~/.copilot/config.json beside trusted folders
     // when there is none: no file that means "signed in" alone, so the owner's Done activates it.
+    signIn: '',
     credentials: [],
     carry: ['.copilot/config.json', '.copilot/settings.json'],
     screen: { busy: [], asking: [], ready: [] },
@@ -154,6 +161,7 @@ export const AGENTS = [
     } as AgentOperations,
     parked: '',
     // `opencode providers login` writes each provider's key or token here (opencode.ai/docs/providers).
+    signIn: '',
     credentials: ['.local/share/opencode/auth.json'],
     carry: ['.config/opencode/opencode.jsonc', '.config/opencode/opencode.json'],
     screen: { busy: [], asking: [], ready: [] },
@@ -174,6 +182,7 @@ export const AGENTS = [
     } as AgentOperations,
     parked: '',
     // `kimi login` (device code) writes the hosted Kimi sign-in here (Kimi Code docs, Data locations).
+    signIn: '',
     credentials: ['.kimi-code/credentials/managed:kimi-code.json'],
     carry: ['.kimi-code/config.toml'],
     // Measured on 2.6.2's first start: its folder-trust dialog. Its ready prompt, "│ >", is the house row.
@@ -301,13 +310,15 @@ export async function newProviderSession(agent: string, argv: readonly string[])
 
 /** The resume argv: the Agent's birth command (its birth receipt's `cmd`: model, permissions
  * mode, as it was born; KAN-661), then the CLI's resume grammar after the executable
- * (`claude … --resume <id>`, `codex … resume <id>`). No birth command: the CLI's plain one. */
+ * (`claude … --resume <id>`, `codex … resume <id>`). No birth command: the CLI's Dangerously one,
+ * never its plain one (KAN-718); Native comes back only from a birth command that chose it. */
 export async function resumeAgentArgv(agent: string, id: string, birthCmd = ''): Promise<string[]> {
   const spec = AGENTS.find((a) => a.id === agent);
   if (!spec) return [];
   const grammar = await readAgentLaunches(spec.id);
   if (!grammar.resume.length) return [];
-  const born = birthCmd.trim().split(/\s+/)[0]?.split('/').pop() === spec.cmd ? birthCmd : spec.cmd;
+  const plain = grammar.nativeDangerously.length ? grammar.nativeDangerously.join(' ') : spec.cmd;
+  const born = birthCmd.trim().split(/\s+/)[0]?.split('/').pop() === spec.cmd ? birthCmd : plain;
   const launch = await launchArgv(born, '');
   return launch.argv.length ? [...launch.argv, ...renderLaunch(grammar.resume, { session_id: id }).slice(1)] : [];
 }
