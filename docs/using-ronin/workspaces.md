@@ -5,9 +5,9 @@ you say it once instead of to each Agent.
 
 A Workspace holds:
 
-- **Objective** — what the project is for.
-- **Instructions** — anything every Agent on it should know.
-- **Locations** — the folders and repositories its Agents work in, each with a short note.
+- **Summary** — what the project is for and what is in it, from [its doc](#its-doc).
+- **Folders** — the folders and repositories its Agents work in, each with a short note.
+- **Objective** and **Instructions** — what every Agent on it is told.
 - **Mode** — Dangerously unless you choose Native (Native for providers that offer no Dangerously form).
 - **Plans** — where its plans are kept ([Writing a plan](planning.md)).
 - **Canvases** — one-page maps of the Workspace: its live site, repos, work, documents and outside services.
@@ -34,22 +34,26 @@ repositories, writes the Summary, and ends.
 ## Make or change a Workspace
 
 Open the **Workspaces** door on Ronin Home and press a Workspace, or place **New Workspace** from
-the selector. **Show** above the stones picks what hangs under each one: the Teams launched in it, the Epics they work on, or both. Its page reads
-like New Team, every section folding to its answer: **Name & objective** (the
-title and name are chosen once, when the Workspace is made; Teams refer to them, so once
-made the section is just the **Objective**), then
-**Locations**, then **Agent info**, its instructions and Mode (folded until you open it).
-Locations opens with two choices. **Add a folder** browses this machine: tick the folders the
-Workspace uses; untick one, or press ×, to take it out. **Clone a repo** asks for the
-repository, then where to put it: walk to a folder and press **Clone**. Under the choices is a
-row per folder. A folder with Git shows its **Mode**, which belongs to the repository; press the
-word to change it. **Reviewed**: each Agent works in its own worktree and hands its work in to the
-Team lead, who checks it and promotes it to the repository's dev. **Direct**: every Agent works in
-the repository's one checkout and commits straight to it; no hand-in, no check. The two are
-explained once, above the rows. **+ note** on a row adds a note for Agents (what the folder is
+the selector. **Show** above the stones picks what hangs under each one: the Teams launched in it, the Epics they work on, or both.
+
+**New Workspace** is two things: its **Name**, and its **Folders**. Press **Create**. The folders
+you added are kept with it; nothing is kept until you press Create.
+
+A Workspace's page reads, top down: its **Summary** (write it here, or let an Agent write it), its
+**Folders**, then, folded until you open them, **Integrations**, **Agent info** (its objective,
+instructions, Mode and plans) and **Behaviors**.
+Folders opens with two buttons. **Add a folder** picks a folder on this machine: walk to it or find
+it and press **Add**, make a new one with **New folder here**, or paste its path. **Clone from
+GitHub** asks for the repository, then where to put it: walk to a folder and press **Clone**. Under
+them is a row per folder: its name and path, and, for a Git repository, its remote in a line under
+them. Press × to take a folder out. A repository's row shows its **Mode**, which belongs to the
+repository; press the word to change it. **Reviewed**: each Agent works in its own worktree and hands
+its work in to the Team lead, who checks it and promotes it to the repository's dev. **Direct**: every
+Agent works in the repository's one checkout and commits straight to it; no hand-in, no check.
+**+ note** on a row adds a note for Agents (what the folder is
 for; it goes into their brief). Where Explorer is on, you can also drag a folder from [Explorer](explorer.md)
-onto the page. Under the rows, **Plans** says where the Workspace keeps its plans: Ronin Lab's
-`<campaign>/<workspace>/plans`, marked recommended. Press it to pick another Location and a
+onto the page. In Agent info, **Plans** says where the Workspace keeps its plans: Ronin Lab's
+`<campaign>/<workspace>/plans`, marked recommended. Press it to pick another of its folders and a
 subfolder. On Save the plans move there; a plan of the same name already there stops the Save,
 so one plan never overwrites another. Under Plans, **Canvases** names the Workspace's canvases:
 press one and it opens over the page, read fresh, with × to go back. A Netlify site's canvas starts

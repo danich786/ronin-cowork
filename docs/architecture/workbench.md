@@ -177,7 +177,7 @@ Authenticate offers Mika operating the registry-owned native login command in th
 Authenticate action. Mika is a startup invariant, including before the first owner provider is connected, so the
 two assisted choices do not depend on provider count. In every path the provider summary remains the readiness authority. Workspaces seats
 its own stones of Workspaces (`workspaces-surface.js`, `workspaces.records`): a pressed one's page is the whole
-Workspace, its folders ticked in a browser of this machine (owner, 2026-11-02), with GitHub CLI beside them;
+Workspace: its Summary, its folders added with the kit's folder picker or a pasted path (KAN-728), with GitHub CLI beside them;
 one read of the pinned folders per bench (`createRootsReading`, the detail route). Epics (owner, 2026-11-02;
 KAN-187) seats its own stones of Epics the same way (`epics-surface.js`, `epics.records`): the level-1 work items of
 the Campaign — the store's pushed `epics` and `epicItems`, no request (KAN-190, KAN-206). Since w334 (owner,
@@ -350,7 +350,7 @@ bench (`/api/project-roots/detail`).
 
 | Surface | Required data and owner |
 |---|---|
-| Workspaces (`workspaces.records`) | `/api/workspaces` for the Campaign the tab looks at; the page writes `PUT /api/workspaces/:name`. Its Locations: a browser of this machine from the home folder (`/api/folders`), a tick box per folder; ticking pins a folder not pinned yet (`POST /api/project-roots`) and holds it by name, the ones with Git as repositories, the rest as folders. A Git folder's How Agents work here writes the repo profile. Clone a repo (`/api/setup/github/clone` with `parent`) asks the repository, then clones into the folder its own browser is open on. Section order: Name & objective, Locations, Agent info. A `/files/<path>` link dropped from Files adds `$HOME/<path>`. Owner, 2026-11-02/03 |
+| Workspaces (`workspaces.records`) | `/api/workspaces` for the Campaign the tab looks at; the page writes `PUT /api/workspaces/:name`. Its Summary is the Workspace doc's (`GET /api/workspaces/:name/doc`, written on Save with `PUT …/doc/summary`). Its Folders: Add a folder is the kit's folder picker (`folder-picker.js`, `/api/folders`) or a pasted path; a folder not registered yet is held by name and registered (`POST /api/project-roots`) on Save or Create, so an abandoned page leaves no folder without a Workspace; the ones with Git are repositories, the rest folders. A Git folder's Mode writes the repo profile. Clone from GitHub (`/api/setup/github/clone` with `parent`) asks the repository, then clones into the folder its own browser is open on. Section order: Summary (New: Name), Folders, Integrations, Agent info (objective, instructions, Mode, plans), Behaviors; New Workspace shows Name and Folders only. A `/files/<path>` link dropped from Files adds `$HOME/<path>`. Owner, 2026-11-02/03; KAN-728 |
 | GitHub CLI (`workspaces.github`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)

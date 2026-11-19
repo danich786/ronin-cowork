@@ -288,8 +288,8 @@ preserve the unsquashed history. Read the repository’s declared arrangement; t
 - `archived: yes` removes a root from the New Agent picker while keeping its entry in the catalog.
 - `DELETE /api/project-roots/:name` removes the catalog block only. It never deletes the directory
   or GitHub repository.
-- In Ronin Setup → Workspace folders, the selected folder's head line offers **Edit**, **Archive**
-  and **Exclude**; while editing, **Save** and **Cancel** take their place. The Campaign's Project
+- In Ronin Setup → Workspace folders, the selected folder's head line offers **Edit** and **⋯**
+  (**Archive**, **Remove from Ronin**); while editing, **Save** and **Cancel** take their place. The Campaign's Project
   roots surface keeps its inline block controls. Both call the same three routes.
 
 Always state which of those three outcomes is intended. "Remove this project" is ambiguous and

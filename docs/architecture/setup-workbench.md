@@ -219,13 +219,13 @@ named entries; they do not replace either built-in.
 
 The surface shows the folders as stones, with **Add A Workspace** first. Adding one is a
 keep-or-ignore decision: browse, and **Keep** the folder you want. Folders with a
-repository are listed first. Selecting a stone opens its page: name and actions
-(**Edit**, **Archive**, **Exclude**), one state line, then its summary, folder facts and
-repository facts. The state line reads **Ready** only when the server's checks passed
-(`repoFacts` `ready`): the folder exists and, where it holds a `.git`, Git reads it as a
-repository with its current branch known (**Ready · on dev**). Otherwise it names the failed
-check (`not_ready`): Folder missing, Git repository Ronin cannot read, or no current branch.
-Origin read access is the separate **Check access** step. More in [Workspace Folders](project-roots.md).
+repository are listed first; nobody types a handle, it is made from the folder's name. Selecting a
+stone opens its page (KAN-728): its name with **Edit** and **⋯** (Archive, Remove from Ronin), then
+its summary when it has one, its path, a repository's remote in one line, and its docs. A folder that
+works says nothing about itself: no Ready badge, no handle, no "not a repository" line. A state line
+appears only when the server's checks failed (`repoFacts` `not_ready`: Folder missing, Git
+repository Ronin cannot read, or no current branch), when it is archived, or when sessions run in it.
+More in [Workspace Folders](project-roots.md).
 
 **Authenticate GitHub** follows three measured steps: **Install**, **Authenticate**, and
 **Ready**. If `gh` is absent, one Install button opens a visible temporary provider-style

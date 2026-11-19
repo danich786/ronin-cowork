@@ -48,8 +48,8 @@ You can change your mind later.
 
 ## Removing a folder
 
-Press a folder's stone. **Archive** takes it off the list you pick from when starting an
-Agent; **Exclude** removes it from Ronin altogether. Either way the folder and everything in
+Press a folder's stone, then **⋯** beside Edit. **Archive** takes it off the list you pick from
+when starting an Agent; **Remove from Ronin** removes it from Ronin altogether. Either way the folder and everything in
 it stay on disk, and Agents already working there keep going.
 
 A workspace folder tells your Agents where to work. It isn't a lock: Agents can reach
