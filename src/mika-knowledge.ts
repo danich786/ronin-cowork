@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { storeDir } from './resources.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-// 23 KB leaves room in the 30 KB one-read packet for her rules, the owner's tips and the
+// 24 KB leaves room in the 30 KB one-read packet for her rules, the owner's tips and the
 // Setup walkthrough beside the index.
-export const MIKA_INDEX_BUDGET = { bytes: 24_600, lines: 416, previewBytes: 160, minimumPreviewBytes: 24 } as const;
+export const MIKA_INDEX_BUDGET = { bytes: 24_600, lines: 432, previewBytes: 160, minimumPreviewBytes: 24 } as const;
 export const MIKA_TAXONOMY = path.join(ROOT, 'ronin_session_boot', 'routine', 'mika', 'MIKA_PYRAMID.toml');
 const INDEX_NAME = 'MIKA_SOURCE_INDEX.md';
 const MANIFEST_NAME = 'mika-source-manifest.json';
