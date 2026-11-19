@@ -306,7 +306,8 @@ export async function buildPhone() {
   const openTerminal = () => {
     const { team, session } = route;
     closeTerminal();
-    host = createTerminalTileHost({ mode: 'reduced', transcriptCache });
+    // The tile's close (Chat's Close Tile, KAN-700) is the bar's back link: the phone has no blank tilespace.
+    host = createTerminalTileHost({ mode: 'reduced', transcriptCache, onMinimize: () => { location.hash = teamHash(team); } });
     const term = el('div', 'ph-term');
     term.append(host.el);
     main.replaceChildren(term);

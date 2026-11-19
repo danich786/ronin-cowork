@@ -204,7 +204,9 @@ and the tile stays on Chat.
 
 **Stopped.** If an Agent's CLI exits on its own (a crash, a killed process), Chat ends with
 *Stopped: exit N at HH:MM* and a **Resume** button, which starts it again on the same
-conversation. Its Team's lead is told once, with the items it holds.
+conversation. Its Team's lead is told once, with the items it holds. **Close Tile** beside it
+closes the tile, as its − does: the Agent stays stopped and its card keeps Resume. On a phone it
+goes back to the Team.
 
 An Agent that reads *working…* with nothing new in its conversation for 12 minutes is flagged
 *no progress for 12 min*, the same way: Chat ends with that sentence and an **Open in

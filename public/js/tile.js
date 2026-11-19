@@ -85,6 +85,7 @@ export class Tile {
       onAnswer: () => this.answerInTerminal(),
       onChoose: (answer) => this.answerQuestion(answer),
       onResume: () => this.resumeAgent(),
+      onClose: () => this.minimize(),
       onDoc: (path) => this.openDoc(path),
       onItem: (item) => openItemOver(this, item),
     });
