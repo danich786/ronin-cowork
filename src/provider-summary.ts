@@ -26,9 +26,9 @@ import { appendEgress, type EgressLine } from './activation/egress.js';
 import { AGENTS, listAgentAvailability, type AgentAvailability, type ModelsSource } from './agents.js';
 import { execFile } from './spawn-broker.js';
 import { ensureInitialCampaign, initialCampaign, writeCampaignProviders } from './campaigns.js';
-import { readSetupSection } from './machine-state.js';
+import { readAgentsSection, readSetupSection, writeAgentsSection } from './machine-state.js';
 import { operationalPartCount, refreshProviderParts } from './provider-parts.js';
-import { listProviderCatalog, type ModelConnection, type ModelList, type ModelRow, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
+import { listProviderCatalog, providerRows, type ModelConnection, type ModelList, type ModelRow, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
 
 interface SetupSection { providers?: Record<string, { activated_at?: unknown; off_at?: unknown }>; [key: string]: unknown }
 export type Agent = typeof AGENTS[number];
@@ -288,7 +288,37 @@ export async function readProviderSummary(): Promise<ProviderSummary | null> {
 
 export async function recordProviderSummary(summary: ProviderSummary): Promise<void> {
   const campaign = await ensureInitialCampaign();
+  const previous = campaign.providers ?? null;
   await writeCampaignProviders(campaign.id, summary);
+  await settleFirstDefault(previous, summary);
+}
+
+const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+
+/**
+ * THE FIRST SIGN-IN IS THE DEFAULT (owner, 2026-11-19; KAN-725): while no default provider is
+ * set, the first CLI signed in here becomes ⚙ agents.sessions.default, written once: the
+ * provider, its model blank (the provider's own default). A later sign-in never moves it; only the Agent defaults do.
+ * One already signed in before this measure outranks one new in it. Ronin models (a provider
+ * part) is no sign-in: it is never in `signed_in`. Returns the provider written, '' for none.
+ */
+export async function settleFirstDefault(previous: ProviderSummary | null, summary: ProviderSummary): Promise<string> {
+  const agents = await readAgentsSection();
+  const sessions = record(agents.sessions);
+  const stated = record(sessions.default).provider;
+  if (typeof stated === 'string' && stated.trim()) return '';
+  const order = [...(previous?.signed_in ?? []), ...summary.signed_in]
+    .filter((cli, at, all) => all.indexOf(cli) === at && summary.signed_in.includes(cli) && summary.operational.includes(cli));
+  if (!order.length) return '';
+  const rows = await providerRows(summary);
+  for (const cli of order) {
+    const row = rows.find((entry) => entry.cli === cli && entry.operational);
+    if (!row) continue;
+    await writeAgentsSection({ ...agents, sessions: { ...sessions, default: { provider: row.provider, model: '' } } });
+    return row.provider;
+  }
+  return '';
 }
 
 /**

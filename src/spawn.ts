@@ -7,7 +7,7 @@ import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
 import { bypassArgs, commandText, readAgentLaunches, withBypass } from './agent-launches.js';
 import { readAgentsSection, readSetupSection } from './machine-state.js';
-import { offAt, readProviderSummary } from './provider-summary.js';
+import { measureAndRecordProviders, offAt, readProviderSummary } from './provider-summary.js';
 import { storeDir } from './resources.js';
 import { listInstallations } from './resource-adapters.js';
 import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type TeamRoster } from './team-rosters.js';
@@ -219,7 +219,16 @@ export type LaunchFacts = Awaited<ReturnType<typeof resolveFacts>>;
 /** THE LAUNCH: which command runs, the provider switch, the Dangerously form. Only a launch
  * comes through here; a brief rebuilt for a running Agent takes the facts and the reading alone. */
 async function resolveLaunch(form: SpawnForm, facts: LaunchFacts) {
-  const { agent, agentsSet, launchSpecs, parentSeed } = facts;
+  const { agent, parentSeed } = facts;
+  let { agentsSet, launchSpecs } = facts;
+  // No default yet (KAN-725): measure the sign-ins first, so the first one signed in, in Setup
+  // or in a tile, is written as the default before this launch reads it.
+  const stated = (agentsSet.sessions as SessionsDefaults | undefined)?.default?.provider;
+  if (agent && !form.cmd && !form.provider && !form.model && !stated) {
+    const summary = await measureAndRecordProviders();
+    agentsSet = await readAgentsSection();
+    launchSpecs = await listSessionLaunchSpecs(summary);
+  }
   const sessionsSet = sessionsFor(agentsSet.sessions as SessionsDefaults | undefined, !!form.team && !!form.team_lead);
   const chosen = resolveLaunchCommand({
     agent,

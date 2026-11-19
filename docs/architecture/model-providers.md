@@ -261,6 +261,14 @@ in ⚙ Configuration — the schema's `models` section, two views of one setting
 | Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward |
 | Preferred model per provider | `sessions.by_provider.<id>` | a launch that names a provider but no model (Configuration only) |
 
+**The first sign-in is the default** (owner, 2026-11-19; KAN-725). While `sessions.default` names
+no provider, the first CLI signed in becomes it, written once: the provider, its model blank (the
+provider's own default). `settleFirstDefault` (`provider-summary.ts`) runs on every recorded
+measure, and a launch with no default measures first (`spawn.ts`), so a sign-in made in Setup or
+in a tile both count. A later sign-in never moves it; only Models > Defaults does. Ronin models
+(a provider part) is no sign-in and never becomes the default this way. With nothing signed in,
+a Default launch is the catalog's first CLI, into its own sign-in.
+
 A Desk's `defaults.provider/model` used to outrank `sessions.default`; at start
 `moveDeskModelDefault` (`campaign-scope.ts`) copies a set pair there once and clears it on the
 Desk. A Team's `agent_defaults` carries no model.
