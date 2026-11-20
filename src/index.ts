@@ -305,7 +305,6 @@ registerSetupProgress(app); // one server-owned Setup completion record, scan an
 registerJikan(app); // /api/teams/:team/jikan* — JIKAN, the Cron jobs tab: a team's scheduled requests — src/routes/jikan-api.ts
 startHouseJikan(); // JIKAN's clock: every minute, deliver what is due through the message door — src/jikan.ts
 registerServicesActivation(app); // /api/services/activation* — the Ronin Services request, local-only; no secret crosses this surface — src/routes/services-activation-api.ts
-if (isEntryPoint) void ensureInstalledRoots().catch((error) => console.error(`[setup] installed roots: ${(error as Error).message}`));
 
 // The Campaign's dated provider facts are measured once at start, after the record exists
 // and has migrated: the summary and the migration both read-modify-write the campaigns
@@ -313,6 +312,8 @@ if (isEntryPoint) void ensureInstalledRoots().catch((error) => console.error(`[s
 // a bare measure (KAN-651): every start, so after every Update too, reads the CLIs' model lists
 // again; nobody has to press Refresh all model providers.
 const campaignStart = ensureInitialCampaign()
+  // Ronin Lab and Project One are Workspaces in that Campaign (KAN-728), so they follow it.
+  .then(() => (isEntryPoint ? ensureInstalledRoots().catch((error) => console.error(`[setup] installed roots: ${(error as Error).message}`)) : undefined))
   .then(() => migrateCampaignScope())
   .then(() => moveDeskModelDefault())
   .then(() => (isEntryPoint ? refreshProviders() : undefined))

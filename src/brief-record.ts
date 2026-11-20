@@ -88,7 +88,7 @@ export interface BriefRecord {
     where: Array<{ repo: string; held: 'desk' | 'checkout' }>;
     /** One line per repo: where it is and how to open it. */
     repo_lines: string;
-    /** One line per Workspace Folder: its name, path and note. */
+    /** One line per Workspace folder: its name, path and note. */
     folder_lines: string;
     desk: boolean;
     checkout: boolean;

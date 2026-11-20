@@ -1,6 +1,5 @@
 /* part of the ronin-cowork client — see js/README.md */
 import { WorkspaceKit } from './workspace-kit.js';
-import { buildProjectRoots } from './projectroots.js';
 import { buildHotwords } from './hotwords.js';
 import { buildKoshi } from './koshi.js';
 import { buildMachineSettings } from './machine-settings.js';

@@ -8,7 +8,7 @@ import { secureUrl } from './passkey.js';
 import { listServices } from './sockets.js';
 import { CONTRACT_V } from './sockets-contract.js';
 import { roninIdentity } from './routes/version.js';
-import { listProjectRoots } from './project-roots.js';
+import { workspaceFolders } from './workspaces.js';
 import { listProviderCatalog, listSessionLaunchSpecs, parseProviderSummary, TIERS } from './model-providers.js';
 import { storeDir } from './resources.js';
 import { readOfficeRecord } from './office-record.js';
@@ -244,13 +244,6 @@ export function assertBindIsSafe(passwordAuth = false): void {
 
 const TAILNET_IP = tailnetIp();
 
-export interface MachineSettingsProject {
-  name: string;
-  title: string;
-  dir: string;
-  remit: string;
-}
-
 export interface MachineSettingsJob {
   outlet: string;
   provider: string | null;
@@ -422,14 +415,6 @@ async function readSet(): Promise<Record<string, unknown>> {
   const { initialCampaign } = await import('./campaigns.js');
   const campaignRecord = await initialCampaign();
   const setup = await readSetupSection();
-  const roots = await listProjectRoots();
-
-  const projects: MachineSettingsProject[] = roots.map((r) => ({
-    name: r.name,
-    title: r.title,
-    dir: r.dir,
-    remit: r.remit,
-  }));
 
   const activation = await readServicesActivation();
   return {
@@ -441,7 +426,6 @@ async function readSet(): Promise<Record<string, unknown>> {
       where: typedStr(machine.where),
     },
     sessions: { max: await readMax() },
-    projects,
     agents: { sessions: sessionDefaults(agents.sessions), jobs: await publicJobs(agents.jobs) },
     koshi,
     wipeboard,
@@ -538,40 +522,10 @@ async function computeStatus(
   const setOwner = set.owner as Record<string, unknown>;
   const agentsSeen = observed.agents as Record<string, { installed: boolean; path: string | null }>;
   const keys = observed.keys as Record<string, boolean>;
-  const projects = set.projects as MachineSettingsProject[];
   const services = set.services as Record<string, unknown>;
   const servicesActivation = services.activation as PublicActivation;
   const max = (set.sessions as Record<string, number>).max;
   const running = await liveCount();
-
-  const projectStatus = await Promise.all(
-    projects.map(async (p) => {
-      let dir = 'ok';
-      try {
-        await access(p.dir);
-      } catch {
-        dir = 'missing';
-      }
-      let repo = '—';
-      if (dir === 'ok') {
-        const cfg = await readTrimmed(path.join(p.dir, '.git', 'config'));
-        if (cfg !== null) {
-          const m = cfg.match(/\[remote "origin"\][^[]*?url\s*=\s*(\S+)/);
-          repo = m
-            ? m[1].replace(/^git@([^:/]+):/, '$1/').replace(/^[a-z+]+:\/\//, '').replace(/\.git$/, '')
-            : 'local repo — no remote';
-        } else {
-          try {
-            await access(path.join(p.dir, '.git'));
-            repo = 'repo — worktree of another';
-          } catch {
-            repo = 'no repo';
-          }
-        }
-      }
-      return { name: p.name, dir, repo };
-    }),
-  );
 
   const sessionDefault = ((set.agents as Record<string, unknown>).sessions ?? {}) as {
     default?: { provider?: string | null; model?: string | null };
@@ -611,7 +565,6 @@ async function computeStatus(
     owner_name: await readOwner(),
     machine_name: (setMachine.name as string) ?? (obsMachine.host as string),
     sessions: { running, max, state: max === 0 ? 'no limit' : running >= max ? 'at the cap' : `${running} of ${max}` },
-    projects: projectStatus,
     routes: [{
       what: 'coworkspace',
       at: r.url,
@@ -698,11 +651,11 @@ export async function readMachineSettings(): Promise<MachineSettingsRecord> {
   const observed = await cachedObserved(jobKeyNames);
   const status = await computeStatus(set, observed);
   const needed = computeNeeded(set, observed);
-  if (!(await listProjectRoots()).some((root) => !root.archived)) {
+  if (!(await workspaceFolders()).length) {
     needed.push({
       leaf: 'workspace_folder',
-      needs: 'a workspace folder where Agents can start',
-      how: 'ask where the owner keeps their work, then use the Workspace Folder chooser to select or create it',
+      needs: 'a Workspace with a folder where Agents can work',
+      how: 'ask where the owner keeps their work, then open the Workspaces door and add that folder to a Workspace',
       met_by: 'agent',
     });
   }

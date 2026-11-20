@@ -26,10 +26,9 @@ signing in another later doesn't change it. Change it on **Models > Defaults**.
 ## 2. Tell Ronin about your project
 
 Open the **Workspaces** door on Ronin Home and make a Workspace for your project: what it is
-for, its repositories and the folders it uses. Your Teams work in it. Ronin already knows two
-folders, **Ronin Lab** for ideas and notes and **Project One** for a project; add your own
-there too. See [Workspaces](../using-ronin/workspaces.md) and
-[Workspace folders](workspace-folders.md).
+for, its repositories and the folders it uses. Your Teams work in it. Ronin starts you with two
+Workspaces, **Ronin Lab** for ideas and notes and **Project One** for a project. See
+[Workspaces](../using-ronin/workspaces.md).
 
 ## 3. Start your first Agent
 

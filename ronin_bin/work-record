@@ -73,7 +73,7 @@ list prints one JSON document: "workspace", your Team's Workspace (title, object
 each repo and folder with its directory, its integrations; null on no Workspace), and "repos", your own entries. add and remove edit only your own entries.
 These edit the repositories in your Work Record. A remove without --branch removes every
 row for that exact repository. They do not change the birth directory or open a desk.
-To change the live session's recorded Workspace Folder, use session_set --help.
+To change the live session's recorded Workspace, use session_set --help.
 EOF
         ;;
       list) [ "$#" -eq 0 ] || { usage >&2; exit 2; }

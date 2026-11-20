@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { listProjectRoots } from '../project-roots.js';
+import { workspaceFolders } from '../workspaces.js';
 import { listSessions } from '../tmux.js';
 import { arrangementOf, desksManaged } from './arrangement.js';
 import { branchExists, deleteBranch, isAncestor, revParse, worktreeOf } from './git.js';
@@ -13,7 +13,7 @@ interface Collected { observation: ResidueObservation; repo: string; apply: () =
 export async function collectSettlementResidue(): Promise<Collected[]> {
   const collected: Collected[] = [];
   const live = new Set((await listSessions().catch(() => [])).filter((session) => !!session.key).map((session) => session.name));
-  const roots = new Set((await listProjectRoots()).map((root) => root.name));
+  const roots = new Set((await workspaceFolders()).map((root) => root.name));
   for (const rec of await listDeskRecords()) {
     if (!roots.has(rec.repo)) continue;
     const arrangement = await arrangementOf(rec.repo).catch(() => null);

@@ -2,12 +2,13 @@
 /** Campaign is a Workbench tenant: it supplies context, never frame or placement code. */
 import { WorkspaceKit } from './workspace-kit.js';
 import { t } from './lexicon.js';
-import { MULTIPLE_CAMPAIGNS_ENABLED, campaignById, campaignOf, createCampaign, loadCampaigns, normalizeSelection } from './campaigns.js';
+import { MULTIPLE_CAMPAIGNS_ENABLED, campaignById, createCampaign, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createCampaignIdentitySurface, createNewCampaignSurface } from './campaign-surfaces.js';
 import { createAgentDefaultsSurface, defaultsSummary } from './campaign-defaults.js';
 import { createInstallationsSurface, installationsSummary } from './campaign-installations.js';
 import { createProviderSetupSessionMount } from './provider-setup-session.js';
-import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
+import { createWorkspaceStones } from './workspaces-surface.js';
+import { createWorkspacesRead } from './workspaces-read.js';
 import { createJiraItemsSurface, createJiraPairsSurface, createJiraPanel } from './jira-panel.js';
 import { createIntegrationsPanel } from './integrations-panel.js';
 import { request } from './request.js';
@@ -22,7 +23,6 @@ import { createDocumentWorkspaceAdapter } from './docs.js';
 import { installBehaviourReader } from './behaviour-reader.js';
 import { workbenchView } from './workspace-contract.js';
 import { createSetupReturnCard } from './setup-return-card.js';
-import { returnFromWorkspaceFolders } from './workspace.js';
 import { registerWorkbenchCatalog, WORKBENCH_PROFILES, WORKBENCH_TYPES } from './workbench-catalog.js';
 import { SETUP_STEP_IDS } from './setup-progress.js';
 import { setupProgressHandlers } from './events.js';
@@ -45,11 +45,7 @@ const enterable = (surface) => ({ el: surface.el, show: () => surface.enter() })
  */
 const currently = {
   identity: (e) => e.selected()?.description || t('campaign_view.no_description', 'No description yet.'),
-  roots: (e) => {
-    const n = e.roots();
-    if (n === null) return t('campaign_view.roots_summary', 'The folders this Campaign is allowed to work in.');
-    return n ? t('campaign_view.roots_n', '{n} roots', { n }) : t('campaign_view.roots_none', 'None — an Agent here has nowhere to work.');
-  },
+  roots: () => t('campaign_view.roots_summary', 'Each Workspace and the folders it works in.'),
   defaults: (e) => defaultsSummary(e.selected()),
 };
 
@@ -58,7 +54,6 @@ export function createCampaignView() {
   const { normalizeWorkbenchState } = WorkspaceKit.contract;
   let ctx = null, entered = false, bench = null;
   let loadGeneration = 0;
-  let rootsHere = null; // null until the light Workspace Folder index has answered once this entry
   let liveSetupProgress = null;
   // The native sign-in tile the Model providers surface mounts here as on Ronin Setup.
   const providerSessions = createProviderSetupSessionMount();
@@ -67,34 +62,18 @@ export function createCampaignView() {
   const setupProgress = () => liveSetupProgress || (selected() ? { steps: SETUP_STEP_IDS.map((id, index) => ({
     id, number: index + 1, answered: Boolean(selected()?.config?.setup?.answers?.[id]), answer: selected()?.config?.setup?.answers?.[id] || '',
   })), facts: selected()?.config?.setup?.facts || {} } : null);
-  const readRoots = async () => {
-    const campaignId = selected()?.id || '';
-    const query = campaignId ? `?campaign_id=${encodeURIComponent(campaignId)}` : '';
-    const r = await request(`/api/project-roots${query}`, { cache: 'no-store' });
-    rootsHere = r.ok && Array.isArray(r.data) ? r.data : [];
-  };
   const environment = {
     feedback: (workspace) => createFeedbackSurface(() => bench.place(TYPES.identity, workspace)),
     selected,
     entered: () => entered,
     ctx: () => ctx,
-    workspaceFolderOrigin: () => ctx?.state?.returnTo?.origin || null,
-    returnFromWorkspaceFolders: () => returnFromWorkspaceFolders(ctx),
     workbench: () => bench,
-    /** How many live roots belong to the selected Campaign; null before the first read. */
-    roots: () => (rootsHere === null ? null : rootsHere.filter((root) => !root.archived && campaignOf(root) === selected()?.id).length),
     identitySummary: () => currently.identity(environment),
     rootsSummary: () => currently.roots(environment),
     defaultsSummary: () => currently.defaults(environment),
     installationsSummary: () => installationsSummary(selected()),
     campaignIdentity: () => enterable(createCampaignIdentitySurface(selected)),
-    campaignRoots: ({ workspace }) => createWorkspaceFoldersSurface({
-      campaignId: () => selected()?.id || '',
-      connected: (host) => entered && host.isConnected,
-      presentation: 'stones',
-      environment,
-      workspace,
-    }),
+    campaignRoots: () => createWorkspaceStones({ workspacesRead: createWorkspacesRead(), workbench: bench, withNew: true }),
     campaignDefaults: () => enterable(createAgentDefaultsSurface(selected)),
     // Open places the items table, or the pairs table, full width in the other workspace.
     campaignJira: ({ workspace }) => enterable(createJiraPanel(selected, {
@@ -229,7 +208,6 @@ export function createCampaignView() {
           const type = typeof held === 'object' ? held.type : held;
           if (type) bench.place(type, workspace, typeof held === 'object' ? held : {});
         }
-        await readRoots();
         if (entered && generation === loadGeneration) refresh();
       });
     },

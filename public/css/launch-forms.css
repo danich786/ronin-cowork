@@ -245,12 +245,6 @@
   .sp-codebase-place { display: flex; align-items: baseline; gap: var(--space-inline); color: var(--fg-strong); }
   .sp-codebase-list { border-top: var(--edge) solid var(--line-2); }
   .sp-codebase-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: var(--space-paragraph) var(--space-inline); border-bottom: var(--edge) solid var(--line-2); padding: var(--space-row) var(--space-inline); }
-  .sp-codebase-keep { display: inline-flex; align-items: center; gap: var(--space-inline); color: var(--muted); cursor: pointer; }
-  .sp-codebase-keep input { margin: 0; accent-color: var(--kaki); }
-  .sp-codebase-keep input:disabled + span { color: var(--fg-strong); }
-  .sp-codebase-apply { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-inline); }
-  .sp-codebase-apply-action { align-self: auto; padding-block: var(--space-row); }
-  .sp-codebase-apply-action:not(:disabled) { border-style: solid; border-color: var(--kaki); background: var(--kaki); /* kaki: the action, or what needs you */ color: var(--on-strong); }
   .sp-codebase-status { color: var(--muted); font-size: var(--form-note); }
   .sp-codebase-open { border: 0; background: transparent; padding: var(--space-control); font: inherit; cursor: pointer; }
   .sp-codebase-open { overflow: hidden; color: var(--fg-strong); text-align: left; text-overflow: ellipsis; white-space: nowrap; }
@@ -511,7 +505,6 @@
   .workspace-form .fs-chev::before { margin-right: 0; font-size: var(--form-note); }
   .workspace-form .fs-sum { color: var(--muted); }
   .workspaces-records[data-bare='true'] .workspace-record-stones .sws-stone { aspect-ratio: auto; }
-  .workspace-form .workspace-fixed { border: 0; background: transparent; padding: 0; color: var(--fg-strong); }
   .workspace-page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); padding-bottom: var(--space-row); border-bottom: var(--edge) solid var(--line); }
   .workspace-page-actions { display: flex; align-items: center; gap: var(--space-row); }
   .workspace-page-head .wk-surface-header-title { font-size: var(--form-key); color: var(--fg-strong); }
@@ -595,7 +588,14 @@
      the primary one, each opening its own panel. */
   .workspace-location-tools { display: flex; gap: var(--space-inline); flex-wrap: wrap; }
   /* Inside Add a folder the picker is its walk and its rows: a press adds, so no chosen box or kind tag. */
-  .workspace-browser .folder-picker .folder-chosen, .workspace-browser .folder-picker .folder-kind { display: none; }
+  .workspace-browser .folder-picker .folder-kind { display: none; }
+  /* The Summary is the Workspace's Markdown file, shown whole in the page's one text size (KAN-728). */
+  .workspace-doc .markdown-reader { font-size: inherit; }
+  .workspace-doc .markdown-reader :is(h1, h2, h3, h4) { font-size: inherit; font-weight: var(--weight-bold); color: var(--fg-strong); margin: var(--space-row) 0 0; }
+  .workspace-doc .markdown-reader p { margin: var(--space-row) 0 0; }
+  .workspace-doc .markdown-reader > :first-child { margin-top: 0; }
+  .workspace-doc-text { width: 100%; box-sizing: border-box; font: inherit; }
+  .workspace-doc-edit { margin-top: var(--space-row); align-self: flex-start; }
   .workspace-clone > input { flex: 1 1 auto; min-width: 0; }
   .workspace-browser { display: flex; flex-direction: column; gap: var(--space-row); padding: var(--space-inline); border: var(--edge) solid var(--line-2); border-radius: var(--radius-small); }
   .workspace-browser-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-inline); }

@@ -2,7 +2,6 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveLaunchCommand, sessionsFor, type SessionsDefaults } from './launch-command.js';
 import { REPO_ROOT } from './resources.js';
-import { listProjectRoots, USER_PROJECT_ROOTS_MD, type ProjectRootInfo } from './project-roots.js';
 import { listSessionLaunchSpecs } from './model-providers.js';
 import { agentSpec } from './agents.js';
 import { bypassArgs, commandText, readAgentLaunches, withBypass } from './agent-launches.js';
@@ -14,7 +13,7 @@ import { isCreatableTeamName as isTeamName, readTeamRoster, teamRosterFile, type
 import { resolveLaunchProfile, type LaunchProfile, type StatedBy } from './launch-profile.js';
 import { readCampaign } from './campaigns.js';
 import { readWorkspace, roninHouse, type Workspace } from './workspaces.js';
-import { arrangementOf, desksManaged } from './desks/arrangement.js';
+import { desksManaged, rowArrangement } from './desks/arrangement.js';
 import { mandate, type LaunchMode, type Mandate } from './agent-defaults.js';
 import { resolveInstallations, type ResolvedInstallation } from './installations.js';
 import { initialCampaignId } from './campaign-scope.js';
@@ -157,8 +156,7 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   const coworkAgent = sessionType === 'cowork_agent';
   const bareMetalAgent = sessionType === 'bare_metal_agent';
   const campaignId = coworkAgent ? (form.campaign_id || await initialCampaignId()) : '';
-  const [roots, agentsSet, campaign, installationCatalog] = await Promise.all([
-    listProjectRoots(),
+  const [agentsSet, campaign, installationCatalog] = await Promise.all([
     readAgentsSection(),
     coworkAgent ? readCampaign(campaignId) : null,
     listInstallations(),
@@ -202,15 +200,12 @@ export async function resolveFacts(form: SpawnForm, taken: Set<string>, proposed
   const installations = resolveInstallations(installationCatalog, campaign?.config.installations);
   const name = wanted || slugName(form.team || (agent ? 'agent' : 'terminal'), form.prompt ?? '', taken);
   // Repositories are the Workspace's; an Agent opens a worktree when its work needs one.
-  const repositories = await Promise.all((workspace?.repos ?? []).map(async (repo) => {
-    const arrangement = await arrangementOf(repo.name, roots).catch(() => null);
-    return { ...repo, dir: arrangement?.dir ?? roots.find((root) => root.name === repo.name)?.dir ?? '', managed: !!arrangement && desksManaged(arrangement) };
-  }));
-  const folders = (workspace?.folders ?? []).map((folder) => ({ ...folder, dir: roots.find((root) => root.name === folder.name)?.dir ?? '' }));
+  const repositories = (workspace?.repos ?? []).map((repo) => ({ ...repo, managed: desksManaged(rowArrangement({ ...repo, repo: true, workspace: workspace!.name, campaign_id: workspace!.campaign_id })) }));
+  const folders = workspace?.folders ?? [];
   const arrangement: 'managed' | 'checkout' | 'none' = repositories.some((repo) => repo.managed) ? 'managed' : repositories.length ? 'checkout' : 'none';
   const kind = form.kind ?? String(parentSeed?.seeds.kind.value ?? 'open');
   return {
-    sessionType, coworkAgent, bareMetalAgent, campaignId, roots, agentsSet, campaign, launchSpecs, preset, roster, profile,
+    sessionType, coworkAgent, bareMetalAgent, campaignId, agentsSet, campaign, launchSpecs, preset, roster, profile,
     parentSeed, workspace, place, repositories, folders, agent, installations, name, arrangement, kind,
   };
 }

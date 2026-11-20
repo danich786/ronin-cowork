@@ -248,7 +248,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
         ? t('docs.scope_plans', 'Plans of Workspace {workspace}', { workspace: scope.workspace })
         : shelf === 'canvases' ? t('docs.scope_canvases', 'Canvases of Workspace {workspace}: press one to read it now', { workspace: scope.workspace })
         : t('docs.scope_docs', 'Docs of {folders} — Workspace {workspace}', { folders: (scope.folders || []).join(', ') || '—', workspace: scope.workspace });
-    } else if (shelves[shelfKey()]) text = shelf === 'plans' ? t('docs.scope_plans_all', 'Plans of every Workspace') : shelf === 'canvases' ? t('docs.scope_canvases_all', 'Canvases of every Workspace') : t('docs.scope_docs_all', 'Docs of every Workspace Folder');
+    } else if (shelves[shelfKey()]) text = shelf === 'plans' ? t('docs.scope_plans_all', 'Plans of every Workspace') : shelf === 'canvases' ? t('docs.scope_canvases_all', 'Canvases of every Workspace') : t('docs.scope_docs_all', 'Docs of every Workspace folder');
     return text ? [{ key: '!scope', tag: 'p', cls: 'dc-scope', text }] : [];
   };
   const noteRow = () => (only && shelf === 'tracked'
@@ -361,7 +361,7 @@ export function buildDocs(root, only = null, { team = null } = {}) {
         return;
       }
       const groups = shelves[key].groups.filter((g) => g.files.length);
-      // DOCS FOLD BY FOLDER: each Workspace Folder's docs group by the directory they sit in
+      // DOCS FOLD BY FOLDER: each Workspace folder's docs group by the directory they sit in
       // (ronin_cowork · docs/architecture), every group closed, so a shelf of a hundred is a
       // short list of places. Plans stay one group per Workspace, open.
       const rows = (shelf === 'docs' ? groups.flatMap((g) => {

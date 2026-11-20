@@ -71,13 +71,13 @@
           "id": "workspace-intro",
           "kind": "title",
           "eyebrow": "Your ground",
-          "heading": "Choose a Workspace Folder",
-          "body": "Your project roots: directories on this machine and GitHub repositories. They give Agents known surfaces to work on."
+          "heading": "Make a Workspace",
+          "body": "A Workspace is a body of work: its summary, and the folders and GitHub repositories its Agents work in."
         },
         {
           "id": "workspace-add",
           "kind": "instruction",
-          "body": "Add the directory or repository you want worked on. Register more at any time."
+          "body": "Name it, add the folder or repository you want worked on, and press Create. Add more at any time."
         },
         {
           "id": "workspace-github",
@@ -94,9 +94,9 @@
         {
           "id": "workspace-folders-doc",
           "kind": "doc",
-          "label": "Workspace Folders",
-          "description": "What a Workspace Folder is, and how to choose one",
-          "path": "docs/getting-started/workspace-folders.md"
+          "label": "Workspaces",
+          "description": "What a Workspace is, and how to add its folders",
+          "path": "docs/using-ronin/workspaces.md"
         }
       ]
     },

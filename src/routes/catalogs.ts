@@ -1,24 +1,13 @@
-import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import type express from 'express';
-import { projectRootsOfSessions } from '../tmux.js';
 import { listSkins } from '../skin-catalog.js';
 import { listLexicons, resolveLexicon } from '../lexicon-catalog.js';
 import { activeDeskProfileName, listDeskProfiles } from '../desk-profiles.js';
-import { initialCampaign, readCampaign } from '../campaigns.js';
+import { initialCampaign } from '../campaigns.js';
 import { providerCatalogAnswer } from '../model-providers.js';
 import { readProviderSummary } from '../provider-summary.js';
-import {
-  listProjectRoots,
-  upsertProjectRoot,
-  removeProjectRoot,
-  repoFacts,
-  checkProjectRootGitAccess,
-  isValidRootName,
-  type RootField,
-} from '../project-roots.js';
-import { campaignResolver, machineCampaignId } from '../campaign-scope.js';
-import { arrangementProfile, readArrangement, setArrangementProfile, validateArrangementProfile } from '../desks/arrangement.js';
+import { setRepoSettings } from '../desks/arrangement.js';
+import { workspaceFolders } from '../workspaces.js';
 import {
   listSavedLaunches,
   seedUserCatalog,
@@ -30,27 +19,9 @@ import {
   listTeamTemplates,
 } from '../resource-adapters.js';
 import { saveAgentTemplate, saveTeamTemplate } from '../templates.js';
-import { browseFolders, createFolder, startGit, withRegisteredRoots } from '../folder-browser.js';
-import {
-  BehaviourDocumentError,
-  createBehaviourDocument,
-  readBehaviourDocument,
-  updateBehaviourDocument,
-} from '../behaviour-documents.js';
+import { browseFolders, createFolder, folderFacts } from '../folder-browser.js';
 
 const errMsg = (e: unknown) => String((e as Error)?.message ?? e).replaceAll(homedir(), '~');
-
-const ROOT_FIELDS: RootField[] = ['title', 'dir', 'memory', 'match', 'remit', 'docs', 'campaign_id'];
-const bodyFields = (body: unknown) => {
-  const out: Partial<Record<RootField, string>> = {};
-  for (const k of ROOT_FIELDS) {
-    const v = (body as Record<string, unknown>)?.[k];
-    if (typeof v === 'string') out[k] = v.trim().slice(0, 500);
-  }
-  const arch = (body as Record<string, unknown>)?.archived;
-  if (arch !== undefined) out.archived = arch === true || arch === 'yes' ? 'yes' : '';
-  return out;
-};
 
 export function registerCatalogs(app: express.Express): void {
   app.get('/api/folders', async (req, res) => {
@@ -59,10 +30,27 @@ export function registerCatalogs(app: express.Express): void {
         hidden: req.query.hidden === 'yes',
         query: String(req.query.q ?? ''),
       });
-      res.json(withRegisteredRoots(listing, await listProjectRoots()));
+      res.json(listing);
     } catch (e) {
       res.status(400).json({ error: errMsg(e) });
     }
+  });
+
+  app.get('/api/folders/inspect', async (req, res) => {
+    const dir = String(req.query.dir ?? '').trim();
+    if (!dir) return res.status(400).json({ error: 'A directory is required.' });
+    try {
+      // A folder a Workspace already holds comes with its name and, a repository, its settings.
+      const facts = await folderFacts(dir);
+      const held = (await workspaceFolders()).find((f) => f.dir === facts.dir);
+      res.json({ ...facts, held: held ? { name: held.name, ...(held.repo ? { mode: held.mode, working: held.working, stable: held.stable, desks: held.desks } : {}) } : null });
+    } catch (e) { res.status(500).json({ error: errMsg(e) }); }
+  });
+
+  // A repository's settings, on its Workspace row (KAN-728): mode, working, stable, desks.
+  app.put('/api/folders/:name/repo-profile', async (req, res) => {
+    try { res.json({ ok: true, arrangement: await setRepoSettings(req.params.name, req.body ?? {}) }); }
+    catch (e) { res.status(400).json({ error: errMsg(e) }); }
   });
 
   app.post('/api/folders', async (req, res) => {
@@ -78,149 +66,6 @@ export function registerCatalogs(app: express.Express): void {
       res.json(await listSkins());
     } catch (e) {
       res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/project-roots', async (req, res) => {
-    try {
-      const resolve = await campaignResolver();
-      const named = ([] as string[]).concat((req.query?.campaign_id as string | string[]) ?? []).filter(Boolean);
-      const wanted = named.length ? named : [await machineCampaignId()].filter(Boolean);
-      const wantedSet = new Set(wanted);
-      res.json(
-        (await listProjectRoots())
-          .filter((r) => !r.archived && wantedSet.has(resolve(r.campaign_id)))
-          .map((r) => ({ ...r, campaign_id: resolve(r.campaign_id) })),
-      );
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/project-roots/detail', async (req, res) => {
-    try {
-      const resolve = await campaignResolver();
-      const named = ([] as string[]).concat((req.query?.campaign_id as string | string[]) ?? []).filter(Boolean);
-      const wanted = new Set(named.length ? named : [await machineCampaignId()].filter(Boolean));
-      const [allRoots, bySession] = await Promise.all([listProjectRoots(), projectRootsOfSessions()]);
-      const roots = allRoots.filter((root) => wanted.has(resolve(root.campaign_id)));
-      const facts = await Promise.all(roots.map((r) => repoFacts(r)));
-      const arrangements = await Promise.all(
-        facts.map((f, i) => (f.repo ? readArrangement(roots[i].name, f.dir).catch(() => null) : Promise.resolve(null))),
-      );
-      const counts: Record<string, number> = {};
-      let untagged = 0;
-      for (const root of Object.values(bySession)) {
-        if (root) counts[root] = (counts[root] ?? 0) + 1;
-        else untagged++;
-      }
-      res.json({
-        roots: roots.map((r, i) => ({
-          ...r,
-          facts: facts[i],
-          arrangement: arrangements[i],
-          repo_profile: arrangements[i] ? arrangementProfile(arrangements[i]) : null,
-          sessions: counts[r.name] ?? 0,
-        })),
-        untagged,
-      });
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.get('/api/project-roots/inspect', async (req, res) => {
-    const dir = String(req.query.dir ?? '').trim();
-    if (!dir) return res.status(400).json({ error: 'A directory is required.' });
-    try {
-      const facts = await repoFacts({ name: 'candidate', title: '', dir, memory: '', remit: '', match: [], docs: [], archived: false, campaign_id: '' });
-      const arrangement = facts.repo ? await readArrangement('candidate', facts.dir).catch(() => null) : null;
-      res.json({
-        ...facts,
-        arrangement,
-        repo_profile: arrangement ? arrangementProfile(arrangement) : null,
-      });
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.post('/api/project-roots/:name/git-access', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
-    try {
-      const root = (await listProjectRoots()).find((entry) => entry.name === name);
-      if (!root) return res.status(404).json({ error: `"${name}" is not in the catalog.` });
-      res.json({ ok: true, ...(await checkProjectRootGitAccess(root)) });
-    } catch (e) {
-      res.status(500).json({ error: errMsg(e) });
-    }
-  });
-
-  app.post('/api/project-roots', async (req, res) => {
-    const name = String(req.body?.name ?? '').trim().toLowerCase();
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'ID: lowercase letters, digits, - and _.' });
-    const fields = bodyFields(req.body);
-    if (!fields.dir) return res.status(400).json({ error: 'A directory is required.' });
-    try {
-      if ((await listProjectRoots()).some((r) => r.name === name)) {
-        return res.status(409).json({ error: `"${name}" is already in the catalog.` });
-      }
-      if (req.body?.init_git === true) await startGit(fields.dir); // the folder gets Git before its profile is read
-      const facts = await repoFacts({ name, title: fields.title ?? '', dir: fields.dir, memory: '', remit: '', match: [], docs: [], archived: false, campaign_id: '' });
-      if (facts.repo && req.body?.profile !== undefined) validateArrangementProfile(req.body.profile);
-      const currentProfile = facts.repo && req.body?.profile !== undefined
-        ? arrangementProfile(await readArrangement(name, fields.dir)) : null;
-      const profileChangedSinceOpen = currentProfile && req.body?.before !== undefined
-        && JSON.stringify(req.body.before) !== JSON.stringify(currentProfile);
-      await upsertProjectRoot(name, fields);
-      const root = (await listProjectRoots()).find((r) => r.name === name);
-      const arrangement = root && facts.repo
-        ? req.body?.profile !== undefined ? await setArrangementProfile(root.dir, req.body.profile) : await readArrangement(name, root.dir)
-        : null;
-      res.json({ ok: true, repo_profile: arrangement ? arrangementProfile(arrangement) : null,
-        ...(profileChangedSinceOpen ? { profile_changed_since_open: true, current_before: currentProfile } : {}) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.put('/api/project-roots/:name', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
-    try {
-      await upsertProjectRoot(name, bodyFields(req.body));
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.put('/api/project-roots/:name/repo-profile', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
-    try {
-      const root = (await listProjectRoots()).find((r) => r.name === name);
-      if (!root) return res.status(404).json({ error: `"${name}" is not in the catalog.` });
-      const currentProfile = arrangementProfile(await readArrangement(name, root.dir));
-      const profileChangedSinceOpen = req.body?.before !== undefined
-        && JSON.stringify(req.body.before) !== JSON.stringify(currentProfile);
-      const arrangement = await setArrangementProfile(root.dir, req.body?.profile);
-      res.json({ ok: true, repo_profile: arrangementProfile(arrangement),
-        ...(profileChangedSinceOpen ? { profile_changed_since_open: true, current_before: currentProfile } : {}) });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
-    }
-  });
-
-  app.delete('/api/project-roots/:name', async (req, res) => {
-    const { name } = req.params;
-    if (!isValidRootName(name)) return res.status(400).json({ error: 'Invalid ID.' });
-    try {
-      await removeProjectRoot(name);
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(400).json({ error: errMsg(e) });
     }
   });
 

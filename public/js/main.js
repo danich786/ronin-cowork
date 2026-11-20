@@ -137,7 +137,7 @@ async function init() {
   guard('install workspace controls', build);
   guard('say when Ronin is unreachable', () => sayWhenUnreachable(document.getElementById('connectionstate')));
   guard('session event stream', connect); // the store's socket: rows, sessions, births & deaths
-  guard('load projects', loadProjects); // PROJECT_ROOTS.md — WHERE a spawn happens
+  guard('load projects', loadProjects); // every Workspace's folders, by name
   // Mark the first tile active but don't grab the keyboard on load (avoids the
   // iOS on-screen keyboard popping up before you've picked a session).
   guard('activate first tile', () => {

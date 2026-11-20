@@ -4,8 +4,9 @@
  * repositories its Agents work in (by their registered names), folder pointers with notes, and
  * the Mode its Agents launch in. Every Team is launched in one; its Agents inherit it.
  *
- * Repositories and folders are Workspace Folders, by registered name: the repositories are the
- * ones with Git, the folders the rest.
+ * THE WORKSPACE IS THE ORGANIZING PRINCIPLE (owner, 2026-11-20; KAN-728). Ronin keeps no folder
+ * list of its own: the repositories (with Git, and their settings) and folders are rows here,
+ * each a dir. Every reader of "the folders" reads `workspaceFolders()`.
  *
  * INTEGRATIONS (KAN-338): the outside services this Workspace uses, each a row naming its
  * `provider` (an integration: a bridge's name, or any the user brings; integrations.ts) and
@@ -20,14 +21,19 @@ import type { BriefSettings } from './brief-record.js';
 import { briefSettings } from './brief-settings.js';
 import { holdsWritten, workspaceListKey } from './holds-hook.js';
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { storeDir } from './resources.js';
 import { ensureWorkspaceDoc } from './workspace-doc.js';
 import type { LaunchMode } from './agent-defaults.js';
 
-export interface WorkspaceRepo { name: string; note: string }
-export interface WorkspaceFolder { name: string; note: string }
-/** Where the Workspace keeps its plans (src/plans.ts): a Workspace Folder by name and a subfolder in
+/** A folder the Workspace works in: `dir` is the folder; `name` is Ronin's key for it (desks, tmux,
+ * promotion), made from the folder's basename on save, the same for one dir in every Workspace. */
+export interface WorkspaceFolder { name: string; dir: string; note: string }
+/** A repository row also holds the repo's settings, here and nowhere else: `reviewed` hands work
+ * in from `working` to `stable`; `direct` works on `stable`. `desks` = managed gives each Agent a worktree. */
+export interface WorkspaceRepo extends WorkspaceFolder { mode: 'reviewed' | 'direct'; working: string; stable: string; desks: 'managed' | 'none' }
+/** Where the Workspace keeps its plans (src/plans.ts): one of its folders by name and a subfolder in
  * it. Absent is the default, Ronin Lab's <campaign>/<workspace>/plans. */
 export interface WorkspacePlans { location: string; path: string }
 /** One integration this Workspace uses: `provider` names its index record; the rest are its facts (`site`, `note`). */
@@ -46,6 +52,8 @@ export interface Workspace {
   /** The Workspace's brief settings and project management (docs/architecture/brief.md, Layers and brief settings). */
   brief: BriefSettings;
   pm?: boolean;
+  /** Archived (the page's ⋯): off the Workspace pickers, kept, one press brings it back. */
+  archived?: boolean;
 }
 
 export const isValidWorkspaceName = (s: string): boolean => /^[a-z0-9][a-z0-9_-]{0,63}$/.test(s);
@@ -69,14 +77,29 @@ export function normalizeWorkspace(campaign_id: string, name: string, v: Record<
     title: text(v.title, 120),
     objective: text(v.objective, 2000),
     instructions: text(v.instructions, 8000),
-    repos: rows(v.repos, (r) => (text(r.name, 64) ? { name: text(r.name, 64), note: text(r.note, 300) } : null)),
-    folders: rows(v.folders, (r) => (text(r.name, 64) ? { name: text(r.name, 64), note: text(r.note, 300) } : null)),
+    repos: rows(v.repos, (r) => { const f = folderRow(r); return f && repoRow(f, r); }),
+    folders: rows(v.folders, folderRow),
     launch_mode: v.launch_mode === 'configured' ? 'configured' : 'live_dangerously', // absent: Dangerously
     ...plansOf(v.plans),
     integrations: integrationsOf(v.integrations),
     brief: briefSettings(v.brief),
     ...(typeof v.pm === 'boolean' ? { pm: v.pm } : {}),
+    ...(v.archived === true ? { archived: true } : {}),
   };
+}
+
+const expand = (p: string): string => (p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p);
+const branch = (v: unknown, dflt: string): string => (/^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$/.test(text(v, 100)) && !text(v, 100).includes('..') ? text(v, 100) : dflt);
+
+function folderRow(r: Record<string, unknown>): WorkspaceFolder | null {
+  const dir = text(r.dir, 1000);
+  return dir ? { name: text(r.name, 64), dir: path.resolve(expand(dir)), note: text(r.note, 300) } : null;
+}
+
+function repoRow(f: WorkspaceFolder, r: Record<string, unknown>): WorkspaceRepo {
+  const mode = r.mode === 'reviewed' ? 'reviewed' : 'direct';
+  const stable = branch(r.stable, mode === 'reviewed' ? 'master' : 'main');
+  return { ...f, mode, working: mode === 'reviewed' ? branch(r.working, 'dev') : '', stable, desks: mode === 'reviewed' && r.desks !== 'none' ? 'managed' : 'none' };
 }
 
 /** Each row a provider, once, with its other facts as short strings; a bare name is a row too. */
@@ -117,13 +140,63 @@ export async function listWorkspaces(campaign: string): Promise<Workspace[]> {
 export async function saveWorkspace(w: Workspace): Promise<Workspace> {
   if (!w.campaign_id || !isValidWorkspaceName(w.name)) throw new Error(`A Workspace name is lowercase letters, digits, _ and -: "${w.name}".`);
   const clean = normalizeWorkspace(w.campaign_id, w.name, w as unknown as Record<string, unknown>);
-  await mkdir(campaignDir(clean.campaign_id), { recursive: true });
-  const file = recordFile(clean.campaign_id, clean.name);
-  const { name: _n, campaign_id: _c, ...body } = clean;
+  await nameRows(clean);
+  await writeRecord(clean);
+  await ensureWorkspaceDoc(clean.name, clean.title); // its Workspace doc (KAN-713), made once
+  // ONE REPOSITORY, ONE SET OF SETTINGS: the same repository in another Workspace takes these.
+  const settings = (r: WorkspaceRepo) => `${r.mode} ${r.working} ${r.stable} ${r.desks}`;
+  for (const campaign of await campaignNames()) {
+    for (const other of await listWorkspaces(campaign)) {
+      if (other.name === clean.name && campaign === clean.campaign_id) continue;
+      let moved = false;
+      for (const row of other.repos) {
+        const mine = clean.repos.find((r) => r.dir === row.dir);
+        if (mine && settings(mine) !== settings(row)) { Object.assign(row, { mode: mine.mode, working: mine.working, stable: mine.stable, desks: mine.desks }); moved = true; }
+      }
+      if (moved) await writeRecord(other);
+    }
+  }
+  return clean;
+}
+
+async function writeRecord(w: Workspace): Promise<void> {
+  await mkdir(campaignDir(w.campaign_id), { recursive: true });
+  const file = recordFile(w.campaign_id, w.name);
+  const { name: _n, campaign_id: _c, ...body } = w;
   await writeFile(`${file}.tmp`, `${JSON.stringify(body, null, 2)}\n`, 'utf8');
   await rename(`${file}.tmp`, file);
-  await ensureWorkspaceDoc(clean.name, clean.title); // its Workspace doc (KAN-713), made once
-  return clean;
+}
+
+/** Names each row, never refusing: a dir another Workspace holds keeps that row's name; a new dir
+ * takes its basename, made unique (site, site-2). A row has one name in every Workspace. */
+async function nameRows(w: Workspace): Promise<void> {
+  const others = (await workspaceFolders()).filter((f) => !(f.workspace === w.name && f.campaign_id === w.campaign_id));
+  const byDir = new Map(others.map((f) => [f.dir, f.name]));
+  const taken = new Set(others.map((f) => f.name));
+  for (const row of [...w.repos, ...w.folders]) {
+    const known = byDir.get(row.dir);
+    if (known) { row.name = known; continue; }
+    const base = (isValidWorkspaceName(row.name) ? row.name : path.basename(row.dir).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|-+$/g, '').slice(0, 60)) || 'folder';
+    let name = base;
+    for (let n = 2; taken.has(name); n++) name = `${base}-${n}`;
+    row.name = name;
+    byDir.set(row.dir, name);
+    taken.add(name);
+  }
+}
+
+/** Every folder of every Workspace, once by name: what desks, promotion, tmux and the docs shelf
+ * read. A repository row carries its settings; `workspace` is the first Workspace holding it. */
+export type HeldFolder = WorkspaceFolder & Partial<Omit<WorkspaceRepo, keyof WorkspaceFolder>> & { repo: boolean; workspace: string; campaign_id: string };
+export async function workspaceFolders(): Promise<HeldFolder[]> {
+  const out = new Map<string, HeldFolder>();
+  for (const campaign of await campaignNames()) {
+    for (const w of await listWorkspaces(campaign)) {
+      for (const r of w.repos) if (!out.get(r.name)?.repo) out.set(r.name, { ...r, repo: true, workspace: w.name, campaign_id: campaign });
+      for (const f of w.folders) if (!out.has(f.name)) out.set(f.name, { ...f, repo: false, workspace: w.name, campaign_id: campaign });
+    }
+  }
+  return [...out.values()];
 }
 
 /** Remove the record. */
@@ -148,7 +221,7 @@ export async function soleWorkspaceRepo(name: string): Promise<string | null> {
   return repos.size === 1 ? [...repos][0] : null;
 }
 
-async function campaignNames(): Promise<string[]> {
+export async function campaignNames(): Promise<string[]> {
   try { return (await readdir(storeDir('workspaces'), { withFileTypes: true })).filter((d) => d.isDirectory()).map((d) => d.name); }
   catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; return []; }
 }

@@ -9,19 +9,19 @@ Three keys carry the whole idea:
 
 - **What it does:** isolated working folders and branches keep parallel Agents from
   colliding in the same files.
-- **When it works:** the repository's Project Root declares Worktrees (`desks=managed` in
-  `RONIN_REPO`). The Agent needs no switch; it is told the folder is a worktree root.
+- **When it works:** the repository's row on its Workspace says Reviewed (`mode=reviewed`,
+  `desks=managed`). The Agent needs no switch; it is told the folder is a worktree root.
 - **The tradeoff:** work leaves the private worktree through the managed path — commit,
   hand-in, and the Team lead's merge — rather than landing directly on the shared branch.
 
 ## Resolution model
 
-One fact determines the result for each repository, its own `RONIN_REPO`:
+One fact determines the result for each repository, its row on the Workspace record:
 
-| The Workspace Folder declares | Result | The page the Agent is pointed at |
+| The row says | Result | The page the Agent is pointed at |
 |---|---|---|
-| `desks=none`, or no `RONIN_REPO` | a **checkout**: work on its current branch with ordinary Git; announce files; no hand-in | `ronin_catalogs/behaviours/conditional/checkout.md` |
-| `desks=managed` | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_catalogs/behaviours/working-at-a-desk.md` |
+| Direct (`desks=none`) | a **checkout**: work on its current branch with ordinary Git; announce files; no hand-in | `ronin_catalogs/behaviours/conditional/checkout.md` |
+| Reviewed (`desks=managed`) | a **worktree root**: the Agent's managed branch and worktree, commit, hand-in, the lead's promotion | `ronin_catalogs/behaviours/working-at-a-desk.md` |
 
 There is no Agent-side arrangement switch. The birth packet teaches both approaches and
 names each selected repository's arrangement; `worktree-desk open <repo>` names the route
@@ -29,40 +29,23 @@ for a repository encountered later. The worktree capability is available to ever
 so later managed work needs no new loadout. Resolution remains per repository, so one
 assignment may contain both a worktree root and a checkout.
 
-New Agent keeps **Born in** separate from **Workspaces**. Workspaces lists every registered
-Workspace Folder, defaults Born in to selected, and allows that default to be removed.
-Before birth, launch uses an existing checkout for every selected direct repository and
-opens a worktree for every selected managed repository. Born in alone does not allocate a worktree.
+Before birth, launch uses an existing checkout for every direct repository of the Team's
+Workspace and opens a worktree for every managed one.
 
-`src/worktrees-resolution.ts` owns the pure 2×2 decision. Its input contains the resolved
-Agent capability, normalized repository applicability, checkout location, branch profile,
-and any proposed managed coordinates. It returns each repository's `managed` or `direct`
-mode, effective location, reason, and provenance. It does not read Campaign, Team, session,
-environment, filesystem, or Git state.
+## Repository settings
 
-## Repository profile
-
-The Project Root editor presents the setting as **Worktrees**:
-
-- **Use Ronin Worktrees** enables managed worktrees for capable Agents.
-- **Use the checkout** keeps Agents in the repository checkout.
-
-The same profile shows the repository workflow and branches:
+A repository's settings are fields on its row in the Workspace record (`src/workspaces.ts`),
+and nowhere else (KAN-728):
 
 - `mode=reviewed|direct`
 - `working=<branch>` for a reviewed repository
 - `stable=<branch>`
-- Worktrees enabled or disabled
+- `desks=managed|none`
 
-Saving a profile changes metadata only. It does not create, delete, rename, check out, or
-move branches and worktrees. The Campaign setting **New project roots use Worktrees?** is
-only the initial value written when a Project Root is added; the Project Root profile is
-authoritative afterward.
-
-On disk, `RONIN_REPO` currently retains `desks=managed|none` as compatibility storage.
-`src/desks/arrangement.ts` is the boundary that parses that spelling and exposes the domain
-answer as `worktrees: enabled|disabled`. Other consumers must not compare `desks=` or parse
-`RONIN_REPO` independently.
+The Workspace page asks them as **Mode**: Reviewed or Direct. Saving changes the record only.
+It does not create, delete, rename, check out, or move branches and worktrees.
+`src/desks/arrangement.ts` (`rowArrangement`, `arrangementOf`) is the one reader that turns a
+row into an arrangement; other consumers do not read the row's fields themselves.
 
 ## Launch and assignment
 
@@ -157,8 +140,7 @@ worktrees are preserved to named recovery refs and receipts before cleanup.
 
 - Resolve Agent capability and repository applicability once; consumers dispatch from the
   typed result without re-deciding it.
-- Keep `RONIN_REPO` parsing and `desks=` compatibility spelling inside the arrangement
-  boundary.
+- Keep reading a repository's settings inside the arrangement boundary (`arrangementOf`).
 - Do not derive managed coordinates from ambient session or Team state inside the resolver.
 - Preserve input order and retain direct repositories in resolution results.
 - Never infer one repository's applicability from the assignment's primary repository.

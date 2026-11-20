@@ -234,18 +234,6 @@ export function buildMachineSettings(root, isShowing, { only = null } = {}) {
     group(t('settei.group_capacity', 'capacity'));
     for (const row of fieldsIn((f) => f.lands?.family === 'session-max')) body.appendChild(row);
 
-    /* projects — shown, never edited here */
-    group(t('settei.group_projects', 'projects · {n}', { n: set.projects.length }));
-    for (const p of set.projects) {
-      const health = st.projects.find((x) => x.name === p.name);
-      body.appendChild(obsRow(p.title || p.name, p.remit || p.dir,
-        health?.dir === 'missing' ? ' ' + t('settei.dir_gone', '✕ {dir} is gone', { dir: p.dir }) : health?.repo ? ` ${health.repo}` : ''));
-    }
-    const link = document.createElement('div');
-    link.className = 'st-row st-link';
-    link.textContent = t('settei.projects_link', 'Edit these in ▣ Workspace folders — this room only shows them.');
-    body.appendChild(link);
-
     /* how work gets a model */
     group(t('settei.group_models', 'how work gets a model'));
     for (const row of fieldsIn((f) => (f.sec === 'models' || f.sec === 'defaults') && f.lands?.family === 'agents')) body.appendChild(row);

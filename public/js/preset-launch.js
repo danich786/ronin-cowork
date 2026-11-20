@@ -63,6 +63,20 @@ function teamOutcome(outcomes, extra = {}) {
   } };
 }
 
+async function presetRows({ root = '', root_dir = '' }, ask) {
+  if (root_dir) {
+    const facts = await ask(`/api/folders/inspect?${new URLSearchParams({ dir: root_dir })}`, { cache: 'no-store' });
+    const row = { dir: root_dir, note: '' };
+    return facts.ok && facts.data.repo ? { repos: [{ ...row, mode: 'direct', stable: facts.data.repo.branch || 'main' }] } : { folders: [row] };
+  }
+  if (!root) return {};
+  const all = await ask('/api/workspaces', { cache: 'no-store' });
+  const held = (all.ok ? all.data.workspaces : []);
+  const repo = held.flatMap((w) => w.repos).find((row) => row.name === root);
+  const folder = held.flatMap((w) => w.folders).find((row) => row.name === root);
+  return repo ? { repos: [repo] } : folder ? { folders: [folder] } : {};
+}
+
 export async function launchPresetPlan(plan = {}, send) {
   const ask = send || request;
   const shelf = plan.template?.shelf === 'teams' ? 'teams' : 'agents';
@@ -100,11 +114,11 @@ export async function launchPresetPlan(plan = {}, send) {
   }
 
   const team = unique(template.name);
-  // The preset's Team works in a Workspace of its own, holding the folder the preset chose.
-  const root = plan.inputs?.root || '';
+  // The preset's Team works in a Workspace of its own, holding the folder the preset chose: a row
+  // another Workspace already has (by name), or the folder Code Stack Eval walked to (by dir).
+  const rows = await presetRows(plan.inputs || {}, send || request);
   const workspace = await (send || request)(`/api/workspaces/${encodeURIComponent(team)}`, { method: 'PUT', json: {
-    title: template.label || template.name, objective: plan.user_message || template.objective || '',
-    repos: root ? [{ name: root, note: '' }] : [],
+    title: template.label || template.name, objective: plan.user_message || template.objective || '', ...rows,
   } });
   if (!workspace.ok) return workspace;
   const rosterOptions = {

@@ -120,12 +120,10 @@ nothing paints exactly this.
 
 ## campaign_view — campaign-view.js (Campaign Manage: the selector's Campaign-level surfaces)
 
-- **campaign_view.roots_summary:** The folders this Campaign is allowed to work in.
+- **campaign_view.roots_summary:** Each Workspace and the folders it works in.
 - **campaign_view.new_summary:** Set the stage. It creates no Team and launches no Agent.
 - **campaign_view.none_selected:** No Desk selected.
 - **campaign_view.no_description:** No description yet.
-- **campaign_view.roots_n:** {n} roots
-- **campaign_view.roots_none:** None — an Agent here has nowhere to work.
 - **campaign_view.name_help:** On the door, the browser tab and the address.
 - **campaign_view.description_help:** What this body of work is for. Shown on its card.
 - **campaign_view.head:** Desk: {name}
@@ -445,9 +443,6 @@ nothing paints exactly this.
 - **settei.reach_alias:** · or {alias} (MagicDNS)
 - **settei.reach_ssh:** reach by ssh
 - **settei.group_capacity:** capacity
-- **settei.group_projects:** projects · {n}
-- **settei.dir_gone:** ✕ {dir} is gone
-- **settei.projects_link:** Edit these in ▣ Workspace folders — this room only shows them.
 - **settei.group_models:** how work gets a model
 - **settei.key_set:** ✓ set
 - **settei.key_not_set:** not set
@@ -541,12 +536,8 @@ nothing paints exactly this.
 - **presets.chief_of_staff:** Chief of Staff
 - **presets.evaluate:** Evaluate
 - **presets.evaluate_none:** Choose a folder
-- **presets.workspace_folder:** workspace folder
 - **presets.repository:** repository
 - **presets.folder:** folder
-- **presets.kept:** Kept
-- **presets.keep:** Keep
-- **presets.skip:** Skip
 
 ## new_agent — new-agent.js (the drawn launch form, staged beside the ＋ New board)
 - **new_agent.title:** New Agent
@@ -797,70 +788,8 @@ The pad's current config downloads as a backup first.
 
 ## wipeboard — the kind note
 
-## roots — projectroots.js (the ▣ Workspace folders tab)
-- **roots.add:** ＋ Add workspace folder
-- **roots.add_hint:** Choose or create a folder on this machine where Agents should start.
-- **roots.add_save:** Add
-- **roots.read_failed:** could not read the catalog — {message}
-- **roots.save:** save
-- **roots.cancel:** cancel
-- **roots.handle_needed:** Give this Workspace Folder a handle.
-- **roots.edit:** edit
-- **roots.edit_folder:** Edit
-- **roots.edit_folder_title:** Change the summary, shelves, match words, or repository workflow.
-- **roots.save_folder:** Save
+## roots — github-workspace-setup.js (the GitHub CLI stone) and the folder picker
 - **roots.cancel_folder:** Cancel
-- **roots.archive_folder:** Archive
-- **roots.unarchive_folder:** Unarchive
-- **roots.exclude_folder:** Exclude
-- **roots.summary:** Summary
-- **roots.summary_none:** No summary yet.
-- **roots.section_folder:** Folder
-- **roots.section_repository:** Repository
-- **roots.fact_directory:** Directory
-- **roots.fact_handle:** Workspace Folder handle
-- **roots.fact_docs:** Docs
-- **roots.fact_match:** Match
-- **roots.fact_remote:** Remote
-- **roots.fact_branch:** Branch
-- **roots.fact_publishing:** Publishing
-- **roots.fact_worktrees:** Worktrees
-- **roots.profile_undeclared:** Not declared
-- **roots.repository_none:** Not a Git repository. A workspace folder does not need to be one.
-- **roots.add_head:** Add a workspace
-- **roots.keep_hint:** Keep a folder on this machine for Teams and Agents to start in.
-- **roots.keep_lede:** Keep a folder on this machine for Teams and Agents to start in; a folder not kept is simply left alone.
-- **roots.picker_path:** Path
-- **roots.picker_none:** None yet
-- **roots.picker_keep:** Keep
-- **roots.picker_kept:** Kept
-- **roots.archive_failed:** could not archive it — {message}
-- **roots.exclude:** exclude
-- **roots.exclude_title:** Remove it from the catalog. Nothing on disk is touched.
-- **roots.exclude_confirm:** Exclude "{name}" from your Ronin?
-
-The catalog entry goes. {dir} is not touched.
-- **roots.exclude_failed:** could not exclude it — {message}
-- **roots.empty:** No workspace folders yet. Choose or create the first one above.
-- **roots.loading:** loading…
-- **roots.chip_worktrees:** Repository: Worktrees allowed
-- **roots.chip_checkout:** Repository: use checkout
-- **roots.chip_reviewed_title:** Reviewed: work moves through {working}, then review reaches {stable}. The branch mounted here is incidental.
-- **roots.chip_direct_title:** Direct: commits land on {stable} itself.
-- **roots.chip_shared:** Repository: use checkout
-- **roots.chip_shared_title:** No RONIN_REPO record: sessions use this checkout. Edit this root to declare its repository workflow.
-- **roots.stone_plain_folder:** Plain folder
-- **roots.stone_repo_no_remote:** Repository · no remote
-- **roots.stone_repo_worktrees:** Repository · Worktrees
-- **roots.stone_repo_checkout:** Repository · checkout
-- **roots.git_access:** Git access
-- **roots.git_access_available:** Access available
-- **roots.git_access_unavailable:** Access unavailable
-- **roots.git_access_not_checked:** Not checked
-- **roots.git_access_check_failed:** Check failed
-- **roots.git_access_checking:** Checking…
-- **roots.git_access_check:** Check access
-- **roots.git_access_not_checked_detail:** Ronin has not checked read access to this repository’s origin.
 - **roots.github_auth_stone:** GitHub CLI
 - **roots.github_auth_state:** Connect account
 - **roots.github_auth_connected_state:** Connected{account}
@@ -886,7 +815,7 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_connect_guided_irasshai:** Use GitHub CLI with the Helpful Assistant
 - **roots.github_connect_irasshai:** Let the Helpful Assistant connect GitHub
 - **roots.git_other_method:** Use another method
-- **roots.git_other_open:** Use your preferred Git or SSH setup here, then return to the Workspace Folder and check Git access.
+- **roots.git_other_open:** Use your preferred Git or SSH setup here, then return to your Workspace.
 - **roots.github_remove_auth:** Remove authentication
 - **roots.github_removing_auth:** Removing GitHub authentication…
 - **roots.github_done:** Done
@@ -896,15 +825,6 @@ The catalog entry goes. {dir} is not touched.
 - **roots.github_not_connected:** GitHub is not connected on this machine.
 - **roots.github_unreadable:** Ronin could not verify GitHub authentication.
 - **roots.github_waiting:** Finish GitHub authentication in the window first.
-- **roots.github_clone_stone:** Clone a repository
-- **roots.github_clone_ready_state:** Uses existing Git access
-- **roots.github_clone_heading:** Clone a repository
-- **roots.github_clone_lede:** Clone a GitHub repository and add its folder as a Ronin workspace.
-- **roots.github_clone_ready:** Cloning uses this machine’s existing Git access. GitHub CLI is optional.
-- **roots.github_repository:** GitHub repository
-- **roots.github_clone:** Clone and add workspace
-- **roots.github_cloning:** Cloning repository…
-- **roots.github_cloned:** Added {name} as a workspace.
 
 ## help_outline — help-outline.js (the Help workbench's pages)
 - **help_outline.project_management:** Project management
@@ -921,35 +841,8 @@ The catalog entry goes. {dir} is not touched.
 - **docs.pill_docs:** Docs
 - **docs.birth_brief:** Birth brief
 - **docs.brief_now:** Brief now
-- **docs.shelf_empty:** Nothing on this shelf — a workspace folder names its docs on its record (Workspace folders → docs).
+- **docs.shelf_empty:** Nothing on this shelf — a Workspace's folders keep their docs in docs/ and README.md.
 - **docs.plans_empty:** No plans yet. A lead writes one with the user: plan write <name>.
-- **roots.f_docs:** docs
-- **roots.f_docs_hint:** Where this root keeps its documentation — directories or files, relative to the directory
-- **roots.group_root:** Workspace folder
-- **roots.group_root_help:** An existing directory on this machine where Agents may work.
-- **roots.group_repository:** Advanced repository workflow
-- **roots.group_repository_help:** Optional Git publishing and Worktrees choices. An ordinary folder needs none of these.
-- **roots.f_mode:** publishing
-- **roots.mode_reviewed:** reviewed release
-- **roots.mode_direct:** direct publishing
-- **roots.f_working:** working
-- **roots.f_working_hint:** The integration branch for reviewed work. You choose its name.
-- **roots.f_stable:** stable
-- **roots.f_stable_hint:** The published branch. You choose its name.
-- **roots.f_worktrees:** Worktrees
-- **roots.worktrees_enabled:** Use Ronin Worktrees
-- **roots.worktrees_disabled:** Use the checkout
-- **roots.flow_reviewed:** {working} → review → {stable}
-- **roots.flow_direct:** commits → {stable}
-- **roots.flow_worktrees:** Agents with Worktrees on use their own working folder and branch; other Agents use the checkout.
-- **roots.flow_checkout:** Every Agent uses this checkout, even when the Agent has Worktrees on.
-- **roots.flow_preview:** Flow: {branches}. {worktrees} Saving this profile does not create, move, or rename branches.
-- **roots.profile_confirm:** Rewrite RONIN_REPO with this repository profile?\n\nBefore:\n{before}\n\nAfter:\n{after}\n\nRunning Agents may still have the earlier instructions.
-- **roots.profile_confirm_title:** Confirm repository settings
-- **roots.profile_confirm_action:** Use these settings
-- **folders.selected:** Selected folder
-- **folders.none_selected:** None selected
-- **folders.start_context:** This is where the Agent will start.
 - **folders.up:** ← Up
 - **folders.home:** Home
 - **folders.search:** Find a folder here
@@ -958,11 +851,6 @@ The catalog entry goes. {dir} is not touched.
 - **folders.new_name:** Folder name
 - **folders.git:** Start Git version history
 - **folders.create:** Create and select
-- **folders.inspecting:** Checking the starting context…
-- **folders.git_found:** Git repository
-- **folders.ordinary:** Ordinary folder
-- **folders.context_found:** Project instructions: {files}
-- **folders.context_none:** No recognized project instructions here; the Agent can still start here.
 - **folders.loading:** Reading folders…
 - **folders.choose:** Choose
 - **folders.empty:** No matching folders here.
@@ -978,25 +866,6 @@ The catalog entry goes. {dir} is not touched.
 - **docs.saving:** saving…
 - **docs.saved:** saved
 - **docs.work_record_note:** Ask an agent to add a document with work-record add_doc <path>. If a document is missing, ask the agent to update its work record.
-
-## roots — the count line and chips
-- **roots.chip_archived:** archived
-- **roots.chip_archived_title:** Off the new-session picker. Still here, and still launchable by name.
-- **roots.chip_gone:** directory is gone
-- **roots.chip_gone_title:** Nothing on disk at this path — fix the path or exclude it
-- **roots.chip_no_remote:** repo, no remote
-- **roots.chip_no_remote_title:** A git repo with no origin
-- **roots.chip_no_repo:** no repo
-- **roots.chip_no_repo_title:** Not a git repo — a workspace folder does not need to be one
-- **roots.sessions_one:** {n} session
-- **roots.sessions_many:** {n} sessions
-- **roots.unarchive:** unarchive
-- **roots.archive:** archive
-- **roots.unarchive_title:** Put it back on the new-session picker.
-- **roots.archive_title:** Take it off the new-session picker. It stays on this pane, and sessions already using it are untouched.
-- **roots.count_one:** {n} workspace folder
-- **roots.count_many:** {n} workspace folders
-- **roots.count_archived:** {n} archived
 
 ## stats — stats.js (the ▦ Stats tab)
 
@@ -1375,21 +1244,6 @@ The catalog entry goes. {dir} is not touched.
 - **hotwords.stock_list:** Ronin's stock list — your first edit makes a copy that is yours
 
 ## errors — main.js (the session-list failure)
-
-## roots — the edit form
-- **roots.f_handle:** Workspace Folder handle
-- **roots.f_handle_hint:** The stable handle used by sessions and tools, such as ronin_lab.
-- **roots.f_title:** display title
-- **roots.f_title_hint:** The name shown on screen. Changing it never changes the handle or directory.
-- **roots.f_title_placeholder:** optional
-- **roots.f_directory:** directory
-- **roots.f_directory_hint:** Any absolute path, at any depth
-- **roots.f_remit:** remit
-- **roots.f_remit_hint:** The one line you pick it from in a list
-- **roots.f_remit_placeholder:** what this is
-- **roots.f_match:** match
-- **roots.f_match_hint:** Words that suggest this workspace folder from free-form intent
-- **roots.f_match_placeholder:** comma separated
 
 ## pad — cell tooltips and idle lines
 - **pad.unbound_tip:** unbound — tap to bind

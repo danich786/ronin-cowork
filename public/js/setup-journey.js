@@ -2,7 +2,7 @@
 export const SETUP_SCENES = Object.freeze([
   { id: 'provider', label: 'Model providers', type: 'setup.providers', canvas: 'library.setup.provider-welcome' },
   { id: 'register', label: 'Register (optional)', type: 'setup.register', canvas: 'library.setup.register' },
-  { id: 'workspace', label: 'Workspace folders', type: 'setup.roots', canvas: 'library.setup.workspace' },
+  { id: 'workspace', label: 'Workspaces', type: 'setup.roots', canvas: 'library.setup.workspace' },
   { id: 'installations', label: 'Installations', type: 'setup.installations', canvas: 'library.setup.installations' },
   { id: 'password', label: 'Password', type: 'machine.password', canvas: 'library.setup.password' },
   { id: 'bounty', label: 'Bounty Program', type: 'setup.bounty', canvas: 'library.setup.bounty' },

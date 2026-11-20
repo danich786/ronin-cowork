@@ -276,7 +276,7 @@ export async function writeTeams(name: string, tags: string[], by = name, said =
   return writeDerived(name, 'teams', await deriveTeams(name, tags), by, said);
 }
 
-/** The configuration line (owner, 2026-10-21): the title and Workspace Folder Ronin keeps for
+/** The configuration line (owner, 2026-10-21): the title and Workspace Ronin keeps for
  * this Agent. Behaviors are not here; adding one sends its own message with the teaching. */
 export async function writeConfiguration(name: string, by = name): Promise<boolean> {
   const title = (await listSessions()).find((s) => s.name === name)?.title ?? '';

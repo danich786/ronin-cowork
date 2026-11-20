@@ -25,9 +25,9 @@ Your email is what unlocks Ronin Services. The form also asks for a two-line int
 that every Agent you start will read, so they know who they're working for. Press
 **No thank you** to skip.
 
-**Workspace folders.** Where your Agents work. **Ronin Lab** and **Project One** are ready
-for you; add your own folders or GitHub repositories here. See
-[Workspace folders](workspace-folders.md).
+**Workspaces.** Where your Agents work. **Ronin Lab** and **Project One** are ready for you;
+press **New Workspace** to make your own, with its folders or GitHub repositories. See
+[Workspaces](../using-ronin/workspaces.md).
 
 **Installations.** Optional extras, starting with [Ronin Services](services-activation.md).
 

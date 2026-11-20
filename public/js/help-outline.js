@@ -54,7 +54,6 @@ function PAGES() {
       page('docs/getting-started/get-started.md', t('help_outline.get_started', 'Get started')),
       page('docs/getting-started/setup-workbench.md', t('help_outline.setup', 'Ronin Setup')),
       page('docs/getting-started/provider-sign-in.md', t('help_outline.sign_in', 'Provider sign-in')),
-      page('docs/getting-started/workspace-folders.md', t('help_outline.folders', 'Workspace Folders')),
       page('docs/getting-started/services-activation.md', t('help_outline.services', 'Ronin Services')),
     ]),
     shelf('using', t('help_outline.using', 'Using Ronin'), [

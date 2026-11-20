@@ -1,15 +1,16 @@
 import type express from 'express';
-import { listProjectRoots, repoFacts } from '../project-roots.js';
+import { folderFacts } from '../folder-browser.js';
+import { workspaceFolders } from '../workspaces.js';
 import { deriveDesk, fromStatus, locatorFrom, rollup, sameDesk, type DeskRollup, type DeskState, type LocateRepo } from '../desk-state.js';
 import { listDesks } from '../desks/registry.js';
 import { readRepos } from '../tegami.js';
 import { isValidName, sessionExists } from '../tmux.js';
 
 async function locator(): Promise<LocateRepo> {
-  const roots = await listProjectRoots().catch(() => []);
-  const facts = await Promise.all(roots.map((r) => repoFacts(r).catch(() => null)));
+  const roots = await workspaceFolders().catch(() => []);
+  const facts = await Promise.all(roots.map((r) => folderFacts(r.dir).catch(() => null)));
   return locatorFrom(
-    facts.flatMap((f) => (f && f.exists ? [{ name: f.name, dir: f.dir, remote: f.repo?.remote ?? '' }] : [])),
+    facts.flatMap((f, i) => (f && f.exists ? [{ name: roots[i].name, dir: f.dir, remote: f.repo?.remote ?? '' }] : [])),
   );
 }
 

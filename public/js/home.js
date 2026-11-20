@@ -9,6 +9,7 @@
 import { request } from './request.js';
 import { t } from './lexicon.js';
 import { subscribe } from './store.js';
+import { hearWorkspaces } from './workspaces-read.js';
 
 // The restored roster (js/roster.js) reads the pushed rows here. The store reconnects on
 // its own and says so, so the roster's stale line has no fault to show.
@@ -16,17 +17,23 @@ export let homeData = null;
 export const homeFault = null;
 subscribe('home', (rows) => { homeData = rows; });
 
-export let projectData = null; // /api/project-roots: [{name, title, dir, match[], remit, docs[]}]
+export let projectData = null; // every Workspace's folder rows, once by name: [{name, dir, note, title}]
 // The provider catalog is not cached here: form-steps.js reads it for the one picker and
 // the Campaign's Model providers surface, fresh on every surface entry.
 
 const projectListeners = new Set();
-/** Hear the catalog change: the Workspace folders surface reloads it after every keep or exclude. */
+/** Hear the folders change: a Workspace saved reads them again. */
 export function onProjects(listener) { projectListeners.add(listener); return () => projectListeners.delete(listener); }
 
+let hearing = false;
 export async function loadProjects() {
-  const r = await request('/api/project-roots');
-  if (r.ok && Array.isArray(r.data)) projectData = r.data;
+  if (!hearing) { hearing = true; hearWorkspaces(() => void loadProjects()); }
+  const r = await request('/api/workspaces');
+  if (r.ok) {
+    const rows = new Map();
+    for (const w of r.data.workspaces || []) for (const row of [...w.repos, ...w.folders]) if (!rows.has(row.name)) rows.set(row.name, { ...row, title: row.name });
+    projectData = [...rows.values()];
+  }
   for (const listener of projectListeners) { try { listener(projectData); } catch (error) { console.error(error); } }
 }
 

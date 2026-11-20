@@ -41,13 +41,13 @@ interpret the schema through `public/js/machine-settings-schema.js`; the schema 
 routes.
 
 Agents use `machine-settings`. Its composed read joins this secret-free record with the
-selected Campaign, installation catalog, observed installed state, provider catalog, and
-Workspace Folder detail. It keeps catalogued, observed, Campaign-on, and new-Team-default
+selected Campaign, installation catalog, observed installed state, and provider catalog.
+Folders are not here: they are rows of a Workspace. It keeps catalogued, observed, Campaign-on, and new-Team-default
 states separate. When `--campaign` is omitted it resolves `RONIN_SESSION` by exact name and
 uses that session's Campaign; it never substitutes the initial Campaign.
 
 Writes go through the existing named routes: typed Machine Settings families,
-`PUT /api/campaigns/:id`, and the named Workspace Folder routes. The command does not use
+and `PUT /api/campaigns/:id`. The command does not use
 the legacy `campaigns` or `record-section` Machine Settings families and exposes no generic
 document patch or store write. Observed, status, needed, schema, provider measurements, and
 repository facts remain read-only.

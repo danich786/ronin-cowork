@@ -1,8 +1,8 @@
 # Ronin Setup — construction
 
 For contributors: what each Setup surface shows and measures, in full. The user's page is
-[Ronin Setup](../getting-started/setup-workbench.md); provider and folder construction are in
-[model providers](model-providers.md) and [Workspace Folders](project-roots.md).
+[Ronin Setup](../getting-started/setup-workbench.md); provider construction is in
+[model providers](model-providers.md), and Workspaces in [Workspaces](../using-ronin/workspaces.md).
 
 ## Where it is
 
@@ -21,7 +21,7 @@ being answered. A link that names a page still opens that page.
 
 **Ronin Settings → Machine Settings** keeps a **Setup** card at the head of its column: the
 word, then five numbered marks, one for each step Setup asks about — model provider,
-registration, Workspace folders, Installations, and password. A mark is hollow until you
+registration, Workspaces, Installations, and password. A mark is hollow until you
 answer that step and filled once you have; the outlined mark is the step Setup will open
 on. Answering means either doing the thing or saying not now — both count, and both are
 remembered.
@@ -35,7 +35,7 @@ stays where it is, so any step can be opened again whenever you want it.
 Setup is one workbench with two workspaces and a selector column between them:
 
 - **Workspace 1** holds the Garden Canvas: short authored guidance for the selected step.
-- **The selector** lists Model providers, optional registration, Workspace folders,
+- **The selector** lists Model providers, optional registration, Workspaces,
   Installations, and Launch. A check means the step's actual completion fact is true.
 - **Workspace 2** is the actionable surface for the selected step. Selecting a card changes
   both workspaces together.
@@ -99,11 +99,11 @@ still opens; its Launch is held and a line beside it says what is missing. Activ
 provider unlocks the stones at once.
 
 **Where.** Ronin Team, Develop a New Project and Agent + Editable Doc ask where to start:
-every workspace folder Ronin keeps, with Ronin Lab and Project One first and Ronin Lab
-chosen by default, then the rest by name — the same list the Workspace folders surface
-shows. **＋ workspace folder** beside it opens Workspace folders in the next workspace; a
-folder kept there is a choice at once, with your choice and typed message left as they
-were.
+every folder of every Workspace, with Ronin Lab and Project One first and Ronin Lab
+chosen by default, then the rest by name. **＋ workspace folder** beside it opens the
+Workspaces in the next workspace; a folder added to a Workspace there is a choice at once,
+with your choice and typed message left as they were. The Team gets a Workspace of its own
+holding the chosen folder's row.
 
 **Rows.** On Bare Metal, Ronin Team and Develop a New Project each row is one session:
 its name, and a provider and model picked in the line from the same catalog the Agent and
@@ -119,10 +119,9 @@ Where. Both open their team page with the team's configuration top-right and the
 column kept narrow: Ronin Team seats its Team Lead top-left and Agent 1 and Agent 2 below,
 whatever order they were born in; Bare Metal seats its sessions top-left and below.
 
-**Code Stack Eval's folders.** The page browses your folders and says which are
-repositories. Tick any number to **Keep** and press **Apply**: they become workspace
-folders at once, on the Workspace folders surface beside you. **Evaluate** picks the one
-this run is about and keeps it too. Nothing is kept until Apply.
+**Code Stack Eval's folder.** The page browses your folders and says which are
+repositories. **Evaluate** picks the one this run is about; at launch it becomes a row of
+the Team's own Workspace.
 
 **What opens.** Launch opens the new team or agent in a new tab, already seated: Home
 Health puts the Head Coach top-left and the Wipeboard beside it; Grokbot seats the agent,
@@ -205,27 +204,22 @@ set the only thing left to offer is **Disable password**.
 Having Tailscale does not answer this step for you. Whether Tailscale alone is enough is a
 judgement about your own machine, so Setup waits for you to say.
 
-## Workspace folders
+## Workspaces
 
-A workspace folder is a folder Ronin keeps for Teams and Agents to start in. A new
-installation makes two inside Ronin: **Ronin Lab** for ideas, assistants, research and
-pre-project work, and **Project One** for project work, prepared for worktrees.
-Your Lab is a general thinking space, not the code repository for a specific project.
-Ronin’s creators use their own Lab in the same way; their internal plans are not part of
-your installation instructions. Each
-uses its lowercase ID (`ronin_lab`, `project_one`) as the starting directory name and
-is a Git repository with a README and a first commit. Workspaces the owner adds are separate,
-named entries; they do not replace either built-in.
+The Workspace step is the Workspaces themselves (KAN-728): Ronin keeps no folder list of its
+own, so every folder Setup adds is a row of a Workspace record (`src/workspaces.ts`). A new
+installation makes two Workspaces inside Ronin (`placeInstalledRoots`, made once each):
+**Ronin Lab** for ideas, assistants, research and pre-project work, holding the folder
+`ronin_lab`, and **Project One** for project work, holding the repository `project_one`,
+Reviewed (working `dev`, stable `main`). Your Lab is a general thinking space, not the code
+repository for a specific project. Each folder is a Git repository with a README and a first
+commit.
 
-The surface shows the folders as stones, with **Add A Workspace** first. Adding one is a
-keep-or-ignore decision: browse, and **Keep** the folder you want. Folders with a
-repository are listed first; nobody types a handle, it is made from the folder's name. Selecting a
-stone opens its page (KAN-728): its name with **Edit** and **⋯** (Archive, Remove from Ronin), then
-its summary when it has one, its path, a repository's remote in one line, and its docs. A folder that
-works says nothing about itself: no Ready badge, no handle, no "not a repository" line. A state line
-appears only when the server's checks failed (`repoFacts` `not_ready`: Folder missing, Git
-repository Ronin cannot read, or no current branch), when it is archived, or when sessions run in it.
-More in [Workspace Folders](project-roots.md).
+The surface shows the Workspaces as stones (`createWorkspaceStones`, `withNew`), with a **New
+Workspace** stone last. Pressing a stone opens the Workspace's page, the same page as the
+Workspaces door's ([Workspaces](../using-ronin/workspaces.md)): Summary, Folders with **Add a
+folder** and **Clone from GitHub**, then Integrations, Agent info and Behaviors; Archive under ⋯.
+New Workspace is its Name and its Folders, then Create; the made Workspace opens in its place.
 
 **Authenticate GitHub** follows three measured steps: **Install**, **Authenticate**, and
 **Ready**. If `gh` is absent, one Install button opens a visible temporary provider-style

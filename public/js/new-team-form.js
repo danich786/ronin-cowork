@@ -557,7 +557,7 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   // saved on the Workspaces page), so a Workspace just made is offered here without a reload.
   const readWorkspaces = async () => {
     const answer = await request('/api/workspaces');
-    workspaces = answer.ok && Array.isArray(answer.data?.workspaces) ? answer.data.workspaces : [];
+    workspaces = answer.ok && Array.isArray(answer.data?.workspaces) ? answer.data.workspaces.filter((w) => !w.archived) : [];
     if (!draft.workspace && workspaces.length === 1) draft.workspace = workspaces[0].name;
   };
   const unhear = hearWorkspaces(() => void readWorkspaces().then(() => {

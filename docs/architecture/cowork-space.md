@@ -138,10 +138,9 @@ statuses as buttons, objective and comments, never history. A stone dragged into
 an Epic's selector card, places that Epic's worksurface there. Models is its own stones of
 providers in Workspace 1 (`models-surface.js`): a stone dragged into a workspace, or its selector
 card, places that provider's page there whole, no rail; Settings' Model Providers surface stays
-as it is, both drawing with the one exported drawing. Workspaces is its own stones of folders in
-Workspace 1 the same way (`workspaces-surface.js`), one card per folder and three dotted cards —
-Add a workspace, GitHub CLI, Clone a repository — the folder they add taking their workspace;
-Settings' Workspace Folders surface stays as it is. Teams opens the Teams workbench at `#/cowork`
+as it is, both drawing with the one exported drawing. Workspaces is its own stones of Workspaces in
+Workspace 1 the same way (`workspaces-surface.js`), one card per Workspace and New Workspace and
+GitHub CLI as cards; Settings' Workspaces surface stays as it is. Teams opens the Teams workbench at `#/cowork`
 (`cowork-view.js`; owner, 2026-10-20), the one Teams workbench: its Teams card
 (`team-roster-surface.js`) carries a Workspace question (many-of, blank All) and a Show question
 (Theme, State, Agents, Items; none picked to start) above its stones, each stone the Team's name

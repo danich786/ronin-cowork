@@ -24,7 +24,7 @@ import { createModelDefaults, createModelProvider, createModelRefresh, createMod
 import { createAccountsSurface } from './accounts-surface.js';
 import { createModelsRecords } from './models-records-surface.js';
 import { createGithubWorkspaceSetup } from './github-workspace-setup.js';
-import { createFolderGithub, createRootsReading, createWorkspaceNew, createWorkspaceRecord, createWorkspaceStones, workspaceOffers } from './workspaces-surface.js';
+import { createFolderGithub, createWorkspaceNew, createWorkspaceRecord, createWorkspaceStones, workspaceOffers } from './workspaces-surface.js';
 import { createWorkspacesRead } from './workspaces-read.js';
 import { campaignById, loadCampaigns, normalizeSelection } from './campaigns.js';
 import { createEpicBoard, createEpicRecord, createEpicsRead, epicOffers } from './epics-surface.js';
@@ -146,9 +146,7 @@ export function createWorkspacesView() {
   const { surface: mikaSurface, pool: mikaPool } = createMikaTilePool();
   const guidePrompt = (setupSession) => `You are helping the owner authenticate GitHub CLI in the adjacent session ${setupSession}. Read its live terminal with edges read ${setupSession} and guide the owner from what is displayed. Explain each prompt briefly and say exactly what to do next. Re-read the session after each step. This is a headless remote machine: browser approval happens on the owner's local computer. Do not operate the setup terminal and never ask for or display a credential. When it finishes, verify with gh auth status and report the connected account and Git protocol.`;
   const connectPrompt = 'Connect this Ronin machine to GitHub through GitHub CLI. First run gh auth status. If it is not connected, run gh auth login --hostname github.com --git-protocol https --web. This is a headless remote machine: give the owner the device URL and one-time code, wait for browser approval, then run gh auth setup-git and gh auth status. Stay with the process until it succeeds or needs an owner decision. Never ask for a token in chat and never print, inspect, or expose credentials. Finish by reporting the connected account and HTTPS Git protocol.';
-  const campaign = (ctx) => campaignById(normalizeSelection(ctx()?.state?.campaignSelection).primary_campaign_id);
   const providerSessions = createProviderSetupSessionMount();
-  const reading = createRootsReading();
   const made = [];
   const keep = (surface) => { made.push(surface); return surface; };
   let github = null;
@@ -157,14 +155,13 @@ export function createWorkspacesView() {
     seats: { workspace1: WORKBENCH_TYPES.workspaceRecords, workspace2: FILES_ON ? WORKBENCH_TYPES.files : WORKBENCH_TYPES.folderGithub },
     loaded: loadCampaigns,
     environment: ({ bench, ctx }) => {
-      const campaignId = () => campaign(ctx)?.id || '';
-      const workspacesRead = createWorkspacesRead(campaignId);
+      const workspacesRead = createWorkspacesRead();
       const environment = {
         mountProviderSetupSession: providerSessions.mountProviderSetupSession,
         workspaces: () => workspaceOffers(workspacesRead),
-        workspaceRecords: () => keep(createWorkspaceStones({ reading, workspacesRead, campaignId, workbench: bench() })),
-        workspaceRecord: (_workspace, detail) => keep(createWorkspaceRecord(detail.key, { reading, workspacesRead, campaignId })),
-        workspaceNew: (workspace) => keep(createWorkspaceNew({ reading, workspacesRead, campaignId, place: (name) => bench().place(WORKBENCH_TYPES.workspaceRecord, workspace, { key: name }) })),
+        workspaceRecords: () => keep(createWorkspaceStones({ workspacesRead, workbench: bench(), recordType: WORKBENCH_TYPES.workspaceRecord })),
+        workspaceRecord: (_workspace, detail) => keep(createWorkspaceRecord(detail.key, { workspacesRead })),
+        workspaceNew: (workspace) => keep(createWorkspaceNew({ workspacesRead, place: (name) => bench().place(WORKBENCH_TYPES.workspaceRecord, workspace, { key: name }) })),
         folderGithub: (workspace) => keep(createFolderGithub(github ??= boxes(workspace))),
         githubMika: () => ({ el: mikaSurface.el, show: () => { mikaPool.sync([helper]); mikaPool.show(helper, false); } }),
         assistName: signInHelperName,
@@ -178,7 +175,6 @@ export function createWorkspacesView() {
       const opposite = (workspace) => workspace === 'workspace1' ? 'workspace2' : 'workspace1';
       const boxes = (workspace = 'workspace2') => createGithubWorkspaceSetup({
         environment, workspace,
-        onCloned: () => reading.read(),
         onMikaGuide: ({ setupSession, workspace: from }) => showMika(opposite(from), guidePrompt(setupSession)),
         onMikaConnect: ({ workspace: from }) => showMika(from, connectPrompt),
       });

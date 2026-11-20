@@ -63,7 +63,6 @@ ronin-cowork/
 ├── LICENSE                  distribution license
 ├── NOTICE                   attribution notice
 ├── README.md                public repository/product entry
-├── RONIN_REPO               repository arrangement declaration
 ├── package.json             JavaScript commands and dependency contract
 ├── package-lock.json        pinned JavaScript dependency graph
 ├── setup.sh                 installation entry point

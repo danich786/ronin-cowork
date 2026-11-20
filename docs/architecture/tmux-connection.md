@@ -138,8 +138,8 @@ surface states, long tasks and errors). Open the inspector on the live server wi
 
 `npm start` and `npm run dev` prepare the global development runtime before starting
 Ronin. Their `prestart`/`predev` command calls `scripts/prepare-dev-services.ts`, whose
-resolver is `src/dev-services.ts`. It reads the registered `ronin_cowork` and
-`ronin_services` Workspace Folders and each repository's declared working branch.
+resolver is `src/dev-services.ts`. It reads the `ronin_cowork` and `ronin_services`
+rows of this box's Workspaces and each repository's working branch on its row.
 Only the mounted Cowork global working checkout receives automatic placement; a
 private worktree, candidate, preview, or `VERSION`-stamped release does not.
 

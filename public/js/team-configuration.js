@@ -39,9 +39,9 @@ export function renderTeamConfiguration(host, roster, optionsArg = {}) {
   // nothing will render it again when it is placed. A superseded render's host is a
   // discarded node; painting it is invisible and cheap.
   // The mandate menus are the catalog's mandate files (mandates.js), read with the Workspaces.
-  void Promise.all([request(`/api/workspaces?campaign_id=${encodeURIComponent(roster.campaign_id || '')}`), loadMandates(),
+  void Promise.all([request('/api/workspaces'), loadMandates(),
     screenOf({ team: roster.name })]).then(([workspaceResult, , screen]) => {
-    const workspaces = workspaceResult.ok && Array.isArray(workspaceResult.data?.workspaces) ? workspaceResult.data.workspaces : [];
+    const workspaces = workspaceResult.ok && Array.isArray(workspaceResult.data?.workspaces) ? workspaceResult.data.workspaces.filter((w) => !w.archived || w.name === roster.workspace) : [];
     const defaults = bucket(roster.agent_defaults);
     const form = el('form', 'ntf-form tw-config-form');
 

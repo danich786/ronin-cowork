@@ -20,14 +20,13 @@ const shop = path.join(ronin.scratch, 'repos', 'shop');
 await fs.mkdir(shop, { recursive: true });
 git(shop, 'init', '-q', '-b', 'master');
 await fs.writeFile(path.join(shop, 'README.md'), '# shop\n');
-await fs.writeFile(path.join(shop, 'RONIN_REPO'), 'mode=reviewed\nworking=dev\nstable=master\ndesks=managed\n');
 git(shop, 'add', '-A');
 git(shop, 'commit', '-q', '-m', 'first');
 git(shop, 'checkout', '-q', '-b', 'dev');
-await fs.mkdir(path.join(ronin.scratch, 'user', 'catalogs'), { recursive: true });
-await fs.writeFile(path.join(ronin.scratch, 'user', 'catalogs', 'PROJECT_ROOTS.md'), `# roots\n\n## shop\n- **dir:** ${shop}\n- **remit:** the shop\n`);
+// The repository and its settings are a row of the Team's Workspace (KAN-728).
+await ronin.api('/api/workspaces/shop', { method: 'PUT', body: { title: 'Shop', repos: [{ name: 'shop', dir: shop, mode: 'reviewed', working: 'dev', stable: 'master', desks: 'managed' }] } });
 
-await ronin.api('/api/team-rosters', { body: { name: 'crew', objective: 'Build the shop.' } });
+await ronin.api('/api/team-rosters', { body: { name: 'crew', objective: 'Build the shop.', workspace: 'shop' } });
 await ronin.api('/api/launch', { body: { name: 'builder', provider: 'anthropic', team: 'crew', prompt: 'Build.' } });
 await ronin.api('/api/launch', { body: { name: 'boss', provider: 'anthropic', team: 'crew', team_lead: true, prompt: 'Lead.' } });
 const paneOf = (name: string) => ronin.tmux.run('display-message', '-p', '-t', `=${name}:`, '#{pane_id}');

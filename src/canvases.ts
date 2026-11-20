@@ -329,11 +329,9 @@ export const remoteUrl = (remote: string): string => {
 
 /** The Workspace's repos as cards (KAN-631), shaped like Live site: the name, what it serves, its page. */
 async function repoCards(w: Workspace): Promise<Card[]> {
-  const { listProjectRoots, repoFacts } = await import('./project-roots.js');
-  const roots = await listProjectRoots().catch(() => []);
+  const { folderFacts } = await import('./folder-browser.js');
   return Promise.all(w.repos.map(async (repo) => {
-    const root = roots.find((one) => one.name === repo.name);
-    const url = root ? remoteUrl((await repoFacts(root).catch(() => null))?.repo?.remote ?? '') : '';
+    const url = remoteUrl((await folderFacts(repo.dir).catch(() => null))?.repo?.remote ?? '');
     return { title: repo.name, rows: [{ text: repo.note || 'Code', ...(url ? { links: [{ text: url.replace(/^https?:\/\/(www\.)?/, '').replace(/^github\.com\//, ''), url }] } : {}) }] };
   }));
 }

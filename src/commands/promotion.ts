@@ -2,9 +2,12 @@ import 'dotenv/config';
 import { readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { listProjectRoots } from '../project-roots.js';
 import { readTeamRoster } from '../team-rosters.js';
-import { readArrangement } from '../desks/arrangement.js';
+import { arrangementOf } from '../desks/arrangement.js';
+import { workspaceFolders } from '../workspaces.js';
+
+/** A repo's settings from its Workspace row, at the dir promotion works in (a --repo override). */
+const readArrangement = async (repo: string, dir: string) => ({ ...(await arrangementOf(repo)), dir });
 import { teamLineBranch } from '../desks/schema.js';
 import { acceptedLinesForTeam } from '../desks/receipts.js';
 import { isAncestor, revParse } from '../desks/git.js';
@@ -32,7 +35,7 @@ if (!['full', 'gates', 'ui'].includes(mode)) { say(`ronin-promote: --mode is ful
 async function reposForTeam(team: string): Promise<RepoSpec[]> {
   const roster = await readTeamRoster(team);
   if (!roster) throw new Error(await missingRosterMessage(team));
-  const roots = await listProjectRoots();
+  const roots = await workspaceFolders();
   const defaults = await teamRepos(roster);
   const overrides = new Map(args.filter((a, i) => args[i - 1] === '--repo' && a.includes('=')).map((a) => a.split('=') as [string, string]));
   const accepted = await unpromotedAcceptedLines(await acceptedLinesForTeam(team), async ({ repo, line }) => {
@@ -54,7 +57,7 @@ async function reposForTeam(team: string): Promise<RepoSpec[]> {
   const specs: RepoSpec[] = [];
   for (const name of names) {
     const dir = overrides.get(name) ?? roots.find((r) => r.name === name)?.dir;
-    if (!dir) throw new Error(`repo '${name}' is not a project_root here — pass --repo ${name}=/path`);
+    if (!dir) throw new Error(`repo '${name}' is in no Workspace here — pass --repo ${name}=/path`);
     const arr = await readArrangement(name, dir);
     // A Workspace may hold a direct repository (the Lab): it has no team line, so nothing to promote.
     if (arr.mode === 'direct') continue;

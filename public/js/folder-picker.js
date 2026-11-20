@@ -1,4 +1,4 @@
-/* Host-side folder chooser shared by setup and Campaign Workspace Folders. */
+/* Host-side folder chooser: the Workspace page's Add a folder. */
 import { request } from './request.js';
 import { confirmDialog, status } from './ui.js';
 import { t } from './lexicon.js';
@@ -10,27 +10,9 @@ const el = (tag, cls, text) => {
   return node;
 };
 
-/**
- * `words` lets a consumer say the picker in its own terms: the label over the chosen path,
- * the empty value, the standing note under it ('' for none), and the per-row action.
- */
-export function createFolderPicker({ value = '', onChange = () => {}, words = {} } = {}) {
-  const say = {
-    chosen: words.chosen ?? t('folders.selected', 'Selected folder'),
-    none: words.none ?? t('folders.none_selected', 'None selected'),
-    note: words.note ?? t('folders.start_context', 'This is where the Agent will start.'),
-    take: words.take ?? t('folders.choose', 'Choose'),
-    // A folder already kept as a workspace: the stock word offers it for evaluation; a
-    // consumer that names it (Setup says 'Kept') has nothing more to do with it.
-    kept: words.kept ?? '',
-  };
+/** Walk, find or make a folder on this machine; its row's `take` button (or a folder just made) hands it to `onChange`. */
+export function createFolderPicker({ onChange = () => {}, take = t('folders.choose', 'Choose') } = {}) {
   const shell = el('div', 'folder-picker');
-  const chosen = el('div', 'folder-chosen');
-  const chosenLabel = el('span', null, say.chosen);
-  const chosenPath = el('code', null, value || say.none);
-  const context = el('span', 'folder-context', say.note);
-  context.hidden = !say.note;
-  chosen.append(chosenLabel, chosenPath, context);
   const controls = el('div', 'folder-controls');
   const back = el('button', null, t('folders.up', '← Up')); back.type = 'button';
   const home = el('button', null, t('folders.home', 'Home')); home.type = 'button';
@@ -49,26 +31,13 @@ export function createFolderPicker({ value = '', onChange = () => {}, words = {}
   const make = el('button', null, t('folders.create', 'Create and select')); make.type = 'button';
   const line = status('folder-status');
   createRow.append(name, gitLabel, make); create.append(createSummary, createRow, line.el);
-  shell.append(chosen, controls, crumbs, listing, create);
+  shell.append(controls, crumbs, listing, create);
 
-  let selected = value;
   let current = '';
   let homeDir = '';
   let parent = null;
   let timer = null;
-  const select = async (dir, folder = null) => {
-    selected = dir;
-    chosenPath.textContent = dir;
-    onChange(dir, folder);
-    context.hidden = false;
-    context.textContent = t('folders.inspecting', 'Checking the starting context…');
-    const inspected = await request(`/api/project-roots/inspect?dir=${encodeURIComponent(dir)}`, { cache: 'no-store' });
-    if (!inspected.ok) { context.textContent = inspected.message; return; }
-    const bits = [inspected.data.repo ? t('folders.git_found', 'Git repository') : t('folders.ordinary', 'Ordinary folder')];
-    if (inspected.data.project_context?.length) bits.push(t('folders.context_found', 'Project instructions: {files}', { files: inspected.data.project_context.join(', ') }));
-    else bits.push(t('folders.context_none', 'No recognized project instructions here; the Agent can still start here.'));
-    context.textContent = bits.join(' · ');
-  };
+  const select = (dir) => onChange(dir);
   const load = async (dir = current) => {
     listing.replaceChildren(el('span', 'folder-loading', t('folders.loading', 'Reading folders…')));
     const qs = new URLSearchParams();
@@ -99,10 +68,8 @@ export function createFolderPicker({ value = '', onChange = () => {}, words = {}
       }
       const row = el('div', 'folder-row');
       const open = el('button', 'folder-open', `▸ ${folder.name}`); open.type = 'button'; open.addEventListener('click', () => load(folder.dir));
-      if (folder.registered_root) open.append(el('small', 'folder-kind', say.kept || t('folders.kind_workspace', 'workspace folder')));
-      const choose = el('button', 'folder-choose', folder.registered_root ? (say.kept || say.take) : say.take); choose.type = 'button';
-      if (folder.registered_root && say.kept) choose.disabled = true;
-      else choose.addEventListener('click', () => void select(folder.dir, folder));
+      const choose = el('button', 'folder-choose', take); choose.type = 'button';
+      choose.addEventListener('click', () => select(folder.dir));
       row.append(open, choose); listing.append(row);
     }
     if (!result.data.folders.length) listing.append(el('span', 'folder-empty', t('folders.empty', 'No matching folders here.')));
@@ -126,8 +93,8 @@ export function createFolderPicker({ value = '', onChange = () => {}, words = {}
     const result = await request('/api/folders', { method: 'POST', json: { parent: current, name: folderName, init_git: initGit.checked } });
     make.disabled = false;
     if (!result.ok) { line.say(result.message, 'bad'); return; }
-    await select(result.data.dir); name.value = ''; initGit.checked = false; create.open = false; line.say(''); await load(current);
+    select(result.data.dir); name.value = ''; initGit.checked = false; create.open = false; line.say(''); await load(current);
   });
-  void load(value || '');
-  return { el: shell, input: chosenPath, value: () => selected, select, refresh: load };
+  void load('');
+  return { el: shell, home: () => homeDir, refresh: load };
 }

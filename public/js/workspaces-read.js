@@ -6,15 +6,14 @@ import { request } from './request.js';
 // own list, so a Workspace just made is offered there without a reload. Nothing polls.
 const heard = new Set();
 
-/** The Workspaces of the Campaign a bench looks at: one read, every surface on the bench hears it. */
-export function createWorkspacesRead(campaignId) {
+/** The office's Workspaces: one read, every surface on the bench hears it. No Campaign is named (KAN-727). */
+export function createWorkspacesRead() {
   let workspaces = [];
   const listeners = new Set();
   return {
     list: () => workspaces,
     read: async () => {
-      const query = campaignId() ? `?campaign_id=${encodeURIComponent(campaignId())}` : '';
-      const answer = await request(`/api/workspaces${query}`, { cache: 'no-store' });
+      const answer = await request('/api/workspaces', { cache: 'no-store' });
       if (answer.ok) workspaces = answer.data?.workspaces || [];
       for (const listener of [...listeners, ...heard]) listener(answer);
       return answer;

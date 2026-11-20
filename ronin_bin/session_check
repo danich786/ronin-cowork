@@ -10,8 +10,8 @@ session_check — read one live Agent by exact name
 Usage:
   session_check <name>
 
-Reports the Agent's Teams, lead designations, and recorded Workspace Folder handle.
-The recorded handle can change; the birth directory does not. Working repositories
+Reports the Agent's Teams, lead designations, and recorded Workspace.
+The recorded Workspace can change; the birth directory does not. Working repositories
 are in that Agent's Work Record (`work-record workspace list` in its session).
 An unused name returns NO-SESSION and changes nothing. Related:
 session_create --help; session_set --help; edges team --help
@@ -43,5 +43,5 @@ s = json.load(sys.stdin)
 print(f"session:      {s['"'"'name'"'"']}")
 print(f"teams:        {'"'"', '"'"'.join(s.get('"'"'tags'"'"') or []) or '"'"'— (rōnin)'"'"'}")
 print(f"人 of:        {'"'"', '"'"'.join(s.get('"'"'leads'"'"') or []) or '"'"'—'"'"'}")
-print(f"workspace-folder-handle: {os.environ['"'"'ROOT'"'"'] or '"'"'—'"'"'}")
+print(f"workspace:    {os.environ['"'"'ROOT'"'"'] or '"'"'—'"'"'}")
 '

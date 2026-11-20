@@ -10,12 +10,9 @@ brief is built from.
 > **Everything in this directory is SYSTEM SCOPE — an upgrade replaces it wholesale**
 > (`docs/architecture/shadowing.md`). Nothing here may list the_owner's own things.
 >
-> That is why `PROJECT_ROOTS.md` here holds **only the project_root contract** and
-> `MODEL_PROVIDERS.md` holds **the stock provider catalog** (a copy in your catalogs store
-> shadows it whole). The directories a box actually works in are user scope and live outside every
-> repo, in the catalogs store — `bin/ronin-store catalogs` prints where, and it is resolved
-> per machine, never spelled by hand (`bin/ronin-store --all` lists them). Created by Ronin on first use, and
-> untouched by any upgrade. Never add a `## <handle>` root block to the shipped file.
+> That is why `MODEL_PROVIDERS.md` holds **the stock provider catalog** (a copy in your
+> catalogs store shadows it whole). The folders a box works in are rows of its Workspaces
+> (`src/workspaces.ts`), never a catalog here.
 
 ## Adding an agent-facing tool
 
@@ -42,7 +39,7 @@ input; identical subject names across directories do not make the documents inte
 | `desk_profiles/` | `home.md`, `league.md`, `professional.md`, `terminal.md`, `vibe_code.md`. | Named presentation and workspace defaults copied into Campaign configuration. |
 | `lexicons/` | `home_en.md`, `league_en.md`, `professional_en.md`, `terminal_en.md`, `vibe_code_en.md`. | Surface-language overrides; `professional_en.md` is the complete floor. |
 | `templates/` | `agents/*.md`, `teams/*.md`, `canvases/*.md` (Netlify), each shelf with its `README.md`. | Authored starting compositions offered as reusable choices, not runtime authority. |
-| catalog root | `MODEL_PROVIDERS.md`, `PROJECT_ROOTS.md`, `SKINS.md`. | Flat stock registries whose formats do not need another grouping directory. |
+| catalog root | `MODEL_PROVIDERS.md`, `SKINS.md`. | Flat stock registries whose formats do not need another grouping directory. |
 
 Every subdirectory has a `README.md` for its exact file format. This map owns location and
 inventory; the child README owns schema. When a file is added, moved, or removed, update
