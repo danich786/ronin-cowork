@@ -130,7 +130,7 @@
      side; in a reading narrower than that (a narrow tile, a phone), each step stacks, its body
      under its name across the full width, so the Status stone and the facts never run past the edge. */
   .wi-form { container: item-reading / inline-size; }
-  @container item-reading (max-width: 22rem) {
+  @container item-reading (max-width: 32rem) {
     .wi-form .fs-step { grid-template-columns: minmax(0, 1fr); }
     .wi-form .fs-step > .fs-step-body, .wi-form .fs-step:has(> .fs-step-head.fs-togglable) > .fs-step-body { grid-column: 1; }
   }
