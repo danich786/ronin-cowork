@@ -11,17 +11,13 @@
  *
  * The list is the bridges, then every MCP server record (KAN-592; a record named like a bridge is
  * that bridge's way through the broker and shows as the bridge), then any name a Workspace uses
- * that has neither. In a hosted office a bridge is listed only when the office has it as an add-on
- * in the Business Lounge (office-record.ts officeAddons, KAN-730). The Lounge is the one switch.
- * MCP server records the person adds aren't sold, so they always show. Each row is read live
- * from the files, never from a server: the Workspaces
+ * that has neither. Each row is read live from the files, never from a server: the Workspaces
  * using it, whether a Services part of its name runs, and the secrets saved for it (names only,
  * never a value).
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { catalogIntegrations, readCatalog } from './catalog.js';
-import { isOfficeHost, officeAddons } from './office-record.js';
 import { storeDir } from './resources.js';
 import { secretNames } from './secrets.js';
 import { listWorkspaces } from './workspaces.js';
@@ -100,14 +96,12 @@ const partState = (name: string, parts: PartFacts): PartState =>
   parts.loaded.includes(name) ? 'running' : parts.onDisk.includes(name) ? 'parked' : '';
 
 export async function integrationsState(campaign: string, parts: PartFacts): Promise<IntegrationState[]> {
-  const [behaviours, workspaces, saved, records, hosted, addons] = await Promise.all([readCatalog('behaviours'), listWorkspaces(campaign), secretNames(), mcpRecords(), isOfficeHost(), officeAddons()]);
-  const shipped = catalogIntegrations({ behaviours });
-  const bridges = hosted ? shipped.filter((b) => addons.has(b.name)) : shipped;
+  const [behaviours, workspaces, saved, records] = await Promise.all([readCatalog('behaviours'), listWorkspaces(campaign), secretNames(), mcpRecords()]);
+  const bridges = catalogIntegrations({ behaviours });
   const servers = records.filter((r) => !bridges.some((b) => b.name === r.name));
   const used = workspaces.flatMap((w) => w.integrations.map((i) => i.provider));
   const known = new Set([...bridges.map((b) => b.name), ...servers.map((r) => r.name)]);
-  const unpaid = new Set(shipped.filter((b) => !bridges.includes(b)).map((b) => b.name));
-  const names = [...known, ...[...new Set(used)].filter((name) => !known.has(name) && !unpaid.has(name)).sort()];
+  const names = [...known, ...[...new Set(used)].filter((name) => !known.has(name)).sort()];
   return names.map((name) => {
     const bridge = bridges.find((b) => b.name === name);
     const record = servers.find((r) => r.name === name);

@@ -102,13 +102,3 @@ export async function readOfficeRecord(): Promise<OfficeView> {
 export async function isOfficeHost(): Promise<boolean> {
   return (await readOfficeRecord()).hosting === 'office_unit';
 }
-
-/** What a hosted office has from the Business Lounge (KAN-730): `office.addons` in lounge.json,
- *  which the park writes beside this record. These are add-on names such as "voice" and "jira",
- *  ticked or included free; Cowork never learns who pays. Absent or unreadable means none. */
-export async function officeAddons(): Promise<Set<string>> {
-  try {
-    const addons = JSON.parse(await fs.readFile(path.join(storeDir('office_unit'), 'lounge.json'), 'utf8'))?.office?.addons;
-    return new Set(Array.isArray(addons) ? addons.filter((name): name is string => typeof name === 'string') : []);
-  } catch { return new Set(); }
-}
