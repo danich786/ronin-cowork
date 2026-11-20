@@ -21,7 +21,7 @@ it.** Two deliberate acts stand between an edit and the grid — the tag, and th
    (`.github/workflows/release.yml`) first refuses any tag whose commit is not on
    `origin/master`, then builds ONCE with `bin/ronin-build`, and
    attaches the artifact to a GitHub Release. `bin/ronin-build` itself refuses a commit
-   that is not on the declared stable line (`RONIN_REPO`): acceptance is the commit's
+   that is not on the declared stable line (`stable` on the repository's Workspace row): acceptance is the commit's
    place on that line, never the checkout that happens to be open.
 4. **A fresh box proves the artifact before anyone is pointed at it.** The bundle, not a
    checkout, on a disposable Linux VM or a throwaway account that has never run tmux or

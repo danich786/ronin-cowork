@@ -14,6 +14,7 @@ import {
   createStep, el, loadProviderCatalog, providerCatalog, readingRows, tagRow, templateTray,
 } from './form-steps.js';
 import { closeWorkspaceTab, reserveWorkspaceTab } from './workspace.js';
+import { hearWorkspaces } from './workspaces-read.js';
 
 const KINDS = ['coding', 'work', 'personal', 'household', 'social', 'school'];
 
@@ -552,14 +553,29 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
   form.append(stepSetup.el, stepTop.el, stepLead.el, stepDefaults.el, stepKit.el, stepPayload.el);
   surface.content.append(form, notice.el);
 
+  // ITS WORKSPACES (KAN-724): read on entering, and again whenever a bench reads them (a Workspace
+  // saved on the Workspaces page), so a Workspace just made is offered here without a reload.
+  const readWorkspaces = async () => {
+    const answer = await request('/api/workspaces');
+    workspaces = answer.ok && Array.isArray(answer.data?.workspaces) ? answer.data.workspaces.filter((w) => !w.archived) : [];
+    if (!draft.workspace && workspaces.length === 1) draft.workspace = workspaces[0].name;
+  };
+  const unhear = hearWorkspaces(() => void readWorkspaces().then(() => {
+    whereQuestions.options('workspace', workspaceRows);
+    paintRoots();
+    paintFoot();
+    return rescreen();
+  }));
+
   return {
     el: embedded ? surface.content : surface.el,
+    destroy: unhear,
     enter: async (detail = {}) => {
       paint();
-      const [seeded, tray, workspaceRows, , catalogRows] = await Promise.all([
+      const [seeded, tray, , , catalogRows] = await Promise.all([
         request('/api/launch-seed'),
         request('/api/templates/teams'),
-        request('/api/workspaces'),
+        readWorkspaces(),
         // The Team's inline Agent editor reads the shared provider catalog too. Load it
         // here so a fresh New Team journey does not depend on another launch surface
         // having happened to populate the module cache first.
@@ -569,8 +585,6 @@ export function createNewTeamFormView(kit, { created = null, consumed = null, em
       catalog = catalogRows?.ok && Array.isArray(catalogRows.data) ? catalogRows.data : [];
       setMandates(catalog); // the mandate menus are the catalog's mandate files
       templates = tray.ok && Array.isArray(tray.data) ? tray.data : [];
-      workspaces = workspaceRows.ok && Array.isArray(workspaceRows.data?.workspaces) ? workspaceRows.data.workspaces : [];
-      if (!draft.workspace && workspaces.length === 1) draft.workspace = workspaces[0].name;
       await rescreen();
       if (seeded.ok) seed = seeded.data;
       // The seed lands only while the form is untouched — re-entering an open draft

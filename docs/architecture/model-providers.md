@@ -33,7 +33,11 @@ One `### <Vendor>` section per provider. The section's fields:
 |---|---|
 | `provider` | the vendor id a launch names (`anthropic`, `openai`, `google`, `xai`, `nous`) and the key of `agents.sessions.by_provider` |
 | `cli` | the id of the CLI that serves it in `src/agents.ts` (`claude`, `codex`, `agy`, `grok`, `hermes`, `copilot`, `opencode`, `kimi`) |
-| `families` | `word=tier` pairs (`sonnet=standard`): a listed id takes the tier of the longest word standing whole in it |
+| `families` | `word=tier` pairs (`sonnet=standard`): a listed id takes the tier of the longest word standing whole in it; within a tier, the first word listed is the one offered |
+
+The file also carries one `## Tiers` table, `| tier | strengths |`: each tier's strengths
+in a few plain words ("deepest reasoning, slower"), shown beside every tiered model for
+every provider. The owner's copy's table, when it has one, replaces the stock one whole.
 | `maturity` | optional: `comingSoon` shows the provider and never launches it |
 
 The `provider` and `cli` fields are the join between the two things Ronin knows about a
@@ -204,6 +208,15 @@ none. The family table is what keeps Setup and Mika's Light → Standard → Fro
 working: a new Sonnet is standard on the day it is listed. With no list read, Native is the only Model choice; Launch mode remains an
 independent axis.
 
+**One model per tier per provider (owner, 19 Nov 2026, KAN-726).** `oneModelPerTier` in
+`src/model-providers.ts` is the one rule, for every provider: after Native, at most one
+Frontier, one Standard and one Light row, in that order. A tier's row is the newest id
+(the numbers in the id compared in order: `gpt-6.2-astra` over `gpt-6-astra`) of the first
+family the section lists for that tier that the CLI lists; a tie keeps the CLI's order.
+Older versions, later families of the same tier and ids no family word fits are not rows,
+so they are neither offered nor launched. A section with no `families` keeps its CLI's
+list whole. Each tiered row carries `strengths`, its tier's line from `## Tiers`.
+
 ## Provider and agent are different axes
 
 The **provider** serves inference and bills the request. The **agent CLI** is the
@@ -261,6 +274,14 @@ in ⚙ Configuration — the schema's `models` section, two views of one setting
 | Mika model level | `jobs.mikaassist.level` | `mika-runtime.ts`: the Agent model's provider, Light → Standard → Frontier upward |
 | Preferred model per provider | `sessions.by_provider.<id>` | a launch that names a provider but no model (Configuration only) |
 
+**The first sign-in is the default** (owner, 2026-11-19; KAN-725). While `sessions.default` names
+no provider, the first CLI signed in becomes it, written once: the provider, its model blank (the
+provider's own default). `settleFirstDefault` (`provider-summary.ts`) runs on every recorded
+measure, and a launch with no default measures first (`spawn.ts`), so a sign-in made in Setup or
+in a tile both count. A later sign-in never moves it; only Models > Defaults does. Ronin models
+(a provider part) is no sign-in and never becomes the default this way. With nothing signed in,
+a Default launch is the catalog's first CLI, into its own sign-in.
+
 A Desk's `defaults.provider/model` used to outrank `sessions.default`; at start
 `moveDeskModelDefault` (`campaign-scope.ts`) copies a set pair there once and clears it on the
 Desk. A Team's `agent_defaults` carries no model.
@@ -276,10 +297,10 @@ server joined (`GET /api/provider-catalog`) and what this machine measured of ea
 (`GET /api/setup/runtime`, which answers from the Campaign's recorded summary and never
 probes), and it offers:
 
-- every provider in the catalog with Native and every model its CLI listed on the last
-  Refresh all, the providers this machine can launch first and the rest after, the
-  CLI's own order within each;
-- each model as `<name> · <tier>`, the id as the value;
+- every provider in the catalog with Native and its one model per tier from the list its
+  CLI gave on the last Refresh all, the providers this machine can launch first and the
+  rest after, Frontier to Light within each;
+- each model as `<name> · <tier> · <strengths>`, the id as the value;
 - what this machine cannot launch **disabled, never hidden** — a greyed row says *not on
   this machine* or *turned off*. A provider whose list was never read offers Native alone.
 
@@ -309,9 +330,10 @@ authenticate with the native sign-in tile, Done and Cancel · ready) read from t
 row (`docs/getting-started/setup-workbench.md`, *Activate a provider*); then **The catalog**, the three
 measured facts, one line saying when its list was read and by which CLI version (or why
 there is none, or that Refresh all has not run), and the model table. Model: Native is
-first and marked as the default. Every named row came from the CLI's list, in the CLI's
-order, and its Model cell carries both names: the CLI's own in bold, the id beneath.
-The table has two columns, Model and Tier; the tier comes from the family words. The native sign-in tile is mounted through the workbench environment's one
+first and marked as the default. Every named row is its tier's model from the CLI's list,
+Frontier to Light, and its Model cell carries both names: the CLI's own in bold, the id
+beneath. The table has two columns, Model and Tier; the Tier cell carries the tier from
+the family words and, beneath it, the strengths from the catalog's `## Tiers` table. The native sign-in tile is mounted through the workbench environment's one
 shared mount (`public/js/provider-setup-session.js`), which both Ronin Setup and Ronin
 Settings hand their environment, so it works on either seat. Showing the surface paints
 the record; only Refresh all reads. Its rows are the one picker's read, so the surface and

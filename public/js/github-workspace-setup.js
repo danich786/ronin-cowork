@@ -1,4 +1,4 @@
-/* Setup's GitHub authentication and clone handoff for the Workspace Folder surface. */
+/* GitHub CLI: install and sign in. Cloning is the Workspace page's Clone from GitHub. */
 import { t } from './lexicon.js';
 import { request } from './request.js';
 import { store } from './store.js';
@@ -13,7 +13,7 @@ const el = (tag, className = '', text = '') => {
 };
 const action = (label, kind) => WorkspaceKit.primitives.createAction({ label, kind }).el;
 
-export function createGithubWorkspaceSetup({ environment, workspace = 'workspace2', onStateChange, onAuthenticated, onCloned, onMikaGuide, onMikaConnect } = {}) {
+export function createGithubWorkspaceSetup({ environment, workspace = 'workspace2', onStateChange, onAuthenticated, onMikaGuide, onMikaConnect } = {}) {
   const authBox = el('section', 'setup-github-workspace');
   const state = el('p', 'setup-fine setup-github-state');
   const install = action(t('roots.github_install', 'Install'), 'primary');
@@ -51,20 +51,6 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     flow, state, terminal, terminalActions,
   );
 
-  const cloneBox = el('section', 'setup-github-workspace');
-  const cloneState = el('p', 'setup-fine setup-github-state');
-  const clone = el('div', 'setup-github-clone');
-  const label = el('label', '', t('roots.github_repository', 'GitHub repository'));
-  const repository = el('input'); repository.type = 'text'; repository.placeholder = 'owner/repository'; repository.autocapitalize = 'off'; repository.spellcheck = false;
-  const cloneButton = action(t('roots.github_clone', 'Clone and add workspace'), 'primary');
-  const outcome = el('p', 'setup-fine'); outcome.setAttribute('role', 'status');
-  label.append(repository); clone.append(label, cloneButton, outcome);
-  cloneBox.append(
-    el('h2', '', t('roots.github_clone_heading', 'Clone a repository')),
-    el('p', '', t('roots.github_clone_lede', 'Clone a GitHub repository and add its folder as a Ronin workspace.')),
-    cloneState, clone,
-  );
-
   let authenticated = false;
   let account = '';
   let installed = true;
@@ -75,7 +61,6 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
   let removing = false;
   let loginAccount = null;
   let measuring = false;
-  let cloning = false;
   let destroyed = false;
   let closing = null;
   let unmounting = false;
@@ -88,10 +73,6 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
       host.append(authBox); void show();
       return () => { authBox.remove(); void teardown(true); };
     },
-  }, {
-    id: '\0github-clone', glyph: '+', label: t('roots.github_clone_stone', 'Clone a repository'),
-    state: '', className: 'setup-roots-github-stone',
-    renderDetail: (host) => { host.append(cloneBox); void show(); return () => cloneBox.remove(); },
   }];
 
   // While a setup session is attached the server watches the machine and pushes the GET
@@ -120,7 +101,6 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
       : authenticated ? t('roots.github_connected', 'Connected to GitHub as {account}.', { account: account || 'your account' })
         : github.state === 'unreadable' ? (github.problem || t('roots.github_unreadable', 'Ronin could not verify GitHub authentication.'))
           : t('roots.github_not_connected', 'GitHub is not connected on this machine.');
-    cloneState.textContent = t('roots.github_clone_ready', 'Cloning uses this machine’s existing Git access. GitHub CLI is optional.');
     install.hidden = installed;
     install.disabled = installing || connecting || Boolean(mounted);
     connect.hidden = authenticated || !installed;
@@ -138,12 +118,9 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
       part.row.dataset.done = String(complete); part.row.dataset.current = String(current);
       part.mark.textContent = complete ? '✓' : String(index + 1); part.value.textContent = value;
     });
-    cloneButton.disabled = cloning || !repository.value.trim();
     items[0].state = authenticated
       ? t('roots.github_auth_connected_state', 'Connected{account}', { account: account ? ` · ${account}` : '' })
       : !installed ? t('roots.github_auth_unavailable_state', 'Install GitHub CLI') : t('roots.github_auth_state', 'Connect account');
-    items[1].state = t('roots.github_clone_ready_state', 'Uses existing Git access');
-    items[1].disabled = false;
     onStateChange?.();
   };
   const mountAttachment = (attachment, provider = 'github', closeEndpoint = '/api/setup/github/close') => {
@@ -192,7 +169,6 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     onAuthenticated?.();
   };
 
-  repository.addEventListener('input', () => paint({ installed, authenticated, account }));
   install.addEventListener('click', async () => {
     if (installing || installed || mounted || destroyed) return;
     installing = true; install.disabled = true;
@@ -238,7 +214,7 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     if (mounted || destroyed) return;
     const result = await request('/api/setup/git/open', { method: 'POST' });
     if (!result.ok) { state.textContent = result.message; return; }
-    state.textContent = t('roots.git_other_open', 'Use your preferred Git or SSH setup here, then return to the Workspace Folder and check Git access.');
+    state.textContent = t('roots.git_other_open', 'Use your preferred Git or SSH setup here, then return to your Workspace.');
     mountAttachment(result.data?.attachment, 'git', '/api/setup/git/close');
   });
   done.addEventListener('click', async () => {
@@ -249,22 +225,11 @@ export function createGithubWorkspaceSetup({ environment, workspace = 'workspace
     await finishAuthentication(result.data);
   });
   close.addEventListener('click', () => { void teardown(true); });
-  cloneButton.addEventListener('click', async () => {
-    if (cloning || !repository.value.trim()) return;
-    cloning = true; cloneButton.disabled = true; outcome.textContent = t('roots.github_cloning', 'Cloning repository…');
-    try {
-      const result = await request('/api/setup/github/clone', { method: 'POST', json: { repository: repository.value.trim() } });
-      outcome.textContent = result.ok
-        ? t('roots.github_cloned', 'Added {name} as a workspace.', { name: result.data?.workspace?.name || repository.value.trim() })
-        : result.message;
-      if (result.ok) await onCloned?.(result.data?.workspace);
-    } finally { cloning = false; cloneButton.disabled = !repository.value.trim(); }
-  });
 
   paint({ installed: true, authenticated: false });
   return {
     items,
     show,
-    destroy: () => { destroyed = true; void teardown(true); authBox.remove(); cloneBox.remove(); },
+    destroy: () => { destroyed = true; void teardown(true); authBox.remove(); },
   };
 }

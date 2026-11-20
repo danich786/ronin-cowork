@@ -22,23 +22,14 @@ export interface FolderListing {
   folders: Array<{ name: string; dir: string; kind: 'repository' | 'folder'; repository: boolean }>;
 }
 
-export interface RegisteredRootRef { name: string; dir: string }
-export type RegisteredFolderListing = Omit<FolderListing, 'folders'> & {
-  folders: Array<FolderListing['folders'][number] & { registered_root: RegisteredRootRef | null }>;
-};
-
-export function withRegisteredRoots(
-  listing: FolderListing,
-  roots: RegisteredRootRef[],
-): RegisteredFolderListing {
-  const byDir = new Map(roots.map((root) => [path.resolve(root.dir), root]));
-  return {
-    ...listing,
-    folders: listing.folders.map((folder) => {
-      const root = byDir.get(path.resolve(folder.dir));
-      return { ...folder, registered_root: root ? { name: root.name, dir: root.dir } : null };
-    }),
-  };
+/** What a Workspace row shows of its folder: whether it is there, and, for a repository, its
+ * origin remote and branch (the repo's settings default its stable branch to that branch). */
+export async function folderFacts(raw: string): Promise<{ dir: string; exists: boolean; repo: { remote: string; branch: string } | null }> {
+  const dir = path.resolve(String(raw || '').replace(/^~(?=\/|$)/, HOME));
+  const exists = await stat(dir).then((s) => s.isDirectory(), () => false);
+  if (!exists || !(await stat(path.join(dir, '.git')).then(() => true, () => false))) return { dir, exists, repo: null };
+  const git = (args: string[]) => execFileP('git', ['-C', dir, ...args], { timeout: 4000 }).then((r) => r.stdout.trim(), () => '');
+  return { dir, exists, repo: { remote: await git(['remote', 'get-url', 'origin']), branch: await git(['branch', '--show-current']) } };
 }
 
 export async function browseFolders(raw: string, options: { hidden?: boolean; query?: string } = {}): Promise<FolderListing> {
@@ -56,13 +47,6 @@ export async function browseFolders(raw: string, options: { hidden?: boolean; qu
     return { name: entry.name, dir: entryDir, kind: repository ? 'repository' as const : 'folder' as const, repository };
   }));
   return { home: HOME, dir, parent: dir === HOME ? null : path.dirname(dir), folders };
-}
-
-/** Git starts in a folder that has none (Add a workspace: "On this machine"); a folder that has it is left as it is. */
-export async function startGit(dirRaw: string): Promise<void> {
-  const dir = path.resolve(String(dirRaw || ''));
-  if (await stat(path.join(dir, '.git')).then(() => true, () => false)) return;
-  await execFileP('git', ['init', '-b', 'main', dir], { timeout: 10_000 });
 }
 
 export async function createFolder(parentRaw: string, nameRaw: string, initGit = false): Promise<{ dir: string; git: boolean }> {

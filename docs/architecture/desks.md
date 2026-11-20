@@ -23,7 +23,7 @@ lead's admission to `dev`; `git push` is git's word and nothing else's.
 
 | Thing | Where | Owned by |
 |---|---|---|
-| a repository's arrangement | `RONIN_REPO` at its root (`mode`, `working`, `stable`, `desks`, `publish`) | the repository; read by `src/desks/arrangement.ts` |
+| a repository's arrangement | its row on the Workspace record (`mode`, `working`, `stable`, `desks`; `src/workspaces.ts`) | the Workspace; read by `src/desks/arrangement.ts` |
 | a desk's row | `desks` store → `registry/<repo>/<branch>.json` (`DeskRecord`) | `src/desks/registry.ts` |
 | an assignment | `desks` store → `assignments/<session>@<team>.json` | `src/desks/registry.ts` |
 | the hand-in ledger | `desks` store → `receipts/<repo>/<line>.jsonl`, one line per attempt | `src/desks/receipts.ts` |
@@ -45,18 +45,14 @@ moment of asking (`deskStatus`). Nothing here is prose an agent maintains.
 
 ## The gate
 
-**`RONIN_REPO` in the repository is the one switch**. `desks=managed`
-gives a coding launch its desk, the contract in its brief, and its capability-selected tools;
-`desks=none`, or no file, gives none of them and the session starts in the checkout. There
-is no install-wide switch. The Campaign's Ronin Worktrees choice defaults the file written for
-a new project root (`declareArrangement`, `src/desks/arrangement.ts`). For an existing root,
-the editor reads the current publishing mode, owner-named branches, and Worktrees repository choice.
-After one exact before/after confirmation it rewrites `RONIN_REPO` directly and atomically
-(`PUT /api/project-roots/:name/repo-profile`, `setArrangementProfile`) and commits it in
-that repository, `RONIN_REPO` alone: the repository owns its Mode and a Workspace only points
-at it, so the checkout is never left dirty. A changed value edits its own line; a save that
-changes no value writes nothing. It performs no migration or running-Agent reconciliation. A coding launch that gets no desk says why on its receipt (*no desk —
-`<root>` has no RONIN_REPO*), and `bin/ronin-doctor` lists every project root's answer.
+**The repository's row on its Workspace is the one switch** (KAN-728). `mode=reviewed` with
+`desks=managed` gives a coding launch its desk, the contract in its brief, and its
+capability-selected tools; `direct` gives none of them and the session starts in the checkout.
+There is no install-wide switch and nothing in the repository: the Workspace page's Mode
+(Reviewed or Direct) writes the row with the Workspace's Save, and
+`PUT /api/folders/:name/repo-profile` (`setRepoSettings`) writes it in every Workspace that holds
+that repository. A repository added to a Workspace starts Direct on the branch it has checked
+out. A coding launch that gets no desk says why on its receipt.
 
 ## Open
 
@@ -64,8 +60,8 @@ changes no value writes nothing. It performs no migration or running-Agent recon
 the working line, while `team` uses the Team's local review line. The ref is resolved to an
 exact commit before create/adopt, recorded independently of the unchanged hand-in line, and
 never moves global development. `worktree-desk assign` is the lead-facing CLI over this same
-function for a named session; it adds no authorization layer. The operation is refused when the repository is `direct`, has no
-`RONIN_REPO`, or sits in a Syncthing share whose `.stignore` does not exclude `.git`;
+function for a named session; it adds no authorization layer. The operation is refused when the repository is `direct`, is in no
+Workspace, or sits in a Syncthing share whose `.stignore` does not exclude `.git`;
 refused when the requested branch is a funnel point. An explicit `worktree-desk open <repo>`
 does not require that repository to already appear on the team's roster; `<repo>` is the
 project-root handle, or a Workspace name holding exactly one repository (`arrangementOf`,
@@ -187,7 +183,7 @@ beside the line and the ref moves by one atomic `update-ref`.
   status for every desk on the box is seconds of git;
 - promotion: `acceptedSince(repo, line, lastPromotedLineSha)` → the receipts a change set
   carries; `ChangeSetReceipt` is the shape it writes;
-- the compatibility audit: `RONIN_REPO`, read by `readArrangement()`.
+- a repository's arrangement: `arrangementOf(name)` → its Workspace row (`rowArrangement`).
 
 ## Tests
 

@@ -8,7 +8,6 @@ import {
   getLeads,
   getWipeboards,
   getProviderSessionId,
-  getCampaign,
   getProjectRoot,
   getTags,
   isValidName,
@@ -34,7 +33,7 @@ import { enqueueMessage } from '../message-queue.js';
 import { person } from '../office-people.js';
 import { callerOf } from './work-items-api.js';
 import { sessionKey } from '../session-dir.js';
-import { isValidRootName, listProjectRoots } from '../project-roots.js';
+import { listWorkspaces, workspaceFolders } from '../workspaces.js';
 import { expandLookup } from '../lookup.js';
 import { count } from '../counts.js';
 import { broadcastEvent, changed, pushTeams } from '../ws/events.js';
@@ -48,7 +47,7 @@ import { emitSessionEnd } from '../sockets.js';
 import { releaseHolder, settleToDo, unfinishedHolds, type WorkItem } from '../work-items.js';
 import { resumeAgentArgv } from '../agents.js';
 import { listTeamRosters } from '../team-rosters.js';
-import { assertSameCampaignRoot, assertSameCampaignTeams } from '../campaign-scope.js';
+import { assertSameCampaignTeams, initialCampaignId } from '../campaign-scope.js';
 import { sessionDir as sessionRecordDir } from '../session-dir.js';
 import {
   expiredArchives,
@@ -659,7 +658,7 @@ export function registerSessions(app: express.Express): void {
   const chatPlaces = async (name: string) => {
     const desks = await listDeskRecords({ owner: name }).catch(() => []);
     const cwd = await sessionRuntime(name).then((r) => r.cwd, () => '');
-    const roots = (await listProjectRoots().catch(() => [])).filter((r) => !r.archived).map((r) => r.dir);
+    const roots = (await workspaceFolders().catch(() => [])).map((f) => f.dir);
     const own = await sessionKey(name).then((key) => sessionRecordDir(key), () => '');
     const repos = [...desks.map((d) => d.worktree), cwd, ...roots];
     return { own, repos, files: [...repos, own, own && path.join(own, 'drop'), ...new Set(roots.map((dir) => path.dirname(dir))), storeDir('library')] };
@@ -696,14 +695,8 @@ export function registerSessions(app: express.Express): void {
     if (!isValidName(name)) return res.status(400).json({ error: 'Invalid name.' });
     if (!(await sessionExists(name))) return res.status(404).json({ error: 'No such session.' });
     const root = String(req.body?.project_root ?? '').trim();
-    if (root && !isValidRootName(root)) return res.status(400).json({ error: 'Invalid Workspace Folder handle.' });
-    try {
-      await assertSameCampaignRoot(await getCampaign(name), root);
-    } catch (e) {
-      return res.status(400).json({ error: String((e as Error)?.message ?? e) });
-    }
-    if (root && !(await listProjectRoots()).some((r) => r.name === root)) {
-      return res.status(404).json({ error: `"${root}" is not in the catalog.` });
+    if (root && !(await listWorkspaces(await initialCampaignId())).some((w) => w.name === root)) {
+      return res.status(404).json({ error: `No Workspace "${root}". work-record workspace list names them.` });
     }
     try {
       const project_root = await setProjectRoot(name, root);

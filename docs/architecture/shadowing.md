@@ -41,14 +41,12 @@ file happens to define every stock name.
 | `SKINS.md` | `## name` blocks | entry-merge. A skin is a set of design tokens and nothing else — no selector, so the worst a bad one does is look bad |
 | `HOTWORDS.md` | a flat list under `## Terms` | **copy-on-write, not a merge** — see below |
 | `MODEL_PROVIDERS.md` | `### <Vendor>` sections, keyed by the `- **provider:** id` each declares | entry-merge, at this file's heading level. A section of a shipped id replaces it whole and keeps its place; a new id appends; `- **hidden:** yes` withdraws the shipped provider. Every served entry carries `origin` and `shadowed`; the Model providers surface says the layer under each provider |
-| `PROJECT_ROOTS.md` | already split by scope | **nothing to shadow** — the contract is stock, the roots are yours |
 
 **Deliberately not shadowable:**
 
 - **The work record (TEGAMI)** — session data in the session store, not stock catalogs. There is
   no shipped version to win over.
-- **Your `PROJECT_ROOTS.md`** — already user scope. The shipped file keeps only the
-  project_root contract; the providers and models it once carried are `MODEL_PROVIDERS.md`.
+- **Your Workspaces and their folders** — user scope, in the `workspaces` store; nothing ships.
 
 **`HOTWORDS.md` is the deliberate exception.** Both halves hold the same kind of thing —
 words — so a merge would have to answer *"the owner deleted a stock term; does an upgrade

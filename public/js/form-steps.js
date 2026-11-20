@@ -192,10 +192,16 @@ export const modelLabel = (row) => {
   const known = row?.name ? null : catalog.rows.find((item) => item.provider === row?.provider && item.model === row?.model);
   return String(row?.name || known?.name || row?.model || '');
 };
-/** A row's tier in words, or '' when the name already says it (a Ronin models tier row is named for its tier). */
+/**
+ * A row's tier and its strengths, as every picker shows them beside the name: "frontier ·
+ * deepest reasoning, slower". The tier word drops when the name already says it (a Ronin
+ * models tier row is named for its tier); the strengths are the catalog's, one per tier.
+ */
 export const rowTierWord = (row) => {
-  const word = row?.model === NATIVE_MODEL ? '' : tierWord(row?.tier);
-  return word && word.toLowerCase() !== modelLabel(row).toLowerCase() ? word : '';
+  const tier = row?.model === NATIVE_MODEL ? '' : tierWord(row?.tier);
+  const word = tier && tier.toLowerCase() !== modelLabel(row).toLowerCase() ? tier : '';
+  const strengths = row?.model === NATIVE_MODEL ? '' : String(row?.strengths || '');
+  return [word, strengths].filter(Boolean).join(' · ');
 };
 export const modelWord = (row) => rowTierWord(row)
   ? t('forms.model_word', '{model} · {tier}', { model: modelLabel(row), tier: rowTierWord(row) })

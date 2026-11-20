@@ -177,7 +177,7 @@ the key `brief`, and it is the session's only authority for its brief.
 `members`); `teamChanged` derives it again on every roster write, join, leave, lead change,
 restore and Team retire, and `memberEnded` drops an ended Agent from its leads' lists. The
 `configuration` line (`{ title, project_root }`) is written by `writeConfiguration` at birth,
-on a restore, and when the title or Workspace Folder changes. A write to the record by anyone
+on a restore, and when the title or recorded Workspace changes. A write to the record by anyone
 but the Agent pushes it one line, "Your work record changed; please read it (work-record
 read)." (`ackRecord`); a change to an item it holds is not a record write, and its notice
 names the item and the change (`ackHolders`, `src/work-items.ts`).

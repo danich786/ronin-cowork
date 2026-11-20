@@ -24,7 +24,7 @@ becomes its level in full density, a level becomes its selected stone in compact
 the stone open at that level returns with it. Consumers never restyle the rest geometry.
 
 **The phalanx** (owner ruling, 2026-10-03). `phalanx.js` is the stone work
-surface as it was, its geometry untouched: Settings (Presets, Workspace Folders, Model
+surface as it was, its geometry untouched: Settings (Presets, Workspaces, Model
 Providers, Setup) and the Agent workbench's Work Items draw with it. Escape lifts only the layer it
 is pressed in (2026-10-08).
 
@@ -177,7 +177,7 @@ Authenticate offers Mika operating the registry-owned native login command in th
 Authenticate action. Mika is a startup invariant, including before the first owner provider is connected, so the
 two assisted choices do not depend on provider count. In every path the provider summary remains the readiness authority. Workspaces seats
 its own stones of Workspaces (`workspaces-surface.js`, `workspaces.records`): a pressed one's page is the whole
-Workspace, its folders ticked in a browser of this machine (owner, 2026-11-02), with GitHub CLI beside them;
+Workspace: its Summary, its folders added with the kit's folder picker or a pasted path (KAN-728), with GitHub CLI beside them;
 one read of the pinned folders per bench (`createRootsReading`, the detail route). Epics (owner, 2026-11-02;
 KAN-187) seats its own stones of Epics the same way (`epics-surface.js`, `epics.records`): the level-1 work items of
 the Campaign — the store's pushed `epics` and `epicItems`, no request (KAN-190, KAN-206). Since w334 (owner,
@@ -223,7 +223,7 @@ Campaign Defaults is the reference case. Its saved values are already in
 `campaign.config.defaults`, so it paints them immediately. Model choices come from the
 provider catalog and selectable Behaviors come from `/api/campaign-default-options`.
 It does not call `/api/launch-seed`: that endpoint assembles a prospective Agent from a
-Desk, Team, Workspace Folders, Agent defaults, Installations, and Behaviors, most of which
+Desk, Team, Workspace, Agent defaults, Installations, and Behaviors, most of which
 the Defaults surface neither displays nor edits.
 
 ## Entry, refresh, and intentional launch
@@ -255,7 +255,7 @@ restoration branches.
 
 | Destination | First open | Notable structured opening |
 |---|---|---|
-| Ronin Settings | Defaults in workspace 1; Workspace Folders in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
+| Ronin Settings | Defaults in workspace 1; Workspaces in workspace 2 | **Desk defaults** replaces the seats with Defaults and Launch your own |
 | New Project | New Agent in workspace 1 | Links may replace or overlay New Agent/New Team and carry prompt or template detail |
 | Ronin Setup | Garden in workspace 1; active journey surface in workspace 2 | Journey actions select a Setup surface without another restoration path |
 | Cowork / Team | Fresh empty/member seating rules; refresh restores this instance | Team Configuration, documents, commons tabs, and New Agent may be addressed in seat detail |
@@ -268,15 +268,14 @@ changes its dependency, or changes a Workbench profile.
 
 ### Ronin Settings (`campaign` profile)
 
-Entry reads the Desk record because it is the tenant and uses the light Workspace Folder
-index for the discovery count. Nothing waits on either read before seats paint. The former
+Entry reads the Desk record because it is the tenant. Nothing waits on that read before seats paint. The former
 page-wide progressive gate is deleted.
 
 | Surface | Required data and owner |
 |---|---|
 | Desk | selected Desk record already held by the tenant |
 | Defaults | `campaign.config.defaults` immediately; provider catalog and Campaign-default options afterward |
-| Workspace Folders | its own root-detail read; repository facts belong here, not in its discovery summary |
+| Workspaces | `/api/workspaces` (the Workspaces stones) |
 | Installations | installation catalog and installed facts; Desk values come from the tenant |
 | Model providers | provider runtime/catalog owned by `provider-surface.js` |
 | Machine | the selected cowork-commons tab owns its read; unopened tabs do no work |
@@ -290,8 +289,8 @@ Entry performs no form catalog read. It restores and places the requested form f
 
 | Surface | Required data and owner |
 |---|---|
-| New Agent | Agent templates, Team roster index, Workspace Folder details, and selected Team/Desk launch seed |
-| New Team | Team templates, Workspace Folder index, and Desk launch seed; live sessions only for the final name-collision gate |
+| New Agent | Agent templates, Team roster index, and selected Team/Desk launch seed |
+| New Team | Team templates, the Workspaces, and Desk launch seed; live sessions only for the final name-collision gate |
 | Help | local reading and currently seated form context |
 | Document / Feedback | the shared surface's own read or submission |
 
@@ -306,7 +305,7 @@ independently.
 | Garden | static garden catalog; selected scene only |
 | Register | registration and user-introduction records |
 | Model providers | provider runtime/catalog owned by the shared provider surface |
-| Workspace Folders | Workspace Folder details and GitHub connection state |
+| Workspaces | `/api/workspaces` (the Workspaces stones, New Workspace among them) |
 | Installations | Desk record, installation catalog, and installed facts |
 | Password | authentication state owned by the shared Password surface |
 | Bounty Program | registration/GitHub facts and the explicit preference it writes |
@@ -345,12 +344,12 @@ The door's own destination over the provider drawing Settings and Setup share.
 
 ### Workspaces (`workspaces` profile)
 
-The door's own destination: the Workspaces and their pages, over one read of the pinned folders per
-bench (`/api/project-roots/detail`).
+The door's own destination: the Workspaces and their pages. The Workspace is the organizing
+principle (KAN-728): its folders and repositories are rows of its record, and nothing else lists them.
 
 | Surface | Required data and owner |
 |---|---|
-| Workspaces (`workspaces.records`) | `/api/workspaces` for the Campaign the tab looks at; the page writes `PUT /api/workspaces/:name`. Its Locations: a browser of this machine from the home folder (`/api/folders`), a tick box per folder; ticking pins a folder not pinned yet (`POST /api/project-roots`) and holds it by name, the ones with Git as repositories, the rest as folders. A Git folder's How Agents work here writes the repo profile. Clone a repo (`/api/setup/github/clone` with `parent`) asks the repository, then clones into the folder its own browser is open on. Section order: Name & objective, Locations, Agent info. A `/files/<path>` link dropped from Files adds `$HOME/<path>`. Owner, 2026-11-02/03 |
+| Workspaces (`workspaces.records`) | `/api/workspaces`; the page writes the whole record with `PUT /api/workspaces/:name`, its folder rows (name, dir, note; a repository's mode, working, stable, desks) with it. Its Summary is the Workspace's Markdown file, shown whole (`GET /api/workspaces/:name/doc`) and, after **Edit**, written on Save (`PUT /api/workspaces/:name/doc`). Its Folders: Add a folder is the kit's folder picker (`folder-picker.js`, `/api/folders`) or a pasted path; each row's remote is read with `/api/folders/inspect`; a repository's Mode is a field on its row. Clone from GitHub (`/api/setup/github/clone` with `parent`) asks the repository, clones into the folder its own browser is open on, and adds the row. Nothing is written before Save or Create. Section order: Summary (New: Name), Folders, Integrations, Agent info (objective, instructions, Mode, plans), Behaviors; ⋯ holds Archive. New Workspace shows Name and Folders only. A `/files/<path>` link dropped from Files adds `$HOME/<path>`. Owner, 2026-11-02/03; KAN-728 |
 | GitHub CLI (`workspaces.github`) | the GitHub setup read and session attachment `github-workspace-setup.js` owns, one instance per bench |
 
 ### Agent (`agent` profile)

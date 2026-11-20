@@ -3,7 +3,8 @@ import { WorkspaceKit } from './workspace-kit.js';
 import { request } from './request.js';
 import { store } from './store.js';
 import { t } from './lexicon.js';
-import { createWorkspaceFoldersSurface } from './workspace-folders-surface.js';
+import { createWorkspaceStones } from './workspaces-surface.js';
+import { createWorkspacesRead } from './workspaces-read.js';
 import { ask } from './ask.js';
 import { PROVIDER_SURFACE_TYPE, providerSurfaceDefinition } from './provider-surface.js';
 import { createPhalanx } from './phalanx.js';
@@ -26,7 +27,7 @@ export const SETUP_SURFACE_TYPES = Object.freeze({
 
 const summaries = new Map([
   [SETUP_SURFACE_TYPES.register, 'optional'],
-  [SETUP_SURFACE_TYPES.roots, '2 folders'],
+  [SETUP_SURFACE_TYPES.roots, '2 Workspaces'],
   [SETUP_SURFACE_TYPES.installations, 'Ronin Services'],
   [SETUP_SURFACE_TYPES.bounty, 'optional · separate opt-in'],
   [SETUP_SURFACE_TYPES.launchOwn, 'presets · team · agent'],
@@ -381,18 +382,12 @@ function createRegisterSurface(context) {
   }, destroy: () => stopProgress() };
 }
 
+// Setup's Workspace step is the Workspaces themselves (KAN-728): each a stone opening its record, and
+// New Workspace, so every folder Setup adds is a row of a Workspace.
 function createRootsSurface(context) {
-  const page = createWorkspaceFoldersSurface({
-    campaignId: () => context.tenant?.campaign || '',
-    presentation: 'stones',
-    environment: context.environment,
-    workspace: context.workspace,
-    onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, '2 folders + yours', context.workbench),
-  });
-  // The header zone carries step 3's state and its picks (see workspace-folders-surface.js),
-  // so the step footer that used to ask at the bottom is retired — one place to answer, and
-  // the top bar already owns 'look at this machine again'.
-  return page;
+  const workspacesRead = createWorkspacesRead();
+  return createWorkspaceStones({ workspacesRead, workbench: context.workbench, withNew: true,
+    onShow: () => notifySummary(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots_summary', '{n} Workspaces', { n: workspacesRead.list().length || 2 }), context.workbench) });
 }
 
 function createBountySurface(context) {
@@ -773,7 +768,7 @@ export function setupSurfaceDefinitions() {
   return [
     definition(SETUP_SURFACE_TYPES.register, t('setup_surface.register', 'Register'), createRegisterSurface),
     providerSurfaceDefinition(),
-    definition(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots', 'Workspace folders'), createRootsSurface),
+    definition(SETUP_SURFACE_TYPES.roots, t('setup_surface.roots', 'Workspaces'), createRootsSurface),
     definition(SETUP_SURFACE_TYPES.installations, t('campaign_view.installations', 'Installations'), createSetupInstallationsSurface),
     definition(SETUP_SURFACE_TYPES.bounty, t('setup_surface.bounty', 'Bounty Program'), createBountySurface),
     definition(SETUP_SURFACE_TYPES.launchOwn, t('setup_surface.launch_own', 'Launch your own'), createLaunchOwnSurface),

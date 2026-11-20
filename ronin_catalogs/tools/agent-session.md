@@ -14,7 +14,7 @@ The session tools are about an Agent's existence, not its work.
   defaults). `--role coworker|lead|epic_lead|coordinator`, coworker by default. Answers
   `BORN` or `REFUSED: <why>`; an existing name is refused.
 - `session_check` `<name>`: read one live session; `NO-SESSION` if the name is unused.
-- `session_set` `<name>`: change its Team, lead, or Workspace Folder (`--root <handle>`,
+- `session_set` `<name>`: change its Team, lead, or Workspace (`--root <workspace>`,
   `--clear-root`). Your own repositories are `work-record workspace`.
 - `session_archive` `<name>`: `ARCHIVED <name> as <id>`, resumable.
 - `session_restore`: bare, it lists recent archives (name, Team, when, id); `session_restore <id>`

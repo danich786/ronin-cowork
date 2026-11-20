@@ -5,7 +5,7 @@ import { pm, getPath, currentOf, optionsOf, pickerProvider, toRequest } from './
 import { servicesCard } from './services-card.js';
 import { accountCard } from './account-card.js';
 import { t } from './lexicon.js';
-import { loadProviderCatalog, providerCatalog, modelLabel } from './form-steps.js';
+import { loadProviderCatalog, providerCatalog, modelLabel, rowTierWord } from './form-steps.js';
 import { ask } from './ask.js';
 import { saveRow } from './save-row.js';
 
@@ -133,10 +133,10 @@ export function buildMachineSettings(root, isShowing, { only = null } = {}) {
       ? t('forms.reason_turned_off', 'turned off')
       : t('forms.reason_not_on_machine', 'not on this machine');
     const fields = fixed ? [
-      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: modelLabel(item), word: item.tier, sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
+      { key: 'model', label: f.short ?? f.label, blank: t('settei.none_set', '— none set —'), options: catalog.filter((item) => item.provider === fixed).map((item) => ({ v: item.model, l: modelLabel(item), word: rowTierWord(item), sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
     ] : [
       { key: 'provider', label: t('forms.provider', 'Model provider'), blank: t('settei.none_set', '— none set —'), options: providers.map((item) => ({ v: item.provider, l: item.provider_label, off: item.operational ? '' : reason(item) })) },
-      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: modelLabel(item), word: item.tier, sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
+      { key: 'model', label: t('forms.model', 'Model'), blank: t('settei.none_set', '— none set —'), after: 'provider', options: (value) => catalog.filter((item) => item.provider === value.provider).map((item) => ({ v: item.model, l: modelLabel(item), word: rowTierWord(item), sub: item.cost || '', off: item.selectable ? '' : reason(item) })) },
     ];
     const pair = ask([{ group: fixed ? '' : f.label, fields }], {
       value: picked,
@@ -233,18 +233,6 @@ export function buildMachineSettings(root, isShowing, { only = null } = {}) {
     /* capacity */
     group(t('settei.group_capacity', 'capacity'));
     for (const row of fieldsIn((f) => f.lands?.family === 'session-max')) body.appendChild(row);
-
-    /* projects — shown, never edited here */
-    group(t('settei.group_projects', 'projects · {n}', { n: set.projects.length }));
-    for (const p of set.projects) {
-      const health = st.projects.find((x) => x.name === p.name);
-      body.appendChild(obsRow(p.title || p.name, p.remit || p.dir,
-        health?.dir === 'missing' ? ' ' + t('settei.dir_gone', '✕ {dir} is gone', { dir: p.dir }) : health?.repo ? ` ${health.repo}` : ''));
-    }
-    const link = document.createElement('div');
-    link.className = 'st-row st-link';
-    link.textContent = t('settei.projects_link', 'Edit these in ▣ Workspace folders — this room only shows them.');
-    body.appendChild(link);
 
     /* how work gets a model */
     group(t('settei.group_models', 'how work gets a model'));

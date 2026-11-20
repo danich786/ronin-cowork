@@ -20,6 +20,7 @@ import { createCampaignHome } from './campaign-home.js';
 import { createEpicsView, createHelpView, createModelsView, createWorkspacesView } from './door-workbenches.js';
 import { createCampaignView } from './campaign-view.js';
 import { createSetupView } from './setup-view.js';
+import { setupFinished } from './setup-progress.js';
 import { createLaunchView } from './launch-view.js';
 import { installWorkspaceHeader } from './workspace-header.js';
 import { WorkspaceKit } from './workspace-kit.js';
@@ -121,7 +122,9 @@ async function init() {
   guard('register the Campaign destination', () => workspace.register('campaign', createCampaignView()));
   guard('register the Setup destination', () => workspace.register('setup', createSetupView()));
   guard('register the Launch destination', () => workspace.register('launch', createLaunchView()));
-  workspace.start();
+  // A bare address lands on Setup until Setup is done (KAN-720); a named page opens itself.
+  const bare = !location.hash.replace(/^#\/?/, '');
+  workspace.start(bare && !(await setupFinished()) ? 'setup' : '');
 
   // THE DESKTOP FIRST PAINT ends here: the route's real workspace is mounted and the
   // header now belongs to it. Session discovery, event wiring and home catalogs below
@@ -134,7 +137,7 @@ async function init() {
   guard('install workspace controls', build);
   guard('say when Ronin is unreachable', () => sayWhenUnreachable(document.getElementById('connectionstate')));
   guard('session event stream', connect); // the store's socket: rows, sessions, births & deaths
-  guard('load projects', loadProjects); // PROJECT_ROOTS.md — WHERE a spawn happens
+  guard('load projects', loadProjects); // every Workspace's folders, by name
   // Mark the first tile active but don't grab the keyboard on load (avoids the
   // iOS on-screen keyboard popping up before you've picked a session).
   guard('activate first tile', () => {

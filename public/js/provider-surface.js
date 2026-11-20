@@ -330,14 +330,15 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
     const finish = (path) => {
       if (!completion.hidden) return;
       completion.hidden = false;
-      completion.append(el('h3', 'setup-provider-note', t('setup_surface.naming_authentication', 'Naming this authentication')));
+      // Done first, right under the terminal; the naming after it, already filled, so Done
+      // never waits on it (KAN-723): an account / subscription titled after the provider.
       const draft = authenticationDrafts.get(provider.id) || provider.sign_in || {};
       const title = el('input'); title.type = 'text'; title.maxLength = 120;
-      title.value = draft.label || '';
+      title.value = draft.label || t('setup_surface.authentication_default_title', '{provider} subscription', { provider: provider.label || provider.id });
       title.placeholder = t('setup_surface.authentication_title_hint', 'Choose a title');
       const field = el('label', 'setup-provider-sign-in-title', t('setup_surface.authentication_title', 'Authentication title'));
       field.append(title);
-      let method = draft.method || '';
+      let method = draft.method || 'subscription';
       const message = el('p', 'setup-notice bad'); message.hidden = true;
       saveAuthentication = async (destination = path) => {
         if (method !== 'not_signed_in' && !title.value.trim()) {
@@ -359,6 +360,7 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       };
       const submit = action(t('setup_surface.done', 'Done'), 'primary', () => saveAuthentication(path));
       submit.dataset.endsEdit = '';
+      submit.classList.add('setup-provider-done');
       const update = () => { authenticationDrafts.set(provider.id, { method, label: title.value }); field.hidden = method === 'not_signed_in'; submit.disabled = !method || (method !== 'not_signed_in' && !title.value.trim()); };
       const fields = el('div', 'setup-provider-authentication-fields');
       signInForm = ask([{ fields: [{ key: 'method', label: t('setup_surface.authentication_type', 'Authentication type'), options: [
@@ -371,7 +373,7 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       fields.append(field, signInForm.el);
       const actions = el('div', 'setup-provider-completion-actions');
       actions.append(submit, closeSetup());
-      completion.append(fields, message, actions);
+      completion.append(actions, message, el('h3', 'setup-provider-note', t('setup_surface.naming_authentication', 'Naming this authentication')), fields);
       update();
     };
     // One shape for all three steps: a mark that says done, current, or pending; the label
@@ -548,7 +550,10 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
       // A Ronin models tier row (model `light`, tier light) is its name already; so is an id equal to it.
       if (row.model !== 'native' && row.model !== row.tier && row.model !== modelLabel(row)) name.append(el('span', 'setup-provider-model-id', row.model));
       if (row.model === 'native') name.append(el('span', 'setup-provider-default', t('setup_surface.native_description', 'The CLI chooses its own configured or current default model.')));
-      line.append(name, el('td', 'setup-provider-tier', tierWord(row.tier)));
+      // The tier, and beneath it the catalog's strengths for that tier: which is which, at a glance.
+      const tier = el('td'); tier.append(el('span', 'setup-provider-tier', tierWord(row.tier)));
+      if (row.model !== 'native' && row.strengths) tier.append(el('span', 'setup-provider-strengths', row.strengths));
+      line.append(name, tier);
       body.append(line);
     }
     table.append(thead, body);
@@ -634,12 +639,16 @@ export function createProviderDrawing(context, { repaint, say = () => {} }) {
   };
   /** After a press: repaint the record; Setup progress performs any completion scan. */
   const paint = async (refresh = false) => { await showRecord(); return measure(refresh); };
+  // Back from a browser sign-in: while a sign-in is open, coming back to this tab reads the
+  // runtime once, so the step can say the CLI is signed in (KAN-723). No timer.
+  const onFocus = () => { if (runtime.providers?.some((row) => row.login_open)) void measure(); };
+  window.addEventListener('focus', onFocus);
   return {
     paintProvider, paint, showRecord, measure,
     /** The open page is gone: the next one scrolls to its current step afresh. */
     closed: () => { alignedProvider = ''; },
     runtime: () => runtime,
     stones: () => providerStones(runtime),
-    destroy: () => disposeMount(),
+    destroy: () => { window.removeEventListener('focus', onFocus); disposeMount(); },
   };
 }

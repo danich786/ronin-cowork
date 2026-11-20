@@ -7,7 +7,7 @@
 # Run as the office user, on a fresh install of the same or a newer release, with the same
 # home and roots the office had (a fresh unit of the same image has them). It stops Ronin,
 # restores every store through bin/ronin-export (this release's layout decides where each
-# lands), puts each Workspace Folder and provider file back at its path, starts Ronin and
+# lands), puts each Workspace's folders and provider file back at its path, starts Ronin and
 # resumes every parked Agent through session_restore.
 #
 # What the fresh install already had where the office's things go is moved aside, never
@@ -94,7 +94,7 @@ done <<<"$CARRIED"
 park_step "restoring the stores"
 "$PARK_ROOT/bin/ronin-export" --restore "$WORK"
 
-park_step "restoring Workspace Folders and provider files"
+park_step "restoring Workspace folders and provider files"
 while read -r kind path; do
   [ -n "${path:-}" ] && [ -e "$WORK/$kind$path" ] || continue
   mkdir -p "$(dirname "$path")"

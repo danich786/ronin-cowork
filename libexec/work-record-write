@@ -311,7 +311,7 @@ NOT_YOURS = {
           "  roster or a membership changes, with a one-line notice. Membership itself is\n"
           "  your tags; leadership is the owner-set 人. Drop \"teams\" and save again.",
     "configuration": "\"configuration\" is not yours to write.\n"
-          "  It is DERIVED: the title and Workspace Folder Ronin keeps for you.\n"
+          "  It is DERIVED: the title and Workspace Ronin keeps for you.\n"
           "  Drop \"configuration\" and save again; it is carried through.",
     "role_family": "\"role_family\" is retired (R35, 2026-08-23).\n"
           "  A session has no identity axis of its own any more: identity is the TEAM\"s\n"

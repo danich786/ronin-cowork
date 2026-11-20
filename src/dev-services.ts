@@ -1,12 +1,11 @@
 import { access, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
-import { peekProjectRoots, type ProjectRootInfo } from './project-roots.js';
-import { readArrangement } from './desks/arrangement.js';
+import { rowArrangement } from './desks/arrangement.js';
 import { gitOut, revParse, worktreeOf } from './desks/git.js';
 import { execFile } from './spawn-broker.js';
 import { envWithoutGitLocation } from './tegami.js';
+import { workspaceFolders } from './workspaces.js';
 
-type Root = Pick<ProjectRootInfo, 'name' | 'dir'>;
 export type DevServicesPreparation =
   | { status: 'skipped'; reason: string }
   | { status: 'synced'; source: string; target: string; revision: string };
@@ -29,25 +28,22 @@ async function runtimePaths(source: string): Promise<string[]> {
 }
 
 /** Development placement only. Release updates retain their own artifact/store flow. */
-export async function prepareDevServices(
-  target: string,
-  roots?: readonly Root[],
-): Promise<DevServicesPreparation> {
+export async function prepareDevServices(target: string): Promise<DevServicesPreparation> {
   target = await realpath(target);
-  // Releases can retain RONIN_REPO, but VERSION identifies their artifact ownership.
+  // VERSION identifies an installed release's artifact ownership.
   if (await exists(path.join(target, 'VERSION'))) return { status: 'skipped', reason: 'installed release' };
-  const registered = roots ?? await peekProjectRoots();
+  const registered = await workspaceFolders();
   const cowork = registered.find((root) => root.name === 'ronin_cowork');
-  if (!cowork) return { status: 'skipped', reason: 'no registered Cowork development repository' };
-  const arrangement = await readArrangement(cowork.name, cowork.dir);
+  if (!cowork) return { status: 'skipped', reason: 'no Workspace holds the Cowork development repository' };
+  const arrangement = rowArrangement(cowork);
   if (arrangement.mode !== 'reviewed') return { status: 'skipped', reason: 'Cowork has no reviewed working line' };
   const mounted = await worktreeOf(cowork.dir, arrangement.working);
   if (!mounted || await realpath(mounted.path) !== target) {
     return { status: 'skipped', reason: 'not the Cowork global working checkout' };
   }
   const services = registered.find((root) => root.name === 'ronin_services');
-  if (!services) return { status: 'skipped', reason: 'no registered Services development repository' };
-  const sourceArrangement = await readArrangement(services.name, services.dir);
+  if (!services) return { status: 'skipped', reason: 'no Workspace holds the Services development repository' };
+  const sourceArrangement = rowArrangement(services);
   if (sourceArrangement.mode !== 'reviewed') throw new Error('Services development source has no reviewed working line.');
   const sourceTree = await worktreeOf(services.dir, sourceArrangement.working);
   if (!sourceTree) throw new Error(`Services working line ${sourceArrangement.working} has no mounted checkout.`);

@@ -19,6 +19,8 @@ const readText = async (handle: string): Promise<string | null> => {
   catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null; throw e; }
 };
 
+export const writeWorkspaceDoc = async (handle: string, text: string): Promise<void> => writeText(handle, text.endsWith('\n') ? text : `${text}\n`);
+
 const writeText = async (handle: string, text: string): Promise<void> => {
   const file = workspaceDocPath(handle);
   await mkdir(path.dirname(file), { recursive: true });

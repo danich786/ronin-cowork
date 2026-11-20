@@ -2,7 +2,6 @@ import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { initialCampaign, listCampaigns, writeCampaign } from './campaigns.js';
 import { readAgentsSection, writeAgentsSection } from './machine-state.js';
-import { listProjectRoots, upsertProjectRoot } from './project-roots.js';
 import { listTeamRosters, teamRosterFile } from './team-rosters.js';
 import { getCampaign, listSessions, setCampaign } from './tmux.js';
 
@@ -49,31 +48,14 @@ export async function assertSameCampaignTeams(session: string, teams: readonly s
   }
 }
 
-export async function assertSameCampaignRoot(campaign_id: string, root: string): Promise<void> {
-  if (!root) return;
-  const resolve = await campaignResolver();
-  const mine = resolve(campaign_id);
-  if (!mine) return;
-  const found = (await listProjectRoots()).find((r) => r.name === root);
-  if (!found) return; // an unknown root is the resolver's refusal to make, not this one's
-  const theirs = resolve(found.campaign_id);
-  if (theirs && theirs !== mine) {
-    throw new Error(
-      `Project root "${root}" belongs to Campaign "${theirs}", not "${mine}". ` +
-        'A Cowork and an Agent may reference only a Project root in their own Campaign.',
-    );
-  }
-}
-
 export interface CampaignScopeMigration {
   campaign_id: string;
   rosters: string[];
-  roots: string[];
   sessions: string[];
 }
 
 export async function migrateCampaignScope(): Promise<CampaignScopeMigration> {
-  const done: CampaignScopeMigration = { campaign_id: '', rosters: [], roots: [], sessions: [] };
+  const done: CampaignScopeMigration = { campaign_id: '', rosters: [], sessions: [] };
   const campaign_id = await initialCampaignId();
   if (!campaign_id) return done; // nothing seeded yet; the next boot will have one
   done.campaign_id = campaign_id;
@@ -89,15 +71,6 @@ export async function migrateCampaignScope(): Promise<CampaignScopeMigration> {
       await writeFile(to, raw.replace(/^(# .*\n\n)/m, `$1- **campaign_id:** ${campaign_id}\n`), 'utf8');
       await unlink(from);
       done.rosters.push(roster.name);
-    } catch {
-    }
-  }
-
-  for (const root of await listProjectRoots()) {
-    if (root.campaign_id) continue;
-    try {
-      await upsertProjectRoot(root.name, { campaign_id });
-      done.roots.push(root.name);
     } catch {
     }
   }

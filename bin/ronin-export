@@ -28,7 +28,7 @@
 #
 # --keep-links and --also exist for bin/ronin-archive, which parks a whole office in one file
 # (docs/operating/park.md): there, a worktree's node_modules link must stay a link, and the
-# Workspace Folders and provider conversations ride beside the stores, keyed by path.
+# Workspace folders and provider conversations ride beside the stores, keyed by path.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

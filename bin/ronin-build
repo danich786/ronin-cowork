@@ -68,7 +68,7 @@ if [ -n "$(git status --porcelain 2>/dev/null)" ] && [ "$ALLOW_DIRTY" = 0 ]; the
 fi
 
 # --- and it must be the accepted state, not whatever happens to be checked out ---
-# A release is cut from the declared stable line (RONIN_REPO: `stable`), which moves only
+# A release is cut from the declared stable line (its Workspace row's `stable`), which moves only
 # by PR from `dev` — the line that carried the full-BYOIN promotion receipt for its exact
 # SHA. Acceptance is a fact about the commit's place on that line, never about the cwd:
 # HEAD must be on `stable` (locally or at origin). --dirty is a local trial and skips this,

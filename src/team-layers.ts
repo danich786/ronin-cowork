@@ -31,7 +31,7 @@ import { rosterReading, teamWork } from './work-items-read.js';
 
 /** A Workspace integration as the Workspace record keeps it (KAN-338): its provider and its facts. */
 export type LayerIntegration = { provider: string } & Record<string, unknown>;
-/** `dirs`: each repo's and folder's directory, from the Workspace Folder registry (project-roots.ts).
+/** `dirs`: each repo's and folder's directory, from its row on the Workspace record.
  * `integrations`: the Workspace's rows as they are, [] when it has none. */
 export interface LayerWorkspace { name: string; title: string; objective: string; repos: string[]; folders: string[]; dirs: Record<string, string>; integrations: LayerIntegration[] }
 /** `team`: the Team the plan is for (plans.ts header); '' is none. */
@@ -50,10 +50,7 @@ type SessionRow = { name: string; key: string; tags: string[]; leads: string[] }
 
 async function workspaceLayer(w: Workspace | null): Promise<LayerWorkspace | null> {
   if (!w) return null;
-  const { peekProjectRoots } = await import('./project-roots.js');
-  const roots = await peekProjectRoots().catch(() => []);
-  const names = [...w.repos, ...w.folders].map((row) => row.name);
-  const dirs = Object.fromEntries(names.map((name) => [name, roots.find((root) => root.name === name)?.dir ?? '']));
+  const dirs = Object.fromEntries([...w.repos, ...w.folders].map((row) => [row.name, row.dir]));
   // Read loosely: the field lands in workspaces.ts with KAN-338; until then there is none.
   const rows = (w as Workspace & { integrations?: unknown }).integrations;
   const integrations = Array.isArray(rows) ? rows.filter((row): row is LayerIntegration => !!row && typeof row === 'object' && typeof (row as { provider?: unknown }).provider === 'string') : [];

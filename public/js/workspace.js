@@ -202,22 +202,13 @@ export function openWorkbenchTab(spec = {}, reserved = null) {
   return window.open(url, '_blank', 'noopener');
 }
 
-/** Use the normal view transition to open the shared Workspace Folders work surface. */
-export function navigateToWorkspaceFolders(context, detail = {}) {
-  if (!context?.navigate || detail?.origin?.kind !== 'preset') return false;
-  context.patchState?.({ returnTo: { view: context.id, param: context.param || '', tabId: context.tabId || '', origin: detail.origin } });
+/** Use the normal view transition to open the Workspaces, where a folder is added to one. */
+export function navigateToWorkspaceFolders(context) {
+  if (!context?.navigate) return false;
   return context.navigate('campaign', { workbenchRequest: { mode: 'replace', state: {
     count: 2, selected: 'workspace2',
-    seats: { workspace1: 'campaign.defaults', workspace2: 'campaign.project-roots' },
+    seats: { workspace1: 'campaign.defaults', workspace2: 'campaign.workspaces' },
   } } });
-}
-
-/** Return to the Preset view recorded by navigateToWorkspaceFolders. */
-export function returnFromWorkspaceFolders(context) {
-  const destination = context?.state?.returnTo;
-  if (!destination || destination.origin?.kind !== 'preset') return false;
-  context.patchState?.({ returnTo: null });
-  return context.navigate(destination.view, { param: destination.param || '', resumeTabId: destination.tabId || '' });
 }
 
 /** Claim and remove the initial request. Refresh reads only this instance's snapshot. */
@@ -457,14 +448,14 @@ export function createWorkspace(host, options = {}) {
     const route = routeFromHash();
     navigate(route?.view || safeView, { param: route?.param || '', fromHistory: true });
   };
-  const start = () => {
+  const start = (landing = '') => {
     if (started || destroyed) return;
     started = true;
     const route = routeFromHash();
-    // A bare Ronin URL is HOME, every time. Workspace recall belongs inside an explicit
-    // destination; it must not turn the product's front door into whichever room this
-    // browser happened to leave last.
-    const id = route?.view || safeView;
+    // A bare Ronin URL is HOME, or the `landing` the caller names (Setup, until Setup is
+    // done: KAN-720). Workspace recall belongs inside an explicit destination; it must not
+    // turn the product's front door into whichever room this browser happened to leave last.
+    const id = route?.view || landing || safeView;
     navigate(id, { param: route?.param || '', replace: true, initial: true });
     window.addEventListener('popstate', onPopState);
   };

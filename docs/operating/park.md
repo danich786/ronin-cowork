@@ -34,7 +34,7 @@ One tar.gz, made by `bin/ronin-export --keep-links`:
 |---|---|---|
 | `manifest.json` | `format`, `release`, `commit`, `contract`, `office_id`, `created_at`, `agents` | — |
 | `RONIN-EXPORT/stores/<id>/` | every store: sessions, archive manifests, Teams, work items, wipeboards, catalogs, settings, desks, worktrees, secrets | store id |
-| `folders/<path>` | every Workspace Folder — the repositories the worktrees belong to | path |
+| `folders/<path>` | every Workspace's folders — the repositories the worktrees belong to | path |
 | `files/<path>` | each Agent's provider conversation, and each provider's sign-in and settings | path |
 
 Stores are restored through `ronin-store` on the destination, so the newer release's layout
@@ -45,9 +45,9 @@ refuses otherwise, and says which.
 A symlink inside a store stays a symlink: a worktree's `node_modules` link stays a link to
 the repository's own.
 
-**Not carried:** loose files directly in the home directory. The `home` Workspace Folder a
-fresh install registers is the home directory itself, which holds Ronin's own roots, so it
-is not carried whole; the Workspace Folders inside it travel one by one. Nor are Ronin's units
+**Not carried:** loose files directly in the home directory, and any Workspace folder that
+holds Ronin's own roots (the home directory, if a Workspace has it); the Workspace folders
+inside it travel one by one. Nor are Ronin's units
 or `node_modules`, which the install provides.
 
 **The file holds the office's credentials:** provider sign-ins, the Services secrets store,

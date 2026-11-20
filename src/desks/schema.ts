@@ -9,7 +9,7 @@ export interface RepoArrangement {
   stable: string;
   desks: 'managed' | 'none';
   publish: string[];
-  source: 'RONIN_REPO' | 'absent';
+  source: 'workspace' | 'absent';
 }
 
 export interface TeamLine {

@@ -19,7 +19,7 @@ import { IRASSHAI_NAME } from './setup-journey.js';
  * one surface further out.
  *
  * SHE IS A SINGLETON, and the check is right here rather than server-side: two Mikas
- * both editing PROJECT_ROOTS.md is a real bug, and unlike a work record a catalog
+ * both writing the same settings is a real bug, and unlike a work record a settings
  * write is not recomputed next turn. `ronin_bin/mika` makes the same check for the
  * agent-side path — same decision, two callers, and neither can make a second one
  * because the Mika door refuses a name that already exists.

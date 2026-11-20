@@ -1,9 +1,8 @@
 import type express from 'express';
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { listProjectRoots } from '../project-roots.js';
 import { storeDir } from '../resources.js';
-import { listWorkspaces, readWorkspace, type Workspace } from '../workspaces.js';
+import { listWorkspaces, readWorkspace, workspaceFolders, type Workspace } from '../workspaces.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { PLAN_STATUSES, listPlans, plansPlace } from '../plans.js';
 import { listCanvases } from '../canvases.js';
@@ -74,7 +73,7 @@ async function canvasGroups(only: Workspace | null) {
 }
 
 /** A TEAM'S SHELF IS ITS WORKSPACE'S (owner, 2026-11-09; KAN-326): with `team`, Plans are its
- * Workspace's plans and Docs the Workspace Folders its Workspace names (repos and folders), and
+ * Workspace's plans and Docs the folders its Workspace holds (repos and folders), and
  * `scope` says so in words. Without one — or for a Team with no Workspace — every Workspace's. */
 async function teamWorkspace(team: string): Promise<Workspace | null> {
   if (!team) return null;
@@ -90,13 +89,12 @@ export function registerDocs(app: express.Express): void {
       const w = await teamWorkspace(String(req.query.team ?? '').trim());
       if (shelf === 'plans') return res.json({ shelf, scope: w ? { workspace: w.name } : null, groups: await planGroups(w) });
       if (shelf === 'canvases') return res.json({ shelf, scope: w ? { workspace: w.name } : null, groups: await canvasGroups(w) });
-      const named = w ? [...w.repos, ...w.folders].map((one) => one.name) : null;
-      const roots = (await listProjectRoots()).filter((r) => !named || named.includes(r.name));
+      const roots = w ? [...w.repos, ...w.folders] : await workspaceFolders();
       const groups = [];
       for (const r of roots) {
         const files: string[] = [];
-        for (const rel of r.docs) await docsUnder(path.resolve(r.dir, rel), files);
-        groups.push({ root: r.name, dir: r.dir, archived: r.archived, files });
+        for (const rel of ['docs', 'README.md']) await docsUnder(path.resolve(r.dir, rel), files);
+        groups.push({ root: r.name, dir: r.dir, files });
       }
       res.json({ shelf, scope: w ? { workspace: w.name, folders: roots.map((r) => r.name) } : null, groups });
     } catch (e) {

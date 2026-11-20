@@ -60,7 +60,9 @@ export type TranscriptLookup = { source: TranscriptSource } | { gap: TranscriptG
 
 export interface Sockets {
   resolveTranscriptSource(name: string): Promise<TranscriptLookup>;
-  registerBoot(hook: { start(): void | Promise<void>; stop?(): void }): void;
+  /** `started` runs once every part's start() has finished and Ronin is listening, so it sees what
+   *  they set up (Ronin models' rows); it is not awaited, so a long one never holds Ronin's start (KAN-721). */
+  registerBoot(hook: { start(): void | Promise<void>; started?(): void | Promise<void>; stop?(): void }): void;
   onSessionWillBorn(cb: (name: string) => void | Promise<void>): void;
   onSessionBorn(cb: (info: BornInfo) => void | Promise<void>): void;
   addBirthLines(cb: (name: string, agent: boolean) => Promise<string> | string): void;

@@ -6,7 +6,7 @@
  * Agent needs. The stores themselves travel keyed by id, as `bin/ronin-export` carries them.
  * Everything named here travels keyed by its absolute path and lands at the same path:
  *
- * - every Workspace Folder's directory — the repositories, whose `.git/worktrees` the managed
+ * - every Workspace folder's directory — the repositories, whose `.git/worktrees` the managed
  *   worktrees (in the `worktrees` store) point back into;
  * - each Agent's provider conversation: the journal segments its launch identity owns, and a
  *   segment's same-named folder beside it (Claude keeps sub-agent and tool-result files there);
@@ -16,7 +16,7 @@
  * A path inside a store is left out: the store already carries it. A folder that holds Ronin's
  * own roots — the "home" folder a fresh install registers is the home directory itself — is
  * not carried whole (that would be the stores twice, the install and every cache); the
- * Workspace Folders inside it travel one by one, and its loose files stay behind.
+ * Workspace folders inside it travel one by one, and its loose files stay behind.
  */
 import { stat } from 'node:fs/promises';
 import os from 'node:os';
@@ -24,7 +24,7 @@ import path from 'node:path';
 import { AGENTS } from './agents.js';
 import { readLaunchIdentity } from './launch-binding.js';
 import { resolveLaunchSegments } from './launch-journal.js';
-import { listProjectRoots } from './project-roots.js';
+import { workspaceFolders } from './workspaces.js';
 import { STORES, rootDir, storeDir } from './resources.js';
 import type { ArchivedSession } from './session-archive.js';
 
@@ -49,7 +49,7 @@ export async function parkCarry(archived: readonly ArchivedSession[]): Promise<P
   const storeDirs = STORES.map((s) => storeDir(s.id));
   const folders: string[] = [];
   const roots = [rootDir('user'), rootDir('data')].map((r) => path.resolve(r));
-  for (const root of await listProjectRoots()) {
+  for (const root of await workspaceFolders()) {
     if (!root.dir || !await exists(root.dir)) continue;
     if (roots.some((r) => inside(r, path.resolve(root.dir)))) continue; // holds Ronin's roots
     folders.push(root.dir);

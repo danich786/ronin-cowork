@@ -5,7 +5,7 @@
 - **serves:**
 - **order:** 50
 
-Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, which providers and models exist, or which Workspace Folders Ronin may work in — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are `ronin-host`'s, not these.
+Reach for the settings tool when the owner asks what this box has, what the Campaign has switched on, what a new Team starts from, or which providers and models exist — and when they ask you to change one of those. It is independent of Ronin Host: the host's own operations (survey, accounts, secrets, restart) are `ronin-host`'s, not these.
 
 **Live tool:** every operation below is a typed subcommand of the shipped `machine-settings` executable.
 
@@ -22,11 +22,8 @@ activation, or restart operation and measuring again. Observed, status, needed, 
 measured facts are always read-only.
 
 The selected Campaign is the current session's when `--campaign` is omitted; an ambiguous
-or absent Campaign is reported, never guessed. Workspace Folder writes preserve the
-workspace-folder-handle; title and directory may change. Archive keeps the catalog entry and removes
-it from launch choices; exclude removes only the entry and never deletes a directory or
-hosted repository. Inspect a repository's declared arrangement before changing its
-profile; adding an existing repository does not rewrite `RONIN_REPO` unless a profile is supplied.
+or absent Campaign is reported, never guessed. Folders and repositories are not here: they
+are rows of a Workspace, changed on its page.
 
 Available session models are read dynamically from the canonical Campaign/provider model
 catalog used by the UI dropdowns. This document carries no model list: install and
@@ -36,9 +33,8 @@ same source.
 
 Every Agent can use the same typed reads and writes. Mika also receives
 `session_create` as a separate grant. Her house guidance tells her to show the owner the
-intended change and wait for a yes before writing, and not to exclude Workspace Folders or
-handle credentials. These are instructions to Mika, not identity checks in the tool.
+intended change and wait for a yes before writing, and not to handle credentials. These are instructions to Mika, not identity checks in the tool.
 
 ## Usage
 
-Typed, secret-free Machine and Campaign configuration. `machine-settings --help` lists read and write operations for the Campaign, installations, Agent and Cowork defaults, Workspace Folders, providers, machine facts, and owner profile. The same operations are available to every Agent given this tool.
+Typed, secret-free Machine and Campaign configuration. `machine-settings --help` lists read and write operations for the Campaign, installations, Agent and Cowork defaults, providers, machine facts, and owner profile. The same operations are available to every Agent given this tool.

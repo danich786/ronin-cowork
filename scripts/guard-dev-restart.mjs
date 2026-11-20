@@ -20,11 +20,24 @@ function git(dir, args) {
   return execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 }
 
-export function guardRestart(repoDir, ledgerDir, override = '') {
+/** The repo's working line from its Workspace row (src/workspaces.ts): the row whose repository this checkout is. */
+function workingLine(top, workspacesDir) {
+  const common = (dir) => path.resolve(dir, git(dir, ['rev-parse', '--git-common-dir']));
+  const mine = common(top);
+  const files = fs.existsSync(workspacesDir) ? fs.readdirSync(workspacesDir, { withFileTypes: true }).filter((d) => d.isDirectory())
+    .flatMap((d) => fs.readdirSync(path.join(workspacesDir, d.name)).filter((n) => /^[^.]+\.json$/.test(n)).map((n) => path.join(workspacesDir, d.name, n))) : [];
+  for (const file of files) {
+    for (const row of JSON.parse(fs.readFileSync(file, 'utf8')).repos ?? []) {
+      if (row.mode === 'reviewed' && row.dir && fs.existsSync(row.dir) && common(row.dir) === mine) return row.working || 'dev';
+    }
+  }
+  return '';
+}
+
+export function guardRestart(repoDir, ledgerDir, override = '', workspacesDir = '') {
   const top = git(repoDir, ['rev-parse', '--show-toplevel']);
   const branch = git(top, ['symbolic-ref', '--quiet', '--short', 'HEAD']);
-  const record = fs.existsSync(path.join(top, 'RONIN_REPO')) ? fs.readFileSync(path.join(top, 'RONIN_REPO'), 'utf8') : '';
-  const working = /^working=(.+)$/m.exec(record)?.[1]?.trim() ?? '';
+  const working = workingLine(top, workspacesDir);
   if (!working || branch !== working) return { ok: true, reason: 'not the reviewed working line' };
   if (override === '1') return { ok: true, reason: 'owner override RONIN_UNRECEIPTED_DEV=1' };
   const head = git(top, ['rev-parse', 'HEAD']);
@@ -38,8 +51,9 @@ export function guardRestart(repoDir, ledgerDir, override = '') {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const repo = process.argv[2] ?? process.cwd();
   const ledger = process.env.RONIN_PROMOTION_LEDGER_DIR || execFileSync(path.join(repo, 'bin/ronin-store'), ['promotion_ledger'], { encoding: 'utf8' }).trim();
+  const workspaces = execFileSync(path.join(repo, 'bin/ronin-store'), ['workspaces'], { encoding: 'utf8' }).trim();
   try {
-    const out = guardRestart(repo, ledger, process.env.RONIN_UNRECEIPTED_DEV ?? '');
+    const out = guardRestart(repo, ledger, process.env.RONIN_UNRECEIPTED_DEV ?? '', workspaces);
     if (out.ok) { console.log(`restart check: ok — ${out.reason}`); process.exit(0); }
     console.warn(`restart check: warning — ${out.reason}; proceeding.`);
     process.exit(0);

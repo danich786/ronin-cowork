@@ -6,8 +6,9 @@ import { updateCommand, updateLineOf } from './agent-install.js';
 import { AGENTS, discoverExecutable, launchArgv, listAgentAvailability } from './agents.js';
 import { updateSection } from './machine-state.js';
 import { listProviderCatalog, newerVersion, type ModelList, type ProviderCatalogEntry, type ProviderSummary } from './model-providers.js';
-import { activatedAt, npmPackageOf, offAt } from './provider-summary.js';
-import { peekProjectRoots, upsertProjectRoot } from './project-roots.js';
+import { activatedAt, npmPackageOf, offAt, providerSignedIn } from './provider-summary.js';
+import { normalizeWorkspace, readWorkspace, saveWorkspace } from './workspaces.js';
+import { initialCampaignId } from './campaign-scope.js';
 import { rootDir } from './resources.js';
 import { runCommand } from './send.js';
 import { execFile as run, SpawnBrokerError } from './spawn-broker.js';
@@ -231,7 +232,8 @@ export async function setupRuntimeAnswer(
     const completed = activatedAt(section, agent.id);
     const offSince = offAt(section, agent.id);
     const isInstalled = summary.installed.includes(agent.id);
-    const signedIn = isInstalled && summary.signed_in.includes(agent.id);
+    // While its sign-in is open, the credential file is read now, not from the last measure (KAN-723).
+    const signedIn = isInstalled && (summary.signed_in.includes(agent.id) || (loginOpen && await providerSignedIn(agent.id)));
     const activated = isInstalled && offSince === null && (completed !== null || signedIn) && entry?.launchable === true;
     // Not activated: nothing was asked and nothing is offered — Installed, and stop. A
     // version from an earlier measurement is not printed as though it were current.
@@ -570,18 +572,14 @@ export async function removeGithubAuthentication(ops: GithubSetupOps = defaultGi
   return githubSetupAnswer(ops);
 }
 
-/** Clone a GitHub repository into `parent` (Ronin's own folder when none is named) and pin it. */
-export async function cloneGithubWorkspace(repository: unknown, parent?: unknown): Promise<{ name: string; dir: string }> {
+/** Clone a GitHub repository into `parent` (Ronin's own folder when none is named). The Workspace
+ * page that asked adds it as a row; nothing here keeps a list (KAN-728). */
+export async function cloneGithubWorkspace(repository: unknown, parent?: unknown): Promise<{ dir: string }> {
   const entered = typeof repository === 'string' ? repository.trim() : '';
   const match = /^(?:https:\/\/github\.com\/|git@github\.com:|ssh:\/\/git@github\.com\/)?([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?)(?:\.git)?$/.exec(entered);
   if (!match) throw new Error('Repository must be owner/name or an HTTPS or SSH github.com URL.');
   const slug = match[1];
   const remote = /^(?:git@|ssh:\/\/)/.test(entered) ? entered : `https://github.com/${slug}.git`;
-  const base = slug.split('/')[1].toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
-  if (!base) throw new Error('That repository does not make a valid workspace ID.');
-  const known = await peekProjectRoots();
-  let name = base;
-  for (let suffix = 2; known.some((root) => root.name === name); suffix++) name = `${base}-${suffix}`;
   const dir = path.join(typeof parent === 'string' && parent.trim() ? path.resolve(parent.trim()) : rootDir('user'), slug.split('/')[1]);
   if (await exists(dir)) throw new Error(`The destination ${dir} already exists.`);
   const git = await discoverExecutable('git');
@@ -600,8 +598,7 @@ export async function cloneGithubWorkspace(repository: unknown, parent?: unknown
       .replace(/[\r\n]+/g, ' ').trim().slice(0, 500);
     throw new Error(safe || 'Git could not access that repository with this machine’s current Git connection.');
   }
-  await upsertProjectRoot(name, { title: slug.split('/')[1], dir, remit: `Work in ${slug}.`, match: slug, archived: '' }, { declareArrangement: false });
-  return { name, dir };
+  return { dir };
 }
 
 /** A new folder's repository, created on GitHub with the GitHub CLI: origin set, the first commit pushed.
@@ -640,24 +637,9 @@ async function ensureRepository(dir: string, label: string, managed: boolean): P
   if (!(await exists(path.join(dir, '.git')))) await git(dir, ['init', '-b', 'main']);
   const readme = path.join(dir, 'README.md');
   if (!(await exists(readme))) await writeFile(readme, `# ${label}\n`, 'utf8');
-  const tracked = ['README.md'];
-  if (managed) {
-    const arrangement = path.join(dir, 'RONIN_REPO');
-    if (!(await exists(arrangement))) {
-      await writeFile(arrangement, [
-        '# RONIN_REPO — this repository is ready for Ronin Worktrees.',
-        'mode=reviewed',
-        'working=dev',
-        'stable=main',
-        'desks=managed',
-        '',
-      ].join('\n'), 'utf8');
-    }
-    tracked.push('RONIN_REPO');
-  }
   const hasHead = await git(dir, ['rev-parse', '--verify', 'HEAD']).then(() => true, () => false);
   if (!hasHead) {
-    await git(dir, ['add', '--', ...tracked]);
+    await git(dir, ['add', '--', 'README.md']);
     await git(dir, ['-c', 'user.name=Ronin', '-c', 'user.email=ronin@localhost', 'commit', '-m', `Start ${label}`]);
   }
   if (managed && !(await git(dir, ['show-ref', '--verify', '--quiet', 'refs/heads/dev']).then(() => true, () => false))) {
@@ -675,21 +657,17 @@ export function ensureInstalledRoots(): Promise<Array<{ name: string; label: str
 
 async function placeInstalledRoots(): Promise<Array<{ name: string; label: string; dir: string }>> {
   const installed = [];
-  const known = await peekProjectRoots();
+  const campaign = await initialCampaignId();
   for (const root of INSTALLED_ROOTS) {
     const dir = path.join(rootDir('user'), root.name);
     await ensureRepository(dir, root.label, root.managed);
-    // Register once. A runtime read runs this on every call; rewriting an unchanged
-    // catalog each time is what let concurrent reads collide.
-    const current = known.find((row) => row.name === root.name);
-    if (!current || path.resolve(current.dir) !== path.resolve(dir) || current.archived) {
-      await upsertProjectRoot(root.name, {
+    // Each is a Workspace holding its own folder, made once: a runtime read runs this on every call.
+    if (campaign && !(await readWorkspace(campaign, root.name))) {
+      const row = { name: root.name, dir, note: root.remit };
+      await saveWorkspace(normalizeWorkspace(campaign, root.name, {
         title: root.label,
-        dir,
-        match: root.label.toLowerCase(),
-        remit: root.remit,
-        archived: '',
-      }, { declareArrangement: false });
+        ...(root.managed ? { repos: [{ ...row, mode: 'reviewed', working: 'dev', stable: 'main', desks: 'managed' }] } : { folders: [row] }),
+      }));
     }
     installed.push({ name: root.name, label: root.label, dir });
   }

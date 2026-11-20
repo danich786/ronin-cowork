@@ -217,8 +217,8 @@ work-record read
 
 Remove an old entry with `work-record workspace remove <repo-or-url>`; add `--branch`
 to remove only that branch. The acknowledgement says how many rows changed, including
-when none matched. `session_set <name> --root <handle>` separately changes a live
-session's recorded Workspace Folder. Neither edit changes its birth directory or opens
+when none matched. `session_set <name> --root <workspace>` separately changes a live
+session's recorded Workspace. Neither edit changes its birth directory or opens
 a managed desk. These fields locate work; they do not replace commits, hand-ins, or evidence.
 
 Every way out first stops once while the Agent holds an item In Progress or In Review it has

@@ -455,20 +455,6 @@ export async function setCampaign(name: string, campaign: string): Promise<strin
   return clean;
 }
 
-export async function projectRootsOfSessions(): Promise<Record<string, string>> {
-  try {
-    const stdout = await tmux.run(['list-sessions', '-F', `#{session_name}\t#{${PROJECT_ROOT_OPT}}`]);
-    const out: Record<string, string> = {};
-    for (const line of stdout.split('\n').filter(Boolean)) {
-      const [name, root] = line.split('\t');
-      if (name && !name.startsWith('grid_')) out[name] = (root ?? '').trim();
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
 const AGENT_OPT = '@ronin-agent';
 const PROVIDER_SESSION_OPT = '@ronin-provider-session';
 

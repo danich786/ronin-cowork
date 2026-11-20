@@ -7,7 +7,7 @@ surface or a new work-record store.
 1. **Objective enters the Team.** The Team lead records an idea as a work item the Team holds.
    The item has stable identity, outcome, status, and provenance.
 2. **Assignment is accepted.** A visible Agent is launched or assigned with the objective,
-   Campaign/Team context, Workspace Folder handle, mandate, behaviors, capabilities, and repository
+   Campaign/Team context, Workspace, mandate, behaviors, capabilities, and repository
    placement resolved before birth.
 3. **The Agent owns its work.** Assignment transfers a Team-held work item into the Agent's
    work record. `item create` then `item handoff <id> <agent>` is the other entry when work

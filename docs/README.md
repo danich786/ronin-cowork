@@ -12,7 +12,7 @@ route depends on the task, not on who is reading.
 | Choose a machine and install Ronin | [Prepare a machine](getting-started/rent-a-machine.md), then [install](getting-started/install.md) |
 | Finish setup and start one working Agent | [Get started](getting-started/get-started.md), [Ronin Setup](getting-started/setup-workbench.md), and [provider sign-in](getting-started/provider-sign-in.md) |
 | Find and arrange my work | [Workbench](using-ronin/workbench.md) and [the tile](using-ronin/tile.md) |
-| Choose where Ronin works | [Workspace Folders](getting-started/workspace-folders.md) |
+| Choose where Ronin works | [Workspaces](using-ronin/workspaces.md) |
 | Browse and manage the machine's files | [Explorer](using-ronin/explorer.md) |
 | Give an Agent a file, image, or screenshot | [Share a file with an Agent](using-ronin/share-a-file.md) |
 | Connect an outside service (an MCP server, a web API, a bridge) | [Add an integration](using-ronin/add-an-integration.md) |
@@ -43,7 +43,7 @@ change area to its code, UI, stores, Services, documentation, and tests.
 | How does an outside service or MCP server reach Agents? | [Integrations](architecture/integrations.md): bridges, MCP server records, keys, who has it, and the `mcp` broker |
 | How do configuration and owner customizations resolve? | [Installations](architecture/installations.md), [shadowing](architecture/shadowing.md), and [templates](architecture/templates.md) |
 | How is project management built, and who reads which brief? | [Project management: contents](architecture/project-management.md): briefs, tools, code and the Jira bridge |
-| Where do state and work live? | [State inventory](state-inventory.md), [coordination trace](coordination-trace.md), and [Workspace Folders](architecture/project-roots.md) |
+| Where do state and work live? | [State inventory](state-inventory.md), [coordination trace](coordination-trace.md), and [Workspaces](using-ronin/workspaces.md) |
 | How does server state reach the browser? | [The data path](architecture/data-path.md): the server pushes on change, a surface subscribes when it opens, nothing polls |
 | What is an Agent's card, and where does its status come from? | [The Agent card](architecture/agent-card.md): the one truth about an Agent; each fact's owner, newest input wins for status |
 | What does an Agent's Chat read? | [Agent output](architecture/agent-output.md): a log read and a terminal read write one file per Agent; Chat only reads it |

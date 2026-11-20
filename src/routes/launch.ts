@@ -39,9 +39,8 @@ import { answered, answerKeys, createNoProgress, forgetHooks, keepHookRecord, pa
 import { tmux } from '../tmux-client.js';
 import { stoppedAt } from '../stopped.js';
 import { broadcastEvent, listening, pushTeams, type CardPart } from '../ws/events.js';
-import { listProjectRoots } from '../project-roots.js';
 import { readWorkspace } from '../workspaces.js';
-import { campaignResolver, initialCampaignId } from '../campaign-scope.js';
+import { initialCampaignId } from '../campaign-scope.js';
 import { readTeamRoster } from '../team-rosters.js';
 import { readCampaign } from '../campaigns.js';
 import { listInstallations } from '../resource-adapters.js';
@@ -306,13 +305,10 @@ export function registerLaunch(app: express.Express): LaunchControl {
       if (team && !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(team)) {
         return res.status(400).json({ error: `A team name is lowercase letters, digits, _ and -: "${team}".` });
       }
-      const [roster, allRoots, agents, resolveCampaign] = await Promise.all([
+      const [roster, agents] = await Promise.all([
         team ? readTeamRoster(team, campaign_id).then((found) => found ?? readTeamRoster(team, '')) : Promise.resolve(null),
-        listProjectRoots(),
         readAgentsSection(),
-        campaignResolver(),
       ]);
-      const roots = allRoots.filter((root) => resolveCampaign(root.campaign_id) === campaign_id);
       if (team && !roster) return res.status(404).json({ error: `Unknown Team "${team}" in Campaign "${campaign_id}".` });
       const seed = resolveLaunchSeed({
         campaign,

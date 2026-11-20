@@ -18,10 +18,9 @@ import { fileURLToPath } from 'node:url';
 import { execFile } from './spawn-broker.js';
 import { discoverExecutable } from './agents.js';
 import { rootDir } from './resources.js';
-import { listProjectRoots, type ProjectRootInfo } from './project-roots.js';
 import { listTeamRosters, readTeamRoster } from './team-rosters.js';
 import { listSessions } from './tmux.js';
-import { listWorkspaces, readWorkspace, type Workspace, type WorkspacePlans } from './workspaces.js';
+import { listWorkspaces, readWorkspace, workspaceFolders, type HeldFolder, type Workspace, type WorkspacePlans } from './workspaces.js';
 
 export class PlanRefused extends Error {}
 export class PlanMissing extends Error {}
@@ -46,7 +45,7 @@ export const headerLine = (h: PlanHeader): string => `Status: ${h.status} · ${h
 
 /* ---------- where ---------- */
 
-const rootsByName = async (): Promise<Map<string, ProjectRootInfo>> => new Map((await listProjectRoots()).map((root) => [root.name, root]));
+const rootsByName = async (): Promise<Map<string, HeldFolder>> => new Map((await workspaceFolders()).map((root) => [root.name, root]));
 
 /** A subfolder named on the Workspace: relative, inside its Location. */
 export function cleanSubpath(sub: string): string {
@@ -62,7 +61,7 @@ export async function plansPlace(campaign: string, workspace: string, plans?: Wo
   const roots = await rootsByName();
   if (plans?.location) {
     const root = roots.get(plans.location);
-    if (!root) throw new PlanMissing(`The Workspace ${workspace} keeps its plans in ${plans.location}, which is not a Workspace Folder now.`);
+    if (!root) throw new PlanMissing(`The Workspace ${workspace} keeps its plans in ${plans.location}, which no Workspace holds now.`);
     const sub = cleanSubpath(plans.path);
     return { dir: path.join(root.dir, sub), location: plans.location, path: sub, recommended: false };
   }

@@ -1,7 +1,7 @@
 import { constants } from 'node:fs';
 import { open, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { listProjectRoots, type ProjectRootInfo } from './project-roots.js';
+import { workspaceFolders } from './workspaces.js';
 import { REPO_ROOT } from './resources.js';
 
 export class DocumentPathError extends Error {
@@ -20,14 +20,13 @@ const containedBy = (root: string, file: string): boolean => {
   return relative === '' || (!relative.startsWith('..' + path.sep) && relative !== '..' && !path.isAbsolute(relative));
 };
 
-export async function resolveDocumentFile(rootName: unknown, requestedPath: unknown, suppliedRoots?: ProjectRootInfo[]): Promise<string> {
+export async function resolveDocumentFile(rootName: unknown, requestedPath: unknown): Promise<string> {
   const rootToken = String(rootName ?? '').trim();
   const supplied = String(requestedPath ?? '').trim();
   if (!supplied) throw new DocumentPathError('A document path is required.');
 
-  const roots = (suppliedRoots ?? await listProjectRoots()).filter((root) => !root.archived);
-  const root = roots.find((entry) => entry.name === rootToken);
-  if (!root) throw new DocumentPathError('Choose a registered workspace folder.', 403);
+  const root = (await workspaceFolders()).find((entry) => entry.name === rootToken);
+  if (!root) throw new DocumentPathError('Choose a folder of a Workspace.', 403);
   if (path.isAbsolute(supplied)) throw new DocumentPathError('Use a path relative to the workspace folder.');
   const candidate = path.resolve(root.dir, supplied);
 
@@ -42,13 +41,13 @@ export async function resolveDocumentFile(rootName: unknown, requestedPath: unkn
   let rootPath: string;
   try { rootPath = await realpath(root.dir); }
   catch { throw new DocumentPathError('That workspace folder is unavailable.', 404); }
-  if (!containedBy(rootPath, canonical)) throw new DocumentPathError('That document is outside the registered workspace folder.', 403);
+  if (!containedBy(rootPath, canonical)) throw new DocumentPathError('That document is outside the Workspace folder.', 403);
   const facts = await stat(canonical);
   if (!facts.isFile()) throw new DocumentPathError('No such file.', 404);
   return canonical;
 }
 
-/** Resolve one shipped, read-only owner guide without pretending the install is a Workspace Folder. */
+/** Resolve one shipped, read-only owner guide without pretending the install is a Workspace folder. */
 export async function resolveProductDocumentFile(requestedPath: unknown, productRoot = REPO_ROOT): Promise<string> {
   const supplied = String(requestedPath ?? '').trim();
   if (!supplied) throw new DocumentPathError('A document path is required.');

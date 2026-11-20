@@ -9,17 +9,16 @@ session_set — update one existing live Agent
 
 Usage:
   session_set <name> [--team <team>] [--lead]
-                     [--root <workspace-folder-handle> | --clear-root]
+                     [--root <workspace> | --clear-root]
 
 Only the named facts change. A missing Agent is refused and never created; use
 session_create for a birth. The bare form is refused; use session_check
 for a read. Related: session_check --help; session_create --help;
 team --help
 
---root changes the session's recorded Workspace Folder handle (for example, ronin_lab),
-not its birth directory or current shell directory. --clear-root clears that record.
-Use `machine-settings project-root list --campaign <id>` to read registered handles,
-or `session_check <name>` to read the current one. The Agent's working repositories
+--root changes the session's recorded Workspace (for example, ronin_lab), not its birth
+directory or current shell directory. --clear-root clears that record.
+`work-record workspace list` names the Workspaces; `session_check <name>` reads the current one. The Agent's working repositories
 are separate: use `work-record workspace --help` from that Agent's session.
 EOF
     exit 0 ;;

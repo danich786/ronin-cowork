@@ -7,7 +7,7 @@
 # Run as the office user. It archives every Agent through Ronin's own archive path (each
 # keeps its provider conversation, Teams, desks and work items), stops Ronin, and writes
 # <file>: one tar.gz made by bin/ronin-export — every store keyed by store id — plus every
-# Workspace Folder and each Agent's provider conversation and sign-in, keyed by path, and
+# Workspace folder and each Agent's provider conversation and sign-in, keyed by path, and
 # manifest.json at its root. bin/ronin-rehydrate <file> brings the office back.
 #
 # Progress is <file>.status.json — {"state":"running"|"done"|"failed","step","size",
