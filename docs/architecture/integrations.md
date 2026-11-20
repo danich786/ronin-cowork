@@ -47,6 +47,15 @@ whose bridge has a `facts:` line one small field per fact, saved into the entry
 provider alone; any other fact in an entry is kept and shown as it is. No code per provider: a
 bridge file's `facts:` line is the whole list.
 
+**In a hosted office the Business Lounge is the one switch (KAN-730).** A bridge (Jira, Netlify,
+Perplexity) is listed only when its name is in `office.addons` of the office's `lounge.json`, which
+the park writes beside `office_record.json`. That list is what the office has, ticked in the Lounge
+or included free, with Environment arriving as every name. With no list, no bridge shows. The filter
+sits once in `src/integrations.ts`, so Settings › Integrations and Helpful Assistant's Integrations
+step both follow it. Connecting stays in the office: the keys and the Workspace link are the
+office's. MCP server records the person adds aren't sold and always show. A new bridge needs its
+name added to HQ's list too. Self-hosted Ronin lists every bridge.
+
 ## The MCP server record
 
 One Markdown file per server, in the owner's store (it survives updates). `mcp add` writes it,
