@@ -27,6 +27,11 @@ test('a fresh box answers health, the page, and an unanswered Setup', async () =
 });
 
 test('Setup sees the installed CLIs, not yet signed in; Help will not start and says why', async () => {
+  // The runtime answer reads only what is recorded; Setup progress's scan measures and records.
+  // With Services loaded the scan can still be running here, so wait until one has finished
+  // (scanned_at is set after its measure is recorded; every progress read starts a scan, so
+  // `scanning` alone never reads false).
+  await until(async () => (await ronin.api('/api/setup/progress')).body.scanned_at, 'the Setup scan', 30_000);
   const before = (await ronin.api('/api/setup/runtime')).body;
   assert.ok(before.providers, JSON.stringify(before).slice(0, 400));
   assert.equal(provider(before, 'claude').installed, true);
